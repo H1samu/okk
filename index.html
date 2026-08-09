@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журналы НАССР</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:32px 20px 60px;
+  }
+  header{
+    text-align:center;
+    margin-bottom:28px;
+  }
+  header .eyebrow{
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    font-weight:600;
+    margin-bottom:8px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  header p{
+    font-size:14px;
+    color:var(--text-secondary);
+    margin:0;
+  }
+  .search-box{
+    position:relative;
+    max-width:520px;
+    margin:24px auto 0;
+  }
+  .search-box input{
+    width:100%;
+    padding:13px 16px 13px 42px;
+    border:1px solid var(--border-strong);
+    border-radius:999px;
+    font-size:15px;
+    font-family:inherit;
+    background:var(--surface);
+    color:var(--text);
+  }
+  .search-box input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .search-box svg{
+    position:absolute;
+    left:15px;
+    top:50%;
+    transform:translateY(-50%);
+    width:18px;
+    height:18px;
+    stroke:var(--text-muted);
+  }
+  .tags-section{margin-top:36px;}
+  .tags-section h2{
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--text-muted);
+    margin:0 0 12px;
+  }
+  .tag-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
+    gap:10px;
+  }
+  .tag-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:16px 14px;
+    text-align:left;
+    cursor:pointer;
+    font-family:inherit;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .tag-card:hover{border-color:var(--border-strong);}
+  .tag-card:active{transform:scale(0.98);}
+  .tag-card.active{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+  }
+  .tag-card .tag-name{
+    font-size:14px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .tag-card .tag-count{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:4px;
+  }
+  .tag-card.active .tag-count{color:var(--accent);}
+  .results-section{margin-top:36px;}
+  .results-header{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .results-header h2{
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--text-muted);
+    margin:0;
+  }
+  .reset-btn{
+    font-size:12px;
+    color:var(--accent);
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-family:inherit;
+    font-weight:600;
+    display:none;
+    padding:0;
+  }
+  .reset-btn.show{display:inline;}
+  .journal-list{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .journal-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:13px 16px;
+    text-decoration:none;
+    color:var(--text);
+  }
+  .journal-row:hover{border-color:var(--border-strong);}
+  .journal-row .jr-left{
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    min-width:0;
+  }
+  .journal-row .jr-name{
+    font-size:14px;
+    font-weight:500;
+  }
+  .journal-row .jr-name mark{
+    background:#fde68a;
+    color:inherit;
+    border-radius:3px;
+  }
+  .journal-row .jr-tags{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .journal-row .jr-tags span{
+    font-size:11px;
+    color:var(--text-muted);
+    background:var(--bg);
+    border-radius:999px;
+    padding:2px 8px;
+  }
+  .journal-row .jr-arrow{
+    flex-shrink:0;
+    color:var(--text-muted);
+    font-size:16px;
+  }
+  .empty-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+  .loading-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">itle kitchen</div>
+    <h1>Журналы и чек-листы НАССР</h1>
+    <p>Найдите нужный документ по тегу или через поиск</p>
+
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
+    </div>
+
+  </header>
+
+  <div class="tags-section">
+    <h2>Теги</h2>
+    <div class="tag-grid" id="tagGrid"></div>
+  </div>
+
+  <div class="results-section">
+    <div class="results-header">
+      <h2 id="resultsTitle">Все документы</h2>
+      <button class="reset-btn" id="resetBtn">Сбросить фильтр</button>
+    </div>
+    <div class="journal-list" id="journalList">
+      <div class="loading-state">Загрузка...</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учет","Прочее"];
+
+  let journals = [];
+  let activeTag = null;
+
+  const tagGrid = document.getElementById('tagGrid');
+  const journalList = document.getElementById('journalList');
+  const searchInput = document.getElementById('searchInput');
+  const resetBtn = document.getElementById('resetBtn');
+  const resultsTitle = document.getElementById('resultsTitle');
+
+  fetch('journals.json')
+    .then(r => {
+      if(!r.ok) throw new Error('network');
+      return r.json();
+    })
+    .then(data => {
+      journals = data;
+      renderTags();
+      renderList();
+    })
+    .catch(() => {
+      journalList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json. Проверьте, что файл лежит рядом с index.html.</div>';
+    });
+
+  function renderTags(){
+    const counts = {};
+    TAG_ORDER.forEach(t => counts[t] = 0);
+    journals.forEach(j => j.tags.forEach(t => { if(counts[t] !== undefined) counts[t]++; }));
+
+    tagGrid.innerHTML = '';
+    TAG_ORDER.forEach(tag => {
+      const btn = document.createElement('button');
+      btn.className = 'tag-card' + (activeTag === tag ? ' active' : '');
+      btn.innerHTML = `<div class="tag-name">${tag}</div><div class="tag-count">${counts[tag]} документ${plural(counts[tag])}</div>`;
+      btn.addEventListener('click', () => {
+        activeTag = activeTag === tag ? null : tag;
+        renderTags();
+        renderList();
+      });
+      tagGrid.appendChild(btn);
+    });
+  }
+
+  function plural(n){
+    const mod10 = n % 10, mod100 = n % 100;
+    if(mod10 === 1 && mod100 !== 11) return 'а';
+    if([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'а';
+    return 'ов';
+  }
+
+  function highlight(text, query){
+    if(!query) return text;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if(idx === -1) return text;
+    return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + query.length) + '</mark>' + text.slice(idx + query.length);
+  }
+
+  function renderList(){
+    const query = searchInput.value.trim();
+    let filtered = journals;
+
+    if(activeTag){
+      filtered = filtered.filter(j => j.tags.includes(activeTag));
+    }
+    if(query){
+      filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));
+    }
+
+    resetBtn.classList.toggle('show', !!activeTag || !!query);
+    resultsTitle.textContent = activeTag ? activeTag : 'Все документы';
+
+    if(filtered.length === 0){
+      journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
+      return;
+    }
+
+    journalList.innerHTML = filtered.map(j => `
+      <a class="journal-row" href="${j.url || '#'}" ${j.url ? '' : 'onclick="return false;"'}>
+        <div class="jr-left">
+          <div class="jr-name">${highlight(j.name, query)}</div>
+          <div class="jr-tags">${j.tags.map(t => `<span>${t}</span>`).join('')}</div>
+        </div>
+        <div class="jr-arrow">→</div>
+      </a>
+    `).join('');
+  }
+
+  searchInput.addEventListener('input', renderList);
+  resetBtn.addEventListener('click', () => {
+    activeTag = null;
+    searchInput.value = '';
+    renderTags();
+    renderList();
+  });
+</script>
+
+</body>
+</html>

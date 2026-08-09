@@ -316,7 +316,7 @@
     let filtered = journals;
 
     if(activeTags.size > 0){
-      filtered = filtered.filter(j => j.tags.some(t => activeTags.has(t)));
+      filtered = filtered.filter(j => Array.from(activeTags).every(t => j.tags.includes(t)));
     }
     if(query){
       filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));

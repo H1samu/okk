@@ -254,7 +254,7 @@
   const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учет","Прочее"];
 
   let journals = [];
-  let activeTag = null;
+  let activeTags = new Set();
 
   const tagGrid = document.getElementById('tagGrid');
   const journalList = document.getElementById('journalList');
@@ -284,10 +284,12 @@
     tagGrid.innerHTML = '';
     TAG_ORDER.forEach(tag => {
       const btn = document.createElement('button');
-      btn.className = 'tag-card' + (activeTag === tag ? ' active' : '');
-      btn.innerHTML = `<div class="tag-name">${tag}</div><div class="tag-count">${counts[tag]} документ${plural(counts[tag])}</div>`;
+      btn.className = 'tag-card' + (activeTags.has(tag) ? ' active' : '');
+      btn.setAttribute('aria-pressed', activeTags.has(tag) ? 'true' : 'false');
+      btn.innerHTML = `<div class="tag-name">${activeTags.has(tag) ? '✓ ' : ''}${tag}</div><div class="tag-count">${counts[tag]} документ${plural(counts[tag])}</div>`;
       btn.addEventListener('click', () => {
-        activeTag = activeTag === tag ? null : tag;
+        if(activeTags.has(tag)) activeTags.delete(tag);
+        else activeTags.add(tag);
         renderTags();
         renderList();
       });
@@ -313,15 +315,15 @@
     const query = searchInput.value.trim();
     let filtered = journals;
 
-    if(activeTag){
-      filtered = filtered.filter(j => j.tags.includes(activeTag));
+    if(activeTags.size > 0){
+      filtered = filtered.filter(j => j.tags.some(t => activeTags.has(t)));
     }
     if(query){
       filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));
     }
 
-    resetBtn.classList.toggle('show', !!activeTag || !!query);
-    resultsTitle.textContent = activeTag ? activeTag : 'Все документы';
+    resetBtn.classList.toggle('show', activeTags.size > 0 || !!query);
+    resultsTitle.textContent = activeTags.size > 0 ? Array.from(activeTags).join(' + ') : 'Все документы';
 
     if(filtered.length === 0){
       journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
@@ -341,7 +343,7 @@
 
   searchInput.addEventListener('input', renderList);
   resetBtn.addEventListener('click', () => {
-    activeTag = null;
+    activeTags.clear();
     searchInput.value = '';
     renderTags();
     renderList();

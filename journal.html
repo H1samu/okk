@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал — НАССР</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1100px;
+    margin:0 auto;
+    padding:24px 20px 60px;
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-decoration:none;
+    margin-bottom:20px;
+  }
+  .back-link:hover{color:var(--accent);}
+  header{
+    margin-bottom:24px;
+  }
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 8px;
+  }
+  .tag-row{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .tag-row span{
+    font-size:11px;
+    color:var(--text-secondary);
+    background:var(--accent-soft);
+    border-radius:999px;
+    padding:3px 10px;
+  }
+  .state-box{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .state-box.error{
+    color:var(--danger);
+    background:var(--danger-soft);
+    border-color:transparent;
+  }
+  .table-scroll{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:auto;
+    max-width:100%;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:var(--accent-soft);
+    color:var(--text);
+    text-align:left;
+    padding:10px 14px;
+    font-weight:600;
+    border-bottom:1px solid var(--border-strong);
+  }
+  tbody td{
+    padding:9px 14px;
+    border-bottom:1px solid var(--border);
+    color:var(--text-secondary);
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fbfaf7;}
+  .row-count{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:10px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+
+  <header>
+    <div class="eyebrow">itle kitchen</div>
+    <h1 id="journalTitle">Загрузка…</h1>
+    <div class="tag-row" id="journalTags"></div>
+  </header>
+
+  <div id="content">
+    <div class="state-box" id="stateBox">Загрузка данных таблицы…</div>
+  </div>
+  <div class="row-count" id="rowCount"></div>
+</div>
+
+<script>
+  // Вставьте свой ограниченный API-ключ (Google Cloud Console → Credentials)
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+
+  const params = new URLSearchParams(window.location.search);
+  const journalId = params.get('id');
+
+  const titleEl = document.getElementById('journalTitle');
+  const tagsEl = document.getElementById('journalTags');
+  const contentEl = document.getElementById('content');
+  const stateBox = document.getElementById('stateBox');
+  const rowCountEl = document.getElementById('rowCount');
+
+  if(!journalId){
+    titleEl.textContent = 'Журнал не указан';
+    stateBox.textContent = 'В адресе страницы нет параметра ?id=... — вернитесь в каталог и откройте журнал через карточку.';
+    stateBox.classList.add('error');
+  } else {
+    fetch('journals.json')
+      .then(r => r.json())
+      .then(all => {
+        const journal = all.find(j => j.id === journalId);
+        if(!journal){
+          titleEl.textContent = 'Журнал не найден';
+          stateBox.textContent = `Не найдена запись с id "${journalId}" в journals.json.`;
+          stateBox.classList.add('error');
+          return;
+        }
+
+        titleEl.textContent = journal.name;
+        tagsEl.innerHTML = journal.tags.map(t => `<span>${t}</span>`).join('');
+        document.title = journal.name + ' — НАССР';
+
+        if(!journal.sheetId || !journal.sheetName){
+          stateBox.textContent = 'Для этого журнала пока не указан sheetId / sheetName в journals.json.';
+          stateBox.classList.add('error');
+          return;
+        }
+
+        const range = encodeURIComponent(journal.sheetName);
+        const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${journal.sheetId}/values/${range}?key=${API_KEY}`;
+
+        fetch(apiUrl)
+          .then(r => {
+            if(!r.ok) throw new Error('http ' + r.status);
+            return r.json();
+          })
+          .then(data => renderTable(data.values || []))
+          .catch(err => {
+            stateBox.textContent = 'Не удалось загрузить данные таблицы. Проверьте: доступ таблицы "по ссылке — Читатель", правильность sheetId/sheetName, и ограничения API-ключа. (' + err.message + ')';
+            stateBox.classList.add('error');
+          });
+      })
+      .catch(() => {
+        titleEl.textContent = 'Ошибка';
+        stateBox.textContent = 'Не удалось загрузить journals.json.';
+        stateBox.classList.add('error');
+      });
+  }
+
+  function renderTable(rows){
+    if(rows.length === 0){
+      stateBox.textContent = 'В этом журнале пока нет ни одной записи.';
+      return;
+    }
+
+    const [header, ...body] = rows;
+    const maxCols = header.length;
+
+    const theadHtml = '<thead><tr>' + header.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
+    const tbodyHtml = '<tbody>' + body.map(row => {
+      const cells = Array.from({length: maxCols}, (_, i) => row[i] || '');
+      return '<tr>' + cells.map(c => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>';
+    }).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
+    rowCountEl.textContent = `Записей: ${body.length}`;
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+</script>
+
+</body>
+</html>

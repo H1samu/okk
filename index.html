@@ -228,7 +228,7 @@
   <header>
     <div class="eyebrow">itle kitchen</div>
     <h1>Журналы и чек-листы НАССР</h1>
-    <p>Найдите нужный документ по категории или через поиск</p>
+    <p>Найдите нужный документ по тегу или через поиск</p>
 
     <div class="search-box">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -238,7 +238,7 @@
   </header>
 
   <div class="tags-section">
-    <h2>Категории</h2>
+    <h2>Теги</h2>
     <div class="tag-grid" id="tagGrid"></div>
   </div>
 
@@ -330,12 +330,12 @@
     resultsTitle.textContent = activeTags.size > 0 ? Array.from(activeTags).join(' + ') : 'Все документы';
 
     if(filtered.length === 0){
-      journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или категорию.</div>';
+      journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
       return;
     }
 
     journalList.innerHTML = filtered.map(j => `
-      <a class="journal-row" href="${j.url || '#'}" ${j.url ? '' : 'onclick="return false;"'}>
+      <a class="journal-row" href="journal.html?id=${encodeURIComponent(j.id)}">
         <div class="jr-left">
           <div class="jr-name">${highlight(j.name, query)}</div>
           <div class="jr-tags">${j.tags.map(t => `<span>${t}</span>`).join('')}</div>

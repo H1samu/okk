@@ -96,7 +96,44 @@
     border-radius:var(--radius);
     overflow:auto;
     max-width:100%;
+    max-height:65vh;
   }
+  .toolbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .toolbar input{
+    flex:1;
+    min-width:200px;
+    padding:9px 14px;
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+    background:var(--surface);
+    color:var(--text);
+  }
+  .toolbar input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  th.sortable{
+    cursor:pointer;
+    user-select:none;
+    white-space:nowrap;
+  }
+  th.sortable:hover{background:#dfe9e5;}
+  th .sort-arrow{
+    display:inline-block;
+    margin-left:4px;
+    color:var(--text-muted);
+    font-size:11px;
+  }
+  th.sort-active .sort-arrow{color:var(--accent);}
   table{
     border-collapse:collapse;
     width:100%;
@@ -138,6 +175,9 @@
     <div class="tag-row" id="journalTags"></div>
   </header>
 
+  <div class="toolbar">
+    <input type="text" id="tableSearch" placeholder="Поиск по всем столбцам..." autocomplete="off" style="display:none;">
+  </div>
   <div id="content">
     <div class="state-box" id="stateBox">Загрузка данных таблицы…</div>
   </div>
@@ -204,23 +244,76 @@
       });
   }
 
+  let tableHeader = [];
+  let tableRows = [];
+  let sortCol = null;
+  let sortDir = 1; // 1 = asc, -1 = desc
+
+  const tableSearch = document.getElementById('tableSearch');
+  tableSearch.addEventListener('input', () => drawTable());
+
   function renderTable(rows){
     if(rows.length === 0){
       stateBox.textContent = 'В этом журнале пока нет ни одной записи.';
       return;
     }
-
     const [header, ...body] = rows;
-    const maxCols = header.length;
+    tableHeader = header;
+    tableRows = body;
+    tableSearch.style.display = '';
+    drawTable();
+  }
 
-    const theadHtml = '<thead><tr>' + header.map(h => `<th>${escapeHtml(h)}</th>`).join('') + '</tr></thead>';
-    const tbodyHtml = '<tbody>' + body.map(row => {
-      const cells = Array.from({length: maxCols}, (_, i) => row[i] || '');
-      return '<tr>' + cells.map(c => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>';
-    }).join('') + '</tbody>';
+  function drawTable(){
+    const maxCols = tableHeader.length;
+    const query = tableSearch.value.trim().toLowerCase();
+
+    let rows = tableRows.map(row => Array.from({length: maxCols}, (_, i) => row[i] || ''));
+
+    if(query){
+      rows = rows.filter(row => row.some(cell => cell.toLowerCase().includes(query)));
+    }
+
+    if(sortCol !== null){
+      rows = rows.slice().sort((a, b) => {
+        const av = a[sortCol], bv = b[sortCol];
+        const an = parseFloat(av.replace(',', '.'));
+        const bn = parseFloat(bv.replace(',', '.'));
+        let cmp;
+        if(!isNaN(an) && !isNaN(bn) && av.trim() !== '' && bv.trim() !== ''){
+          cmp = an - bn;
+        } else {
+          cmp = av.localeCompare(bv, 'ru');
+        }
+        return cmp * sortDir;
+      });
+    }
+
+    const theadHtml = '<thead><tr>' + tableHeader.map((h, i) => {
+      const active = sortCol === i;
+      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${escapeHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr></thead>';
+
+    const tbodyHtml = '<tbody>' + rows.map(row =>
+      '<tr>' + row.map(c => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>'
+    ).join('') + '</tbody>';
 
     contentEl.innerHTML = `<div class="table-scroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
-    rowCountEl.textContent = `Записей: ${body.length}`;
+    rowCountEl.textContent = `Записей: ${rows.length}${query || sortCol !== null ? ` из ${tableRows.length}` : ''}`;
+
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = parseInt(th.dataset.col, 10);
+        if(sortCol === col){
+          sortDir = -sortDir;
+        } else {
+          sortCol = col;
+          sortDir = 1;
+        }
+        drawTable();
+      });
+    });
   }
 
   function escapeHtml(str){

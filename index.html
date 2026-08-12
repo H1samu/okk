@@ -61,6 +61,11 @@
     color:var(--text-secondary);
     margin:0;
   }
+  header .total-count{
+    font-size:13px;
+    color:var(--text-muted);
+    margin-top:10px;
+  }
   .search-box{
     position:relative;
     max-width:520px;
@@ -234,6 +239,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
     </div>
+    <div class="total-count" id="totalCount"></div>
 
   </header>
 
@@ -273,6 +279,7 @@
     })
     .then(data => {
       journals = data;
+      document.getElementById('totalCount').textContent = `Всего документов: ${journals.length}`;
       renderTags();
       renderList();
     })
@@ -327,7 +334,9 @@
     }
 
     resetBtn.classList.toggle('show', activeTags.size > 0 || !!query);
-    resultsTitle.textContent = activeTags.size > 0 ? Array.from(activeTags).join(' + ') : 'Все документы';
+    resultsTitle.textContent = activeTags.size > 0
+      ? `${Array.from(activeTags).join(' + ')} (${filtered.length})`
+      : `Все документы (${filtered.length})`;
 
     if(filtered.length === 0){
       journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';

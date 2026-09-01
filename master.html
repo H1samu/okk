@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Мастер-таблица — НАССР</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:900px;
+    margin:0 auto;
+    padding:24px 20px 60px;
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-decoration:none;
+    margin-bottom:20px;
+  }
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  .eyebrow{
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color:var(--text-muted);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  header p{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin:0;
+  }
+  .search-box{
+    position:relative;
+    margin:18px 0 24px;
+  }
+  .search-box input{
+    width:100%;
+    padding:11px 16px 11px 40px;
+    border:1px solid var(--border-strong);
+    border-radius:999px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--surface);
+    color:var(--text);
+  }
+  .search-box input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .search-box svg{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:16px;
+    stroke:var(--text-muted);
+  }
+  .row-count{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:14px;
+  }
+  .master-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .master-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+  }
+  .mc-name{
+    font-size:14px;
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  .mc-name mark{
+    background:#fde68a;
+    color:inherit;
+    border-radius:3px;
+  }
+  .mc-tags{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-bottom:12px;
+  }
+  .mc-tags span{
+    font-size:11px;
+    color:var(--text-secondary);
+    background:var(--accent-soft);
+    border-radius:999px;
+    padding:2px 9px;
+  }
+  .mc-links{
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .mc-links a{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:12px;
+    font-weight:600;
+    text-decoration:none;
+    color:var(--text);
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:6px 11px;
+  }
+  .mc-links a:hover{border-color:var(--border-strong);}
+  .mc-links a.na{
+    color:var(--text-muted);
+    opacity:0.5;
+    cursor:default;
+    pointer-events:none;
+  }
+  .empty-state, .loading-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+
+  <header>
+    <div class="eyebrow">itle kitchen</div>
+    <h1>Мастер-таблица</h1>
+    <p>Все журналы, таблицы, формы и QR-коды в одном списке</p>
+  </header>
+
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
+  </div>
+
+  <div class="row-count" id="rowCount"></div>
+  <div class="master-list" id="masterList">
+    <div class="loading-state">Загрузка...</div>
+  </div>
+</div>
+
+<script>
+  let journals = [];
+  const masterList = document.getElementById('masterList');
+  const rowCount = document.getElementById('rowCount');
+  const searchInput = document.getElementById('searchInput');
+
+  fetch('journals.json')
+    .then(r => r.json())
+    .then(data => {
+      journals = data;
+      draw();
+    })
+    .catch(() => {
+      masterList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json.</div>';
+    });
+
+  function qrThumb(driveId){
+    return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
+  }
+
+  function highlight(text, query){
+    if(!query) return text;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if(idx === -1) return text;
+    return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + query.length) + '</mark>' + text.slice(idx + query.length);
+  }
+
+  function linkOrNa(url, label){
+    return url
+      ? `<a href="${url}" target="_blank" rel="noopener">${label}</a>`
+      : `<a class="na">${label}</a>`;
+  }
+
+  function draw(){
+    const query = searchInput.value.trim();
+    let filtered = journals;
+    if(query){
+      filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));
+    }
+
+    rowCount.textContent = `Журналов: ${filtered.length} из ${journals.length}`;
+
+    if(filtered.length === 0){
+      masterList.innerHTML = '<div class="empty-state">Ничего не найдено.</div>';
+      return;
+    }
+
+    masterList.innerHTML = filtered.map(j => `
+      <div class="master-card">
+        <div class="mc-name">${highlight(j.name, query)}</div>
+        <div class="mc-tags">${(j.tags || []).map(t => `<span>${t}</span>`).join('')}</div>
+        <div class="mc-links">
+          ${linkOrNa(j.sheetUrl, '📊 Таблица')}
+          ${linkOrNa(j.formUrl, '📝 Форма')}
+          ${linkOrNa(j.qrDriveId ? qrThumb(j.qrDriveId) : '', '▦ QR формы')}
+          ${linkOrNa(j.formUrlPrefill, '📝 Форма (с предзаполнением)')}
+          ${linkOrNa(j.qrPrefillDriveId ? qrThumb(j.qrPrefillDriveId) : '', '▦ QR (предзаполнение)')}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  searchInput.addEventListener('input', draw);
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

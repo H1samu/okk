@@ -1207,5 +1207,44 @@
     "qrDriveId": "https://drive.google.com/file/d/1rGNW-zE1FMsqp5t79xKqgARWHKVSdu9W/view?usp=drive_link",
     "formUrlPrefill": "-",
     "formUrlPrefillQR": "-"
+  },
+  {
+    "id": null,
+    "name": "- Кастомная форма с ручным заполнением",
+    "tags": null,
+    "sheetId": null,
+    "sheetName": null,
+    "sheetUrl": null,
+    "formUrlView": null,
+    "formUrlEdit": null,
+    "qrDriveId": null,
+    "formUrlPrefill": null,
+    "formUrlPrefillQR": null
+  },
+  {
+    "id": null,
+    "name": "- Форма с частичным автозаполнением",
+    "tags": null,
+    "sheetId": null,
+    "sheetName": null,
+    "sheetUrl": null,
+    "formUrlView": null,
+    "formUrlEdit": null,
+    "qrDriveId": null,
+    "formUrlPrefill": null,
+    "formUrlPrefillQR": null
+  },
+  {
+    "id": null,
+    "name": "- Форма с ручным заполнением",
+    "tags": null,
+    "sheetId": null,
+    "sheetName": null,
+    "sheetUrl": null,
+    "formUrlView": null,
+    "formUrlEdit": null,
+    "qrDriveId": null,
+    "formUrlPrefill": null,
+    "formUrlPrefillQR": null
   }
 ]

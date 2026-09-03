@@ -159,7 +159,7 @@
     <div class="error" id="errorMsg">Неверный пароль</div>
     <div class="success" id="successMsg">
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline class="checkmark" points="20 6 9 17 4 12"/></svg>
-      Верно, входим...
+      Пароль верный, заходим...
     </div>
     <button type="submit" id="loginBtn">Войти</button>
   </form>
@@ -216,7 +216,7 @@
       input.readOnly = true;
       loginBtn.classList.add('valid');
       successMsg.classList.add('show');
-      setTimeout(proceed, 450);
+      setTimeout(proceed, 700);
     }
   }
 

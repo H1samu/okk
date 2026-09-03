@@ -1,6 +1,6 @@
 {
-  "name": "Журналы НАССР",
-  "short_name": "НАССР",
+  "name": "G CHECK. Журналы НАССР",
+  "short_name": "G CHECK",
   "description": "Журналы и чек-листы НАССР — поиск и просмотр по категориям",
   "start_url": "./index.html",
   "scope": "./",

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Вход</title>
+<title>Вход — G-check</title>
 <meta name="theme-color" content="#3a5a52">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -77,11 +77,42 @@
     color:var(--text);
     text-align:center;
     letter-spacing:2px;
+    transition:border-color .2s ease, background .2s ease;
   }
   input[type="password"]:focus{
     outline:2px solid var(--accent);
     outline-offset:1px;
   }
+  input[type="password"].valid{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent);
+    outline:none;
+  }
+  .success{
+    font-size:13px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .success.show{display:flex;}
+  .success svg{
+    width:15px;
+    height:15px;
+    flex-shrink:0;
+    stroke:var(--accent);
+  }
+  .success .checkmark{
+    stroke-dasharray:20;
+    stroke-dashoffset:20;
+    animation:draw .3s ease forwards;
+  }
+  @keyframes draw{ to{ stroke-dashoffset:0; } }
   button{
     padding:13px 16px;
     border:none;
@@ -92,10 +123,13 @@
     font-weight:600;
     font-family:inherit;
     cursor:pointer;
-    transition:opacity .15s ease;
+    transition:opacity .15s ease, transform .15s ease;
   }
   button:hover{opacity:0.92;}
   button:active{transform:scale(0.99);}
+  button.valid{
+    transform:scale(1.02);
+  }
   .error{
     font-size:13px;
     color:var(--danger);
@@ -123,7 +157,11 @@
   <form id="loginForm" autocomplete="off">
     <input type="password" id="passwordInput" placeholder="Пароль" autofocus>
     <div class="error" id="errorMsg">Неверный пароль</div>
-    <button type="submit">Войти</button>
+    <div class="success" id="successMsg">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline class="checkmark" points="20 6 9 17 4 12"/></svg>
+      Верно, входим...
+    </div>
+    <button type="submit" id="loginBtn">Войти</button>
   </form>
 
   <div class="site-footer">by <a href="https://t.me/hisamost" target="_blank" rel="noopener">hisamost</a></div>
@@ -134,7 +172,7 @@
   // случайный человек не открыл сайт по ссылке. Пароль виден любому,
   // кто откроет devtools и введёт правильную строку, зная хеш можно
   // подобрать пароль офлайн. Для реальной защиты данных нужен бекенд.
-  const PASSWORD_HASH = "125cc01e3590742de6c2745c92ad4c2c1341c0a4346a118debb6b6f8415bb955";
+  const PASSWORD_HASH = "PASTE_YOUR_SHA256_HASH_HERE";
   const SESSION_KEY = "gcheck_auth_time"; // timestamp входа
   const SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 часа
 
@@ -153,25 +191,55 @@
   const form = document.getElementById('loginForm');
   const input = document.getElementById('passwordInput');
   const errorMsg = document.getElementById('errorMsg');
+  const successMsg = document.getElementById('successMsg');
+  const loginBtn = document.getElementById('loginBtn');
+
+  let unlocked = false;
+
+  function proceed(){
+    localStorage.setItem(SESSION_KEY, Date.now().toString());
+    const params = new URLSearchParams(location.search);
+    const redirect = params.get('redirect');
+    location.replace(redirect ? decodeURIComponent(redirect) : 'index.html');
+  }
+
+  async function checkPassword(){
+    if(unlocked) return;
+    const value = input.value;
+    if(!value) return;
+
+    const hash = await sha256(value);
+    if(hash === PASSWORD_HASH){
+      unlocked = true;
+      errorMsg.classList.remove('show');
+      input.classList.add('valid');
+      input.readOnly = true;
+      loginBtn.classList.add('valid');
+      successMsg.classList.add('show');
+      setTimeout(proceed, 450);
+    }
+  }
+
+  input.addEventListener('input', () => {
+    errorMsg.classList.remove('show');
+    checkPassword();
+  });
 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if(unlocked) { proceed(); return; }
+
     const value = input.value;
     const hash = await sha256(value);
 
     if(hash === PASSWORD_HASH){
-      localStorage.setItem(SESSION_KEY, Date.now().toString());
-      const params = new URLSearchParams(location.search);
-      const redirect = params.get('redirect');
-      location.replace(redirect ? decodeURIComponent(redirect) : 'index.html');
+      checkPassword();
     } else {
       errorMsg.classList.add('show');
       input.value = '';
       input.focus();
     }
   });
-
-  input.addEventListener('input', () => errorMsg.classList.remove('show'));
 </script>
 
 </body>

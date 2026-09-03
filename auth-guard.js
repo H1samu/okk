@@ -6,7 +6,7 @@
 // сразу редиректит его туда. Не защита данных, только от случайных людей.
 (function(){
   var SESSION_KEY = "gcheck_auth_time";
-  var SESSION_TTL_MS = 24 * 60 * 60 * 1000; // 24 часа
+  var SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 24 часа
 
   var savedTime = parseInt(localStorage.getItem(SESSION_KEY) || '0', 10);
   var isValid = savedTime && (Date.now() - savedTime) < SESSION_TTL_MS;

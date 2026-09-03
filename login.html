@@ -182,7 +182,7 @@
     return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
   }
 
-  // Если уже авторизован и не прошло 24 часа — сразу на главную
+  // Если уже авторизован и не прошло 12 часов — сразу на главную
   const savedTime = parseInt(localStorage.getItem(SESSION_KEY) || '0', 10);
   if(savedTime && (Date.now() - savedTime) < SESSION_TTL_MS){
     location.replace('index.html');

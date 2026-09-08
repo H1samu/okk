@@ -77,6 +77,17 @@
     max-width:520px;
     margin:24px auto 0;
   }
+  .search-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    max-width:520px;
+    margin:24px auto 0;
+  }
+  .search-row .search-box{
+    margin:0;
+    flex:1;
+  }
   .search-box input{
     width:100%;
     padding:13px 16px 13px 42px;
@@ -99,6 +110,100 @@
     width:18px;
     height:18px;
     stroke:var(--text-muted);
+  }
+  .scan-btn{
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    height:46px;
+    padding:0 16px;
+    border-radius:999px;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .scan-btn:hover{border-color:var(--accent);}
+  .scan-modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.6);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .scan-modal-overlay.show{display:flex;}
+  .scan-modal{
+    background:var(--surface);
+    border-radius:var(--radius);
+    max-width:420px;
+    width:100%;
+    padding:20px;
+  }
+  .scan-modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:14px;
+  }
+  .scan-modal-header h3{
+    font-size:15px;
+    font-weight:700;
+    margin:0;
+  }
+  .scan-close{
+    background:none;
+    border:none;
+    font-size:20px;
+    color:var(--text-muted);
+    cursor:pointer;
+    line-height:1;
+    padding:4px;
+  }
+  .scan-video-wrap{
+    position:relative;
+    border-radius:10px;
+    overflow:hidden;
+    background:#000;
+    aspect-ratio:1/1;
+  }
+  .scan-video-wrap video{
+    width:100%;
+    height:100%;
+    object-fit:cover;
+  }
+  .scan-frame{
+    position:absolute;
+    inset:14%;
+    border:2px solid #ffffff;
+    border-radius:12px;
+    opacity:0.85;
+    pointer-events:none;
+  }
+  .scan-status{
+    margin-top:12px;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-align:center;
+    min-height:18px;
+  }
+  .scan-status.error{color:var(--danger);}
+  .scan-result-link{
+    display:block;
+    margin-top:10px;
+    text-align:center;
+    font-size:13px;
+    font-weight:600;
+    color:var(--accent);
+    word-break:break-all;
   }
   .tags-section{margin-top:36px;}
   .master-link{
@@ -283,13 +388,31 @@
     <h1>Журналы и чек-листы НАССР</h1>
     <p>Найдите нужный документ по тегу или через поиск</p>
 
-    <div class="search-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
+    <div class="search-row">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
+      </div>
+      <button class="scan-btn" id="scanBtn" type="button">📷 QR</button>
     </div>
     <div class="total-count" id="totalCount"></div>
 
   </header>
+
+  <div class="scan-modal-overlay" id="scanOverlay">
+    <div class="scan-modal">
+      <div class="scan-modal-header">
+        <h3>Сканирование QR-кода</h3>
+        <button class="scan-close" id="scanClose" type="button" aria-label="Закрыть">✕</button>
+      </div>
+      <div class="scan-video-wrap">
+        <video id="scanVideo" playsinline muted></video>
+        <div class="scan-frame"></div>
+      </div>
+      <div class="scan-status" id="scanStatus">Наведите камеру на QR-код</div>
+      <a class="scan-result-link" id="scanResultLink" href="#" style="display:none;" target="_blank" rel="noopener"></a>
+    </div>
+  </div>
 
   <a class="master-link" href="master.html">
     <div class="ml-left">
@@ -427,6 +550,149 @@
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
+  }
+
+  // --- Сканирование QR-кода ---
+  const scanBtn = document.getElementById('scanBtn');
+  const scanOverlay = document.getElementById('scanOverlay');
+  const scanClose = document.getElementById('scanClose');
+  const scanVideo = document.getElementById('scanVideo');
+  const scanStatus = document.getElementById('scanStatus');
+  const scanResultLink = document.getElementById('scanResultLink');
+
+  let scanStream = null;
+  let scanRAF = null;
+  let scanCanvas = null;
+  let scanCtx = null;
+  let jsQRLoaded = false;
+  let barcodeDetector = null;
+
+  const TRUSTED_URL_PATTERN = /^https:\/\/docs\.google\.com\/forms\//i;
+
+  scanBtn.addEventListener('click', openScanner);
+  scanClose.addEventListener('click', closeScanner);
+  scanOverlay.addEventListener('click', (e) => { if(e.target === scanOverlay) closeScanner(); });
+
+  async function openScanner(){
+    scanOverlay.classList.add('show');
+    scanStatus.textContent = 'Запрашиваем доступ к камере...';
+    scanStatus.classList.remove('error');
+    scanResultLink.style.display = 'none';
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      scanStatus.textContent = 'Камера не поддерживается в этом браузере.';
+      scanStatus.classList.add('error');
+      return;
+    }
+
+    try{
+      scanStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'environment' }
+      });
+    } catch(e){
+      scanStatus.textContent = 'Нет доступа к камере. Разрешите доступ в настройках браузера.';
+      scanStatus.classList.add('error');
+      return;
+    }
+
+    scanVideo.srcObject = scanStream;
+    await scanVideo.play();
+    scanStatus.textContent = 'Наведите камеру на QR-код';
+
+    if('BarcodeDetector' in window){
+      try{
+        barcodeDetector = new BarcodeDetector({ formats: ['qr_code'] });
+        scanLoopNative();
+        return;
+      } catch(e){
+        barcodeDetector = null;
+      }
+    }
+
+    if(!jsQRLoaded){
+      await loadJsQR();
+    }
+    scanLoopFallback();
+  }
+
+  function closeScanner(){
+    scanOverlay.classList.remove('show');
+    if(scanRAF) cancelAnimationFrame(scanRAF);
+    scanRAF = null;
+    if(scanStream){
+      scanStream.getTracks().forEach(t => t.stop());
+      scanStream = null;
+    }
+    scanVideo.srcObject = null;
+  }
+
+  async function scanLoopNative(){
+    if(!scanStream) return;
+    try{
+      const codes = await barcodeDetector.detect(scanVideo);
+      if(codes.length > 0){
+        handleScanResult(codes[0].rawValue);
+        return;
+      }
+    } catch(e){ /* игнорируем единичные сбои кадра */ }
+    scanRAF = requestAnimationFrame(scanLoopNative);
+  }
+
+  function scanLoopFallback(){
+    if(!scanStream) return;
+    if(!scanCanvas){
+      scanCanvas = document.createElement('canvas');
+      scanCtx = scanCanvas.getContext('2d');
+    }
+    if(scanVideo.readyState === scanVideo.HAVE_ENOUGH_DATA && window.jsQR){
+      scanCanvas.width = scanVideo.videoWidth;
+      scanCanvas.height = scanVideo.videoHeight;
+      scanCtx.drawImage(scanVideo, 0, 0, scanCanvas.width, scanCanvas.height);
+      const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+      const code = window.jsQR(imageData.data, imageData.width, imageData.height);
+      if(code && code.data){
+        handleScanResult(code.data);
+        return;
+      }
+    }
+    scanRAF = requestAnimationFrame(scanLoopFallback);
+  }
+
+  function loadJsQR(){
+    return new Promise((resolve) => {
+      if(window.jsQR){ jsQRLoaded = true; resolve(); return; }
+      const script = document.createElement('script');
+      script.src = 'https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js';
+      script.onload = () => { jsQRLoaded = true; resolve(); };
+      script.onerror = () => {
+        scanStatus.textContent = 'Не удалось загрузить сканер. Проверьте интернет-соединение.';
+        scanStatus.classList.add('error');
+        resolve();
+      };
+      document.head.appendChild(script);
+    });
+  }
+
+  function handleScanResult(rawValue){
+    if(scanRAF) cancelAnimationFrame(scanRAF);
+    scanRAF = null;
+
+    if(TRUSTED_URL_PATTERN.test(rawValue)){
+      scanStatus.textContent = 'Код распознан, открываем форму...';
+      window.location.href = rawValue;
+      return;
+    }
+
+    // Ссылка не похожа на Google Форму — не переходим автоматически, показываем на подтверждение
+    scanStatus.textContent = 'Код распознан, но это не ссылка на форму:';
+    scanResultLink.href = rawValue;
+    scanResultLink.textContent = rawValue;
+    scanResultLink.style.display = 'block';
+
+    if(scanStream){
+      scanStream.getTracks().forEach(t => t.stop());
+      scanStream = null;
+    }
   }
 </script>
 

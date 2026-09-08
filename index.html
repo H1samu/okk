@@ -196,15 +196,6 @@
     min-height:18px;
   }
   .scan-status.error{color:var(--danger);}
-  .scan-result-link{
-    display:block;
-    margin-top:10px;
-    text-align:center;
-    font-size:13px;
-    font-weight:600;
-    color:var(--accent);
-    word-break:break-all;
-  }
   .tags-section{margin-top:36px;}
   .master-link{
     display:flex;
@@ -410,7 +401,6 @@
         <div class="scan-frame"></div>
       </div>
       <div class="scan-status" id="scanStatus">Наведите камеру на QR-код</div>
-      <a class="scan-result-link" id="scanResultLink" href="#" style="display:none;" target="_blank" rel="noopener"></a>
     </div>
   </div>
 
@@ -558,7 +548,6 @@
   const scanClose = document.getElementById('scanClose');
   const scanVideo = document.getElementById('scanVideo');
   const scanStatus = document.getElementById('scanStatus');
-  const scanResultLink = document.getElementById('scanResultLink');
 
   let scanStream = null;
   let scanRAF = null;
@@ -566,8 +555,6 @@
   let scanCtx = null;
   let jsQRLoaded = false;
   let barcodeDetector = null;
-
-  const TRUSTED_URL_PATTERN = /^https:\/\/docs\.google\.com\/forms\//i;
 
   scanBtn.addEventListener('click', openScanner);
   scanClose.addEventListener('click', closeScanner);
@@ -577,7 +564,6 @@
     scanOverlay.classList.add('show');
     scanStatus.textContent = 'Запрашиваем доступ к камере...';
     scanStatus.classList.remove('error');
-    scanResultLink.style.display = 'none';
 
     if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
       scanStatus.textContent = 'Камера не поддерживается в этом браузере.';
@@ -677,22 +663,8 @@
     if(scanRAF) cancelAnimationFrame(scanRAF);
     scanRAF = null;
 
-    if(TRUSTED_URL_PATTERN.test(rawValue)){
-      scanStatus.textContent = 'Код распознан, открываем форму...';
-      window.location.href = rawValue;
-      return;
-    }
-
-    // Ссылка не похожа на Google Форму — не переходим автоматически, показываем на подтверждение
-    scanStatus.textContent = 'Код распознан, но это не ссылка на форму:';
-    scanResultLink.href = rawValue;
-    scanResultLink.textContent = rawValue;
-    scanResultLink.style.display = 'block';
-
-    if(scanStream){
-      scanStream.getTracks().forEach(t => t.stop());
-      scanStream = null;
-    }
+    scanStatus.textContent = 'Код распознан, переходим по ссылке...';
+    window.location.href = rawValue;
   }
 </script>
 

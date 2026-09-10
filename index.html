@@ -68,6 +68,16 @@
     color:var(--text-secondary);
     margin:0;
   }
+  .inline-refresh{
+    background:none;
+    border:none;
+    padding:0;
+    margin:0;
+    font:inherit;
+    color:inherit;
+    cursor:text;
+    text-decoration:none;
+  }
   header .total-count{
     font-size:13px;
     color:var(--text-muted);
@@ -397,7 +407,7 @@
   <header>
     <img class="logo" src="logo.png" alt="G-check">
     <h1>Журналы и чек-листы НАССР</h1>
-    <p>Найдите нужный документ по тегу или через поиск</p>
+    <p>Найдите нужный документ по тегу <button id="refreshBtn" class="inline-refresh" type="button">или</button> через поиск</p>
 
     <div class="search-row">
       <div class="search-box">
@@ -466,6 +476,29 @@
     }
     return false;
   }
+
+  // "Мягкое" обновление: чистит только кэш service worker'а (старые версии
+  // файлов сайта), не трогает localStorage — авторизация и избранное остаются.
+  const refreshBtn = document.getElementById('refreshBtn');
+  refreshBtn.addEventListener('click', async () => {
+    refreshBtn.disabled = true;
+    refreshBtn.textContent = 'обновляем...';
+    try{
+      if('caches' in window){
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+      if('serviceWorker' in navigator){
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map(r => r.unregister()));
+      }
+      refreshBtn.textContent = 'готово ✓';
+      setTimeout(() => window.location.reload(), 500);
+    } catch(e){
+      refreshBtn.textContent = 'или';
+      refreshBtn.disabled = false;
+    }
+  });
 
   const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учет","Прочее"];
 

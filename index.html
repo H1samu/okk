@@ -591,8 +591,9 @@
     // В режиме избранного цель — быстро заполнить форму, поэтому ссылка
     // ведёт сразу на саму форму (в новой вкладке), а не на просмотр журнала.
     journalList.innerHTML = filtered.map(j => {
-      const href = favoritesOnly && j.formUrl ? j.formUrl : `journal.html?id=${encodeURIComponent(j.id)}`;
-      const target = favoritesOnly && j.formUrl ? ' target="_blank" rel="noopener"' : '';
+      const favFormUrl = j.formUrlPrefill || j.formUrl;
+      const href = favoritesOnly && favFormUrl ? favFormUrl : `journal.html?id=${encodeURIComponent(j.id)}`;
+      const target = favoritesOnly && favFormUrl ? ' target="_blank" rel="noopener"' : '';
       return `
       <a class="journal-row" href="${href}"${target}>
         <div class="jr-left">

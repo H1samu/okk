@@ -106,6 +106,7 @@
     gap:10px;
   }
   .master-card{
+    position:relative;
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:var(--radius);
@@ -115,6 +116,7 @@
     font-size:14px;
     font-weight:600;
     margin-bottom:6px;
+    padding-right:36px;
   }
   .mc-name mark{
     background:#fde68a;
@@ -160,11 +162,14 @@
     pointer-events:none;
   }
   .fav-star{
+    position:absolute;
+    top:12px;
+    right:12px;
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    width:30px;
-    height:30px;
+    width:28px;
+    height:28px;
     border-radius:8px;
     border:1px solid var(--border);
     background:var(--bg);
@@ -191,7 +196,6 @@
   <a class="back-link" href="index.html">← Все журналы</a>
 
   <header>
-    <div class="eyebrow">itle kitchen</div>
     <h1>Мастер-таблица</h1>
     <p>Все журналы, таблицы, формы и QR-коды в одном списке</p>
   </header>
@@ -256,14 +260,12 @@
 
     masterList.innerHTML = filtered.map(j => `
       <div class="master-card">
+        <button class="fav-star${isFavorite(j.id) ? ' active' : ''}" data-fav-id="${j.id}" title="Добавить форму в избранное" type="button">${isFavorite(j.id) ? '⭐' : '☆'}</button>
         <div class="mc-name">${highlight(j.name, query)}</div>
         <div class="mc-tags">${(j.tags || []).map(t => `<span>${t}</span>`).join('')}</div>
         <div class="mc-links">
           ${linkOrNa(j.sheetUrl, '📊 Таблица')}
-          <span style="display:inline-flex; gap:8px; align-items:center;">
-            ${linkOrNa(j.formUrl, '📝 Форма')}
-            <button class="fav-star${isFavorite(j.id) ? ' active' : ''}" data-fav-id="${j.id}" title="Добавить форму в избранное" type="button">${isFavorite(j.id) ? '⭐' : '☆'}</button>
-          </span>
+          ${linkOrNa(j.formUrl, '📝 Форма')}
           ${linkOrNa(j.qrDriveId ? qrThumb(j.qrDriveId) : '', '▦ QR формы')}
           ${linkOrNa(j.formUrlPrefill, '📝 Форма (с предзаполнением)')}
           ${linkOrNa(j.qrPrefillDriveId ? qrThumb(j.qrPrefillDriveId) : '', '▦ QR (предзаполнение)')}

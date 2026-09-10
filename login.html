@@ -176,10 +176,21 @@
     <button type="submit" id="loginBtn">Войти</button>
   </form>
 
-  <div class="site-footer">by <a href="https://t.me/hisamost" target="_blank" rel="noopener">hisamost</a></div>
+  <div class="site-footer">by <a href="https://t.me/hisamost" onclick="return openExternal(this.href)" rel="noopener">hisamost</a> &amp; <a href="https://t.me/katekateem" onclick="return openExternal(this.href)" rel="noopener">katekateem</a></div>
 </div>
 
 <script>
+  // Надёжное открытие внешних ссылок (Telegram и т.п.) — на части мобильных
+  // браузеров обычный target="_blank" иногда "теряется". Пробуем открыть
+  // новой вкладкой, если не получилось — переходим в текущей.
+  function openExternal(url){
+    const win = window.open(url, '_blank');
+    if(!win){
+      window.location.href = url;
+    }
+    return false;
+  }
+
   // SHA-256 хеш пароля. Это НЕ настоящая защита данных — только чтобы
   // случайный человек не открыл сайт по ссылке. Пароль виден любому,
   // кто откроет devtools и введёт правильную строку, зная хеш можно

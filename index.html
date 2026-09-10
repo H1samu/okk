@@ -54,7 +54,7 @@
     margin-bottom:8px;
   }
   header .logo{
-    height:28px;
+    height:48px;
     width:auto;
     margin-bottom:14px;
   }
@@ -402,7 +402,7 @@
     <div class="search-row">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Поиск журнала" autocomplete="off">
       </div>
       <button class="scan-btn" id="scanBtn" type="button">📷 QR</button>
     </div>
@@ -451,11 +451,22 @@
     </div>
   </div>
 
-  <div class="site-footer">by <a href="https://t.me/hisamost" target="_blank" rel="noopener" style="color:inherit; text-decoration:none;">hisamost</a></div>
+  <div class="site-footer">by <a href="https://t.me/hisamost" onclick="return openExternal(this.href)" rel="noopener" style="color:inherit; text-decoration:none;">hisamost</a> &amp; <a href="https://t.me/katekateem" onclick="return openExternal(this.href)" rel="noopener" style="color:inherit; text-decoration:none;">katekateem</a></div>
 
 </div>
 
 <script>
+  // Надёжное открытие внешних ссылок (Telegram и т.п.) — на части мобильных
+  // браузеров и в установленном PWA обычный target="_blank" иногда "теряется".
+  // Пробуем открыть новой вкладкой, если не получилось — переходим в текущей.
+  function openExternal(url){
+    const win = window.open(url, '_blank');
+    if(!win){
+      window.location.href = url;
+    }
+    return false;
+  }
+
   const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учет","Прочее"];
 
   let journals = [];
@@ -530,7 +541,7 @@
     resetBtn.classList.toggle('show', activeTags.size > 0 || !!query || favoritesOnly);
 
     if(favoritesOnly){
-      resultsTitle.textContent = `⭐ Избранное (${filtered.length})`;
+      resultsTitle.textContent = `⭐ Избранные формы (${filtered.length})`;
     } else {
       resultsTitle.textContent = activeTags.size > 0
         ? `${Array.from(activeTags).join(' + ')} (${filtered.length})`

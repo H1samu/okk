@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Журналы</title>
 <script src="auth-guard.js"></script>
+<script src="favorites.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -197,40 +198,51 @@
   }
   .scan-status.error{color:var(--danger);}
   .tags-section{margin-top:36px;}
+  .quick-row{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:24px;
+  }
   .master-link{
     display:flex;
     align-items:center;
-    justify-content:space-between;
-    gap:12px;
+    gap:10px;
     background:#fdf3e3;
     border:1px solid #ecd9ab;
     border-radius:var(--radius);
-    padding:14px 18px;
+    padding:14px 16px;
     text-decoration:none;
-    margin-top:28px;
   }
   .master-link:hover{border-color:#dcbf7e;}
-  .master-link .ml-left{
-    display:flex;
-    align-items:center;
-    gap:10px;
-  }
-  .master-link .ml-icon{font-size:18px;}
+  .master-link .ml-icon{font-size:17px; flex-shrink:0;}
   .master-link .ml-text{
-    font-size:14px;
+    font-size:13px;
     font-weight:600;
     color:#8a6416;
   }
-  .master-link .ml-sub{
-    font-size:12px;
-    color:#a9832f;
-    font-weight:400;
-    margin-top:2px;
+  .fav-toggle{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    font-family:inherit;
+    cursor:pointer;
+    text-align:left;
   }
-  .master-link .ml-arrow{
-    color:#a9832f;
-    font-size:16px;
-    flex-shrink:0;
+  .fav-toggle:hover{border-color:var(--border-strong);}
+  .fav-toggle.active{
+    background:#fdf7e3;
+    border-color:#ecdca0;
+  }
+  .fav-toggle .ft-icon{font-size:17px; flex-shrink:0;}
+  .fav-toggle .ft-text{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
   }
   .tags-section h2{
     font-size:13px;
@@ -241,35 +253,43 @@
     margin:0 0 12px;
   }
   .tag-grid{
-    display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(150px, 1fr));
-    gap:10px;
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
   }
+  .tag-grid::-webkit-scrollbar{display:none;}
   .tag-card{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
     background:var(--surface);
     border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:16px 14px;
+    border-radius:999px;
+    padding:9px 14px;
     text-align:left;
     cursor:pointer;
     font-family:inherit;
+    white-space:nowrap;
     transition:border-color .15s ease, transform .1s ease;
   }
   .tag-card:hover{border-color:var(--border-strong);}
-  .tag-card:active{transform:scale(0.98);}
+  .tag-card:active{transform:scale(0.97);}
   .tag-card.active{
     border-color:var(--accent);
     background:var(--accent-soft);
   }
   .tag-card .tag-name{
-    font-size:14px;
+    font-size:13px;
     font-weight:600;
     color:var(--text);
   }
   .tag-card .tag-count{
     font-size:12px;
     color:var(--text-muted);
-    margin-top:4px;
   }
   .tag-card.active .tag-count{color:var(--accent);}
   .results-section{margin-top:36px;}
@@ -375,14 +395,14 @@
 <div class="wrap">
 
   <header>
-    <img class="logo" src="logo.svg" alt="G-check">
+    <img class="logo" src="logo.png" alt="G-check">
     <h1>Журналы и чек-листы НАССР</h1>
     <p>Найдите нужный документ по тегу или через поиск</p>
 
     <div class="search-row">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="searchInput" placeholder="Поиск журнала" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Поиск по названию журнала" autocomplete="off">
       </div>
       <button class="scan-btn" id="scanBtn" type="button">📷 QR</button>
     </div>
@@ -404,16 +424,17 @@
     </div>
   </div>
 
-  <a class="master-link" href="master.html">
-    <div class="ml-left">
+  <div class="quick-row">
+    <a class="master-link" href="master.html">
       <span class="ml-icon">📊</span>
-      <div>
-        <div class="ml-text">Мастер-таблица</div>
-        <div class="ml-sub">Все журналы, теги и ссылки в одном месте</div>
-      </div>
-    </div>
-    <span class="ml-arrow">→</span>
-  </a>
+      <span class="ml-text">Мастер-таблица</span>
+    </a>
+
+    <button class="fav-toggle" id="favToggle" type="button">
+      <span class="ft-icon">⭐</span>
+      <span class="ft-text" id="favText">Избранное</span>
+    </button>
+  </div>
 
   <div class="tags-section">
     <h2>Теги</h2>
@@ -439,12 +460,15 @@
 
   let journals = [];
   let activeTags = new Set();
+  let favoritesOnly = false;
 
   const tagGrid = document.getElementById('tagGrid');
   const journalList = document.getElementById('journalList');
   const searchInput = document.getElementById('searchInput');
   const resetBtn = document.getElementById('resetBtn');
   const resultsTitle = document.getElementById('resultsTitle');
+  const favToggle = document.getElementById('favToggle');
+  const favText = document.getElementById('favText');
 
   fetch('journals.json')
     .then(r => {
@@ -471,7 +495,7 @@
       const btn = document.createElement('button');
       btn.className = 'tag-card' + (activeTags.has(tag) ? ' active' : '');
       btn.setAttribute('aria-pressed', activeTags.has(tag) ? 'true' : 'false');
-      btn.innerHTML = `<div class="tag-name">${activeTags.has(tag) ? '✓ ' : ''}${tag}</div><div class="tag-count">${counts[tag]} документ${plural(counts[tag])}</div>`;
+      btn.innerHTML = `<span class="tag-name">${activeTags.has(tag) ? '✓ ' : ''}${tag}</span><span class="tag-count">(${counts[tag]})</span>`;
       btn.addEventListener('click', () => {
         if(activeTags.has(tag)) activeTags.delete(tag);
         else activeTags.add(tag);
@@ -480,13 +504,6 @@
       });
       tagGrid.appendChild(btn);
     });
-  }
-
-  function plural(n){
-    const mod10 = n % 10, mod100 = n % 100;
-    if(mod10 === 1 && mod100 !== 11) return 'а';
-    if([2,3,4].includes(mod10) && ![12,13,14].includes(mod100)) return 'а';
-    return 'ов';
   }
 
   function highlight(text, query){
@@ -500,6 +517,9 @@
     const query = searchInput.value.trim();
     let filtered = journals;
 
+    if(favoritesOnly){
+      filtered = filtered.filter(j => isFavorite(j.id));
+    }
     if(activeTags.size > 0){
       filtered = filtered.filter(j => Array.from(activeTags).every(t => j.tags.includes(t)));
     }
@@ -507,31 +527,54 @@
       filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));
     }
 
-    resetBtn.classList.toggle('show', activeTags.size > 0 || !!query);
-    resultsTitle.textContent = activeTags.size > 0
-      ? `${Array.from(activeTags).join(' + ')} (${filtered.length})`
-      : `Все документы (${filtered.length})`;
+    resetBtn.classList.toggle('show', activeTags.size > 0 || !!query || favoritesOnly);
+
+    if(favoritesOnly){
+      resultsTitle.textContent = `⭐ Избранное (${filtered.length})`;
+    } else {
+      resultsTitle.textContent = activeTags.size > 0
+        ? `${Array.from(activeTags).join(' + ')} (${filtered.length})`
+        : `Все документы (${filtered.length})`;
+    }
 
     if(filtered.length === 0){
-      journalList.innerHTML = '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
+      journalList.innerHTML = favoritesOnly
+        ? '<div class="empty-state">Пока нет избранных форм. Отметьте нужные звёздочкой в мастер-таблице.</div>'
+        : '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
       return;
     }
 
-    journalList.innerHTML = filtered.map(j => `
-      <a class="journal-row" href="journal.html?id=${encodeURIComponent(j.id)}">
+    // В режиме избранного цель — быстро заполнить форму, поэтому ссылка
+    // ведёт сразу на саму форму (в новой вкладке), а не на просмотр журнала.
+    journalList.innerHTML = filtered.map(j => {
+      const href = favoritesOnly && j.formUrl ? j.formUrl : `journal.html?id=${encodeURIComponent(j.id)}`;
+      const target = favoritesOnly && j.formUrl ? ' target="_blank" rel="noopener"' : '';
+      return `
+      <a class="journal-row" href="${href}"${target}>
         <div class="jr-left">
           <div class="jr-name">${highlight(j.name, query)}</div>
           <div class="jr-tags">${j.tags.map(t => `<span>${t}</span>`).join('')}</div>
         </div>
         <div class="jr-arrow">→</div>
       </a>
-    `).join('');
+    `;
+    }).join('');
   }
+
+  favToggle.addEventListener('click', () => {
+    favoritesOnly = !favoritesOnly;
+    favToggle.classList.toggle('active', favoritesOnly);
+    favText.textContent = favoritesOnly ? '✓ Избранное' : 'Избранное';
+    renderList();
+  });
 
   searchInput.addEventListener('input', renderList);
   resetBtn.addEventListener('click', () => {
     activeTags.clear();
     searchInput.value = '';
+    favoritesOnly = false;
+    favToggle.classList.remove('active');
+    favText.textContent = 'Избранное';
     renderTags();
     renderList();
   });

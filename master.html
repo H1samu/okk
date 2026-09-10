@@ -68,6 +68,26 @@
     color:var(--text-secondary);
     margin:0;
   }
+  .ext-links{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .ext-links a{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:8px 14px;
+  }
+  .ext-links a:hover{border-color:var(--border-strong);}
   .search-box{
     position:relative;
     margin:18px 0 24px;
@@ -198,6 +218,10 @@
   <header>
     <h1>Мастер-таблица</h1>
     <p>Все журналы, таблицы, формы и QR-коды в одном списке</p>
+    <div class="ext-links">
+      <a href="https://docs.google.com/spreadsheets/d/1feY2Xrx9IU0Jm62sR15js-7_CVtt4j9Me-z7aAK-ams/edit?usp=drive_link" target="_blank" rel="noopener">📊 Открыть мастер таблицу</a>
+      <a href="https://drive.google.com/drive/folders/1DwgG2qoaO3HQJMG_WwZYeFYcy4qT99LQ?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto" target="_blank" rel="noopener">📁 Открыть папку с журналами</a>
+    </div>
   </header>
 
   <div class="search-box">

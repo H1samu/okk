@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Заявки для СГИ — НАССР</title>
+<script src="auth-guard.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+    padding:24px 20px 60px;
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-decoration:none;
+    margin-bottom:20px;
+  }
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  h1{
+    font-size:22px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  header p{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin:0;
+  }
+  .ext-links{
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    margin-top:14px;
+  }
+  .ext-links a{
+    display:inline-flex;
+    align-items:center;
+    gap:7px;
+    font-size:13px;
+    font-weight:600;
+    text-decoration:none;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:8px 14px;
+  }
+  .ext-links a:hover{border-color:var(--border-strong);}
+
+  .toolbar{
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+    margin:20px 0 18px;
+  }
+  .search-box{
+    position:relative;
+  }
+  .search-box input{
+    width:100%;
+    padding:11px 16px 11px 40px;
+    border:1px solid var(--border-strong);
+    border-radius:999px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--surface);
+    color:var(--text);
+  }
+  .search-box input:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .search-box svg{
+    position:absolute;
+    left:14px;
+    top:50%;
+    transform:translateY(-50%);
+    width:16px;
+    height:16px;
+    stroke:var(--text-muted);
+  }
+  .status-tabs{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .status-tabs::-webkit-scrollbar{display:none;}
+  .status-tab{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:9px 14px;
+    cursor:pointer;
+    font-family:inherit;
+    white-space:nowrap;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .status-tab:hover{border-color:var(--border-strong);}
+  .status-tab.active{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent);
+  }
+  .status-tab .count{
+    color:var(--text-muted);
+    font-weight:500;
+  }
+  .status-tab.active .count{color:var(--accent);}
+
+  .row-count{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-bottom:12px;
+  }
+
+  .state-box{
+    text-align:center;
+    padding:50px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .state-box.error{
+    color:var(--danger);
+    background:var(--danger-soft);
+    border-color:transparent;
+  }
+
+  .table-scroll{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:auto;
+    max-width:100%;
+  }
+  table{
+    border-collapse:collapse;
+    width:100%;
+    font-size:13px;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    background:var(--accent-soft);
+    color:var(--text);
+    text-align:left;
+    padding:10px 14px;
+    font-weight:600;
+    border-bottom:1px solid var(--border-strong);
+    white-space:nowrap;
+  }
+  tbody td{
+    padding:9px 14px;
+    border-bottom:1px solid var(--border);
+    color:var(--text-secondary);
+    vertical-align:middle;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fbfaf7;}
+  td.name-cell{
+    color:var(--text);
+    font-weight:500;
+    min-width:200px;
+  }
+
+  .status-select{
+    padding:7px 10px;
+    border-radius:8px;
+    border:1px solid var(--border-strong);
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    background:var(--surface);
+    color:var(--text);
+    cursor:pointer;
+    min-width:190px;
+  }
+  .status-select:disabled{
+    opacity:0.5;
+    cursor:wait;
+  }
+  .status-select.s-open{ color:#8a6416; border-color:#ecd9ab; background:#fdf3e3; }
+  .status-select.s-inprogress{ color:#1d5fa8; border-color:#bcd6f0; background:#eaf2fc; }
+  .status-select.s-done{ color:var(--accent); border-color:#c7dcd5; background:var(--accent-soft); }
+  .status-select.s-doneclean{ color:#2f7a3e; border-color:#bfe0c7; background:#eaf7ec; }
+
+  .cell-muted{color:var(--text-muted); font-size:12px; white-space:nowrap;}
+
+  .save-error{
+    font-size:11px;
+    color:var(--danger);
+    margin-top:4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+
+  <header>
+    <h1>Заявки для СГИ</h1>
+    <p>Список заявок с возможностью менять статус прямо на сайте</p>
+    <div class="ext-links">
+      <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+      <a href="#" id="formLink" target="_blank" rel="noopener">📝 Создать заявку</a>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Поиск по наименованию, участку, оборудованию" autocomplete="off">
+    </div>
+    <div class="status-tabs" id="statusTabs"></div>
+  </div>
+
+  <div class="row-count" id="rowCount"></div>
+
+  <div id="content">
+    <div class="state-box" id="stateBox">Загрузка данных…</div>
+  </div>
+</div>
+
+<script>
+  // ==== НАСТРОЙКИ — впишите свои значения ====
+
+  // API-ключ Google Sheets API (тот же, что в journal.html/master.html)
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+
+  // ID таблицы "Заявки для СГИ" и название листа с ответами формы
+  const SHEET_ID = '1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU';
+  const SHEET_NAME = 'Ответы на форму (1)';
+
+  // Ссылки для кнопок наверху страницы
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU/edit?gid=1339045562#gid=1339045562';
+  const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSesZMSkr2nSk62ZgKTSflTU8ReYwT-293rpNa1xhrRRiyaU0g/viewform';
+
+  // URL опубликованного Apps Script Web App (заканчивается на /exec)
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5oW0P6AQ0WIyIc0nzoE1kJNOk132TzUi8epKlwZ7-yxSKO0fDfu_hPmBQdOLr_4XF/exec';
+
+  // ==== Статусы ====
+  const STATUSES = [
+    'Открыта',
+    'В работе',
+    'Выполнена',
+    'Выполнена. Проведена мойка и дезинфекция'
+  ];
+
+  const STATUS_CLASS = {
+    'Открыта': 's-open',
+    'В работе': 's-inprogress',
+    'Выполнена': 's-done',
+    'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
+  };
+
+  document.getElementById('sheetLink').href = SHEET_URL;
+  document.getElementById('formLink').href = FORM_URL;
+
+  // ==== Состояние ====
+  let header = [];       // заголовки столбцов из таблицы
+  let colIdx = {};        // { 'Дата создания': 0, 'Статус': 4, ... } — индекс столбца по названию
+  let rows = [];          // [{ rowIndex: 2, cells: [...] }, ...]  rowIndex — реальный номер строки в таблице (для API)
+  let activeStatus = null; // null = "Все"
+  let searchQuery = '';
+
+  const contentEl = document.getElementById('content');
+  const stateBox = document.getElementById('stateBox');
+  const rowCountEl = document.getElementById('rowCount');
+  const statusTabsEl = document.getElementById('statusTabs');
+  const searchInput = document.getElementById('searchInput');
+
+  const COLUMN_KEYS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Взято в работу', 'Дата закрытия'];
+
+  function loadData(){
+    const range = encodeURIComponent(SHEET_NAME);
+    const apiUrl = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+
+    fetch(apiUrl)
+      .then(r => {
+        if(!r.ok) throw new Error('http ' + r.status);
+        return r.json();
+      })
+      .then(data => {
+        const values = data.values || [];
+        if(values.length === 0){
+          stateBox.textContent = 'В таблице пока нет ни одной заявки.';
+          return;
+        }
+        header = values[0];
+        colIdx = {};
+        header.forEach((h, i) => { colIdx[String(h).trim()] = i; });
+
+        // Проверяем, что все нужные столбцы найдены
+        const missing = COLUMN_KEYS.filter(k => !(k in colIdx));
+        if(missing.length > 0){
+          stateBox.textContent = 'В таблице не найдены столбцы: ' + missing.join(', ') + '. Проверьте заголовки в первой строке таблицы.';
+          stateBox.classList.add('error');
+          return;
+        }
+
+        rows = values.slice(1).map((r, i) => ({
+          rowIndex: i + 2, // +2: пропускаем заголовок (строка 1), API возвращает 0-based
+          cells: COLUMN_KEYS.map(k => r[colIdx[k]] || '')
+        })).filter(row => row.cells.some(c => c !== '')); // пропускаем полностью пустые строки
+
+        renderStatusTabs();
+        renderTable();
+      })
+      .catch(err => {
+        stateBox.textContent = 'Не удалось загрузить данные таблицы. Проверьте SHEET_ID, API_KEY и доступ "по ссылке — Читатель". (' + err.message + ')';
+        stateBox.classList.add('error');
+      });
+  }
+
+  function renderStatusTabs(){
+    const counts = {};
+    STATUSES.forEach(s => counts[s] = 0);
+    rows.forEach(r => {
+      const s = r.cells[4]; // индекс "Статус" в COLUMN_KEYS
+      if(counts[s] !== undefined) counts[s]++;
+    });
+
+    const allBtn = `<button class="status-tab${activeStatus === null ? ' active' : ''}" data-status="">Все <span class="count">(${rows.length})</span></button>`;
+    const tabs = STATUSES.map(s =>
+      `<button class="status-tab${activeStatus === s ? ' active' : ''}" data-status="${escapeHtml(s)}">${escapeHtml(s)} <span class="count">(${counts[s]})</span></button>`
+    ).join('');
+
+    statusTabsEl.innerHTML = allBtn + tabs;
+
+    statusTabsEl.querySelectorAll('.status-tab').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeStatus = btn.dataset.status || null;
+        renderStatusTabs();
+        renderTable();
+      });
+    });
+  }
+
+  function renderTable(){
+    let filtered = rows;
+    if(activeStatus){
+      filtered = filtered.filter(r => r.cells[4] === activeStatus);
+    }
+    if(searchQuery){
+      const q = searchQuery.toLowerCase();
+      filtered = filtered.filter(r =>
+        r.cells[1].toLowerCase().includes(q) || // Наименование
+        r.cells[2].toLowerCase().includes(q) || // Участок
+        r.cells[3].toLowerCase().includes(q)    // Оборудование
+      );
+    }
+
+    rowCountEl.textContent = `Заявок: ${filtered.length} из ${rows.length}`;
+
+    if(filtered.length === 0){
+      contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
+      return;
+    }
+
+    const theadHtml = `<thead><tr>
+      <th>Дата создания</th>
+      <th>Наименование заявки</th>
+      <th>Участок</th>
+      <th>Оборудование</th>
+      <th>Статус</th>
+      <th>Взято в работу</th>
+      <th>Дата закрытия</th>
+    </tr></thead>`;
+
+    const tbodyHtml = '<tbody>' + filtered.map(r => `
+      <tr data-row-index="${r.rowIndex}">
+        <td class="cell-muted">${escapeHtml(r.cells[0])}</td>
+        <td class="name-cell">${escapeHtml(r.cells[1])}</td>
+        <td>${escapeHtml(r.cells[2])}</td>
+        <td>${escapeHtml(r.cells[3])}</td>
+        <td>
+          <select class="status-select ${STATUS_CLASS[r.cells[4]] || ''}" data-row-index="${r.rowIndex}">
+            ${STATUSES.map(s => `<option value="${escapeHtml(s)}"${s === r.cells[4] ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+          </select>
+        </td>
+        <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[5])}</td>
+        <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[6])}</td>
+      </tr>
+    `).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
+
+    contentEl.querySelectorAll('.status-select').forEach(sel => {
+      sel.addEventListener('change', onStatusChange);
+    });
+  }
+
+  function onStatusChange(e){
+    const select = e.target;
+    const rowIndex = parseInt(select.dataset.rowIndex, 10);
+    const newStatus = select.value;
+    const tr = select.closest('tr');
+
+    select.disabled = true;
+    select.className = 'status-select ' + (STATUS_CLASS[newStatus] || '');
+
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      // Apps Script Web App требует text/plain для простого POST без preflight-проблем
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ rowIndex, newStatus })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if(!res.ok){
+          throw new Error(res.error || 'Неизвестная ошибка');
+        }
+        // Обновляем локальные данные и колонки "Взято в работу"/"Дата закрытия"
+        const rowData = rows.find(r => r.rowIndex === rowIndex);
+        if(rowData){
+          rowData.cells[4] = newStatus;
+          if(res.takenAt) rowData.cells[5] = res.takenAt;
+          if(res.closedAt) rowData.cells[6] = res.closedAt;
+        }
+        if(tr){
+          tr.querySelector('.taken-at-cell').textContent = rowData ? rowData.cells[5] : '';
+          tr.querySelector('.closed-at-cell').textContent = rowData ? rowData.cells[6] : '';
+        }
+        select.disabled = false;
+        renderStatusTabs(); // обновить счётчики на вкладках
+      })
+      .catch(err => {
+        select.disabled = false;
+        // откатываем select на прежнее значение
+        const rowData = rows.find(r => r.rowIndex === rowIndex);
+        if(rowData) select.value = rowData.cells[4];
+        select.className = 'status-select ' + (STATUS_CLASS[rowData ? rowData.cells[4] : ''] || '');
+
+        let errBox = tr.querySelector('.save-error');
+        if(!errBox){
+          errBox = document.createElement('div');
+          errBox.className = 'save-error';
+          select.closest('td').appendChild(errBox);
+        }
+        errBox.textContent = 'Не удалось сохранить: ' + err.message;
+        setTimeout(() => { if(errBox) errBox.remove(); }, 5000);
+      });
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  searchInput.addEventListener('input', () => {
+    searchQuery = searchInput.value.trim();
+    renderTable();
+  });
+
+  loadData();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

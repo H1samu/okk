@@ -210,7 +210,7 @@
   .tags-section{margin-top:36px;}
   .quick-row{
     display:grid;
-    grid-template-columns:1fr 1fr;
+    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
     gap:10px;
     margin-top:24px;
   }
@@ -230,6 +230,23 @@
     font-size:13px;
     font-weight:600;
     color:#8a6416;
+  }
+  .sgi-link{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    background:#eaf2fc;
+    border:1px solid #bcd6f0;
+    border-radius:var(--radius);
+    padding:14px 16px;
+    text-decoration:none;
+  }
+  .sgi-link:hover{border-color:#93bce4;}
+  .sgi-link .sl-icon{font-size:17px; flex-shrink:0;}
+  .sgi-link .sl-text{
+    font-size:13px;
+    font-weight:600;
+    color:#1d5fa8;
   }
   .fav-toggle{
     display:flex;
@@ -438,6 +455,11 @@
     <a class="master-link" href="master.html">
       <span class="ml-icon">📊</span>
       <span class="ml-text">Мастер-таблица</span>
+    </a>
+
+    <a class="sgi-link" href="sgi.html">
+      <span class="sl-icon">🛠️</span>
+      <span class="sl-text">Заявки для СГИ</span>
     </a>
 
     <button class="fav-toggle" id="favToggle" type="button">

@@ -1,6 +1,6 @@
 {
-  "name": "GK CHECK. Журналы НАССР",
-  "short_name": "GK CHECK",
+  "name": "Hismar CHECK. Журналы НАССР",
+  "short_name": "Hismar CHECK",
   "description": "Журналы и чек-листы НАССР — поиск и просмотр по категориям",
   "start_url": "./index.html",
   "scope": "./",

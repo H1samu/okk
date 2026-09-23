@@ -49,8 +49,15 @@
     margin-bottom:20px;
   }
   .back-link:hover{color:var(--accent);}
-  header{margin-bottom:20px;}
-  h1{
+  header{
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+    flex-wrap:wrap;
+  }
+  .header-text h1{
     font-size:22px;
     font-weight:700;
     margin:0 0 6px;
@@ -60,13 +67,19 @@
     color:var(--text-secondary);
     margin:0;
   }
+  .user-badge{
+    font-size:12px;
+    color:var(--text-muted);
+    margin-top:8px;
+  }
+  .user-badge b{color:var(--text-secondary);}
   .ext-links{
     display:flex;
     gap:10px;
     flex-wrap:wrap;
     margin-top:14px;
   }
-  .ext-links a{
+  .ext-links a, .ext-links button{
     display:inline-flex;
     align-items:center;
     gap:7px;
@@ -78,8 +91,16 @@
     border:1px solid var(--border);
     border-radius:999px;
     padding:8px 14px;
+    font-family:inherit;
+    cursor:pointer;
   }
-  .ext-links a:hover{border-color:var(--border-strong);}
+  .ext-links a:hover, .ext-links button:hover{border-color:var(--border-strong);}
+  .ext-links .create-btn{
+    color:#fff;
+    background:var(--accent);
+    border-color:var(--accent);
+  }
+  .ext-links .create-btn:hover{opacity:0.92; border-color:var(--accent);}
 
   .toolbar{
     display:flex;
@@ -248,6 +269,107 @@
     color:var(--danger);
     margin-top:4px;
   }
+
+  /* ==== Модальное окно создания заявки ==== */
+  .modal-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.5);
+    z-index:1000;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+  }
+  .modal-overlay.show{display:flex;}
+  .modal{
+    background:var(--surface);
+    border-radius:var(--radius);
+    max-width:440px;
+    width:100%;
+    padding:24px;
+    max-height:90vh;
+    overflow:auto;
+  }
+  .modal-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:16px;
+  }
+  .modal-header h3{
+    font-size:16px;
+    font-weight:700;
+    margin:0;
+  }
+  .modal-close{
+    background:none;
+    border:none;
+    font-size:20px;
+    color:var(--text-muted);
+    cursor:pointer;
+    line-height:1;
+    padding:4px;
+  }
+  .field{
+    margin-bottom:14px;
+  }
+  .field label{
+    display:block;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-secondary);
+    margin-bottom:6px;
+  }
+  .field input, .field select{
+    width:100%;
+    padding:11px 14px;
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    font-size:14px;
+    font-family:inherit;
+    background:var(--bg);
+    color:var(--text);
+  }
+  .field input:focus, .field select:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  .modal-submit{
+    width:100%;
+    padding:13px 16px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    color:#fff;
+    font-size:15px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    margin-top:6px;
+  }
+  .modal-submit:hover{opacity:0.92;}
+  .modal-submit:disabled{opacity:0.6; cursor:wait;}
+  .modal-error{
+    font-size:13px;
+    color:var(--danger);
+    background:var(--danger-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .modal-error.show{display:block;}
+  .modal-success{
+    font-size:13px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    margin-bottom:14px;
+    display:none;
+  }
+  .modal-success.show{display:block;}
 </style>
 </head>
 <body>
@@ -256,13 +378,17 @@
   <a class="back-link" href="index.html">← Все журналы</a>
 
   <header>
-    <h1>Заявки для СГИ</h1>
-    <p>Список заявок с возможностью менять статус прямо на сайте</p>
-    <div class="ext-links">
-      <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
-      <a href="#" id="formLink" target="_blank" rel="noopener">📝 Создать заявку</a>
+    <div class="header-text">
+      <h1>Заявки для СГИ</h1>
+      <p>Список заявок с возможностью менять статус прямо на сайте</p>
+      <div class="user-badge">Вы вошли как: <b id="currentUserName">—</b></div>
     </div>
   </header>
+
+  <div class="ext-links">
+    <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+    <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
+  </div>
 
   <div class="toolbar">
     <div class="search-box">
@@ -279,22 +405,50 @@
   </div>
 </div>
 
+<!-- Модальное окно создания заявки -->
+<div class="modal-overlay" id="createOverlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Новая заявка для СГИ</h3>
+      <button class="modal-close" id="createClose" type="button" aria-label="Закрыть">✕</button>
+    </div>
+
+    <div class="modal-error" id="createError"></div>
+    <div class="modal-success" id="createSuccess">Заявка успешно создана ✓</div>
+
+    <form id="createForm">
+      <div class="field">
+        <label for="fieldName">Наименование заявки</label>
+        <input type="text" id="fieldName" required autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="fieldArea">Участок</label>
+        <select id="fieldArea" required></select>
+      </div>
+      <div class="field">
+        <label for="fieldEquipment">Оборудование</label>
+        <input type="text" id="fieldEquipment" autocomplete="off">
+      </div>
+      <button type="submit" class="modal-submit" id="createSubmit">Отправить заявку</button>
+    </form>
+  </div>
+</div>
+
 <script>
   // ==== НАСТРОЙКИ — впишите свои значения ====
 
   // API-ключ Google Sheets API (тот же, что в journal.html/master.html)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
 
-  // ID таблицы "Заявки для СГИ" и название листа с ответами формы
+  // ID таблицы "Заявки для СГИ" и название листа с заявками
   const SHEET_ID = '1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU';
   const SHEET_NAME = 'Ответы на форму (1)';
 
-  // Ссылки для кнопок наверху страницы
+  // Ссылка для кнопки "Открыть таблицу"
   const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU/edit?gid=1339045562#gid=1339045562';
-  const FORM_URL = 'https://docs.google.com/forms/d/e/1FAIpQLSesZMSkr2nSk62ZgKTSflTU8ReYwT-293rpNa1xhrRRiyaU0g/viewform';
 
-  // URL опубликованного Apps Script Web App (заканчивается на /exec)
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx5oW0P6AQ0WIyIc0nzoE1kJNOk132TzUi8epKlwZ7-yxSKO0fDfu_hPmBQdOLr_4XF/exec';
+  // URL опубликованного Apps Script Web App (заканчивается на /exec) — тот же, что в sgi-login.html
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
 
   // ==== Статусы ====
   const STATUSES = [
@@ -311,17 +465,43 @@
     'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
   };
 
-  document.getElementById('sheetLink').href = SHEET_URL;
-  document.getElementById('formLink').href = FORM_URL;
+  // ==== Участки для выпадающего списка в форме создания заявки ====
+  const AREAS = [
+    'RND', 'АХО', 'Бухгалтерия', 'Горячий цех', 'Другое',
+    'Комната начальников цехов', 'Комната технологов', 'Котломойка',
+    'Мясной цех', 'Овощной цех', 'Опенспейс', 'Отдел контроля качества',
+    'Склад готовой продукции', 'Склад сухих компонентов', 'Склад сырья',
+    'Столовая', 'Холодный цех', 'Цех сборки', 'Цех упаковки', 'Цех фасовки'
+  ];
 
-  // ==== Состояние ====
-  let header = [];       // заголовки столбцов из таблицы
-  let colIdx = {};        // { 'Дата создания': 0, 'Статус': 4, ... } — индекс столбца по названию
-  let rows = [];          // [{ rowIndex: 2, cells: [...] }, ...]  rowIndex — реальный номер строки в таблице (для API)
+  document.getElementById('sheetLink').href = SHEET_URL;
+
+  // ==== Личная сессия (кто вошёл) ====
+  const SESSION_KEY = 'gcheck_sgi_user';
+  const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
+
+  let currentUser = null;
+  try{
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(saved && saved.name && saved.time && (Date.now() - saved.time) < SESSION_TTL_MS){
+      currentUser = saved.name;
+    }
+  } catch(e){ /* игнорируем повреждённые данные сессии */ }
+
+  if(!currentUser){
+    location.replace('sgi-login.html');
+  } else {
+    document.getElementById('currentUserName').textContent = currentUser;
+  }
+
+  // ==== Состояние списка заявок ====
+  let header = [];
+  let colIdx = {};
+  let rows = [];
   let activeStatus = null; // null = "Все"
   let searchQuery = '';
-  let sortCol = 0;         // по умолчанию сортируем по "Дата создания"
-  let sortDir = -1;        // -1 = по убыванию — новые заявки сверху
+  let sortCol = 0;          // по умолчанию сортируем по "Дата создания"
+  let sortDir = -1;         // -1 = по убыванию — новые заявки сверху
 
   const contentEl = document.getElementById('content');
   const stateBox = document.getElementById('stateBox');
@@ -329,7 +509,10 @@
   const statusTabsEl = document.getElementById('statusTabs');
   const searchInput = document.getElementById('searchInput');
 
-  const COLUMN_KEYS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Взято в работу', 'Дата закрытия'];
+  // Порядок должен совпадать со столбцами в таблице
+  const COLUMN_KEYS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
+  // Индексы внутри COLUMN_KEYS для удобства
+  const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7 };
 
   function loadData(){
     const range = encodeURIComponent(SHEET_NAME);
@@ -350,7 +533,6 @@
         colIdx = {};
         header.forEach((h, i) => { colIdx[String(h).trim()] = i; });
 
-        // Проверяем, что все нужные столбцы найдены
         const missing = COLUMN_KEYS.filter(k => !(k in colIdx));
         if(missing.length > 0){
           stateBox.textContent = 'В таблице не найдены столбцы: ' + missing.join(', ') + '. Проверьте заголовки в первой строке таблицы.';
@@ -359,9 +541,9 @@
         }
 
         rows = values.slice(1).map((r, i) => ({
-          rowIndex: i + 2, // +2: пропускаем заголовок (строка 1), API возвращает 0-based
+          rowIndex: i + 2,
           cells: COLUMN_KEYS.map(k => r[colIdx[k]] || '')
-        })).filter(row => row.cells.some(c => c !== '')); // пропускаем полностью пустые строки
+        })).filter(row => row.cells.some(c => c !== ''));
 
         renderStatusTabs();
         renderTable();
@@ -376,7 +558,7 @@
     const counts = {};
     STATUSES.forEach(s => counts[s] = 0);
     rows.forEach(r => {
-      const s = r.cells[4]; // индекс "Статус" в COLUMN_KEYS
+      const s = r.cells[IDX.status];
       if(counts[s] !== undefined) counts[s]++;
     });
 
@@ -399,14 +581,15 @@
   function renderTable(){
     let filtered = rows;
     if(activeStatus){
-      filtered = filtered.filter(r => r.cells[4] === activeStatus);
+      filtered = filtered.filter(r => r.cells[IDX.status] === activeStatus);
     }
     if(searchQuery){
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(r =>
-        r.cells[1].toLowerCase().includes(q) || // Наименование
-        r.cells[2].toLowerCase().includes(q) || // Участок
-        r.cells[3].toLowerCase().includes(q)    // Оборудование
+        r.cells[IDX.name].toLowerCase().includes(q) ||
+        r.cells[IDX.area].toLowerCase().includes(q) ||
+        r.cells[IDX.equipment].toLowerCase().includes(q) ||
+        r.cells[IDX.requester].toLowerCase().includes(q)
       );
     }
 
@@ -419,7 +602,7 @@
         if(ad !== null && bd !== null){
           cmp = ad - bd;
         } else if(ad !== null && bd === null){
-          cmp = -1; // строки с датой выше строк без даты
+          cmp = -1;
         } else if(ad === null && bd !== null){
           cmp = 1;
         } else {
@@ -436,10 +619,9 @@
       return;
     }
 
-    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Взято в работу', 'Дата закрытия'];
+    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
     const theadHtml = '<thead><tr>' + HEADERS.map((h, i) => {
-      if(i === 4){
-        // "Статус" — не сортируем по клику, там выпадающий список + отдельные вкладки-фильтры
+      if(i === IDX.status){
         return `<th>${h}</th>`;
       }
       const active = sortCol === i;
@@ -449,17 +631,18 @@
 
     const tbodyHtml = '<tbody>' + filtered.map(r => `
       <tr data-row-index="${r.rowIndex}">
-        <td class="cell-muted">${escapeHtml(r.cells[0])}</td>
-        <td class="name-cell">${escapeHtml(r.cells[1])}</td>
-        <td>${escapeHtml(r.cells[2])}</td>
-        <td>${escapeHtml(r.cells[3])}</td>
+        <td class="cell-muted">${escapeHtml(r.cells[IDX.createdAt])}</td>
+        <td class="name-cell">${escapeHtml(r.cells[IDX.name])}</td>
+        <td>${escapeHtml(r.cells[IDX.area])}</td>
+        <td>${escapeHtml(r.cells[IDX.equipment])}</td>
         <td>
-          <select class="status-select ${STATUS_CLASS[r.cells[4]] || ''}" data-row-index="${r.rowIndex}">
-            ${STATUSES.map(s => `<option value="${escapeHtml(s)}"${s === r.cells[4] ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('')}
+          <select class="status-select ${STATUS_CLASS[r.cells[IDX.status]] || ''}" data-row-index="${r.rowIndex}">
+            ${STATUSES.map(s => `<option value="${escapeHtml(s)}"${s === r.cells[IDX.status] ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('')}
           </select>
         </td>
-        <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[5])}</td>
-        <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[6])}</td>
+        <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
+        <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[IDX.takenAt])}</td>
+        <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[IDX.closedAt])}</td>
       </tr>
     `).join('') + '</tbody>';
 
@@ -510,35 +693,32 @@
 
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
-      // Apps Script Web App требует text/plain для простого POST без preflight-проблем
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ rowIndex, newStatus })
+      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus })
     })
       .then(r => r.json())
       .then(res => {
         if(!res.ok){
           throw new Error(res.error || 'Неизвестная ошибка');
         }
-        // Обновляем локальные данные и колонки "Взято в работу"/"Дата закрытия"
         const rowData = rows.find(r => r.rowIndex === rowIndex);
         if(rowData){
-          rowData.cells[4] = newStatus;
-          if(res.takenAt) rowData.cells[5] = res.takenAt;
-          if(res.closedAt) rowData.cells[6] = res.closedAt;
+          rowData.cells[IDX.status] = newStatus;
+          if(res.takenAt) rowData.cells[IDX.takenAt] = res.takenAt;
+          if(res.closedAt) rowData.cells[IDX.closedAt] = res.closedAt;
         }
         if(tr){
-          tr.querySelector('.taken-at-cell').textContent = rowData ? rowData.cells[5] : '';
-          tr.querySelector('.closed-at-cell').textContent = rowData ? rowData.cells[6] : '';
+          tr.querySelector('.taken-at-cell').textContent = rowData ? rowData.cells[IDX.takenAt] : '';
+          tr.querySelector('.closed-at-cell').textContent = rowData ? rowData.cells[IDX.closedAt] : '';
         }
         select.disabled = false;
-        renderStatusTabs(); // обновить счётчики на вкладках
+        renderStatusTabs();
       })
       .catch(err => {
         select.disabled = false;
-        // откатываем select на прежнее значение
         const rowData = rows.find(r => r.rowIndex === rowIndex);
-        if(rowData) select.value = rowData.cells[4];
-        select.className = 'status-select ' + (STATUS_CLASS[rowData ? rowData.cells[4] : ''] || '');
+        if(rowData) select.value = rowData.cells[IDX.status];
+        select.className = 'status-select ' + (STATUS_CLASS[rowData ? rowData.cells[IDX.status] : ''] || '');
 
         let errBox = tr.querySelector('.save-error');
         if(!errBox){
@@ -563,13 +743,88 @@
     renderTable();
   });
 
-  loadData();
+  if(currentUser){
+    loadData();
+  }
 
   if('serviceWorker' in navigator){
     window.addEventListener('load', () => {
       navigator.serviceWorker.register('sw.js').catch(() => {});
     });
   }
+
+  // ==== Модальное окно "Создать заявку" ====
+  const createOverlay = document.getElementById('createOverlay');
+  const openCreateModal = document.getElementById('openCreateModal');
+  const createClose = document.getElementById('createClose');
+  const createForm = document.getElementById('createForm');
+  const createError = document.getElementById('createError');
+  const createSuccess = document.getElementById('createSuccess');
+  const createSubmit = document.getElementById('createSubmit');
+  const fieldName = document.getElementById('fieldName');
+  const fieldArea = document.getElementById('fieldArea');
+  const fieldEquipment = document.getElementById('fieldEquipment');
+
+  fieldArea.innerHTML = '<option value="" disabled selected>Выберите участок</option>' +
+    AREAS.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
+
+  openCreateModal.addEventListener('click', () => {
+    createOverlay.classList.add('show');
+    createError.classList.remove('show');
+    createSuccess.classList.remove('show');
+    createForm.reset();
+    fieldArea.selectedIndex = 0;
+  });
+
+  createClose.addEventListener('click', closeCreateModal);
+  createOverlay.addEventListener('click', (e) => { if(e.target === createOverlay) closeCreateModal(); });
+
+  function closeCreateModal(){
+    createOverlay.classList.remove('show');
+  }
+
+  createForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    createError.classList.remove('show');
+    createSuccess.classList.remove('show');
+    createSubmit.disabled = true;
+    createSubmit.textContent = 'Отправляем...';
+
+    try{
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({
+          action: 'createRequest',
+          name: fieldName.value.trim(),
+          area: fieldArea.value,
+          equipment: fieldEquipment.value.trim(),
+          requester: currentUser
+        })
+      });
+      const data = await res.json();
+      if(!data.ok){
+        throw new Error(data.error || 'Неизвестная ошибка');
+      }
+
+      createSuccess.classList.add('show');
+      createSubmit.textContent = 'Отправить заявку';
+      createSubmit.disabled = false;
+      createForm.reset();
+      fieldArea.selectedIndex = 0;
+
+      setTimeout(() => {
+        closeCreateModal();
+        loadData(); // обновляем список, чтобы новая заявка появилась сразу
+      }, 900);
+
+    } catch(err){
+      createError.textContent = 'Не удалось создать заявку: ' + err.message;
+      createError.classList.add('show');
+      createSubmit.disabled = false;
+      createSubmit.textContent = 'Отправить заявку';
+    }
+  });
 </script>
 
 </body>

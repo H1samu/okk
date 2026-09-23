@@ -427,7 +427,7 @@
       </div>
       <div class="field">
         <label for="fieldEquipment">Оборудование</label>
-        <input type="text" id="fieldEquipment" autocomplete="off">
+        <input type="text" id="fieldEquipment" required autocomplete="off">
       </div>
       <button type="submit" class="modal-submit" id="createSubmit">Отправить заявку</button>
     </form>
@@ -441,14 +441,14 @@
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
 
   // ID таблицы "Заявки для СГИ" и название листа с заявками
-  const SHEET_ID = '1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU';
+  const SHEET_ID = 'ВСТАВЬТЕ_ID_ТАБЛИЦЫ_СГИ';
   const SHEET_NAME = 'Ответы на форму (1)';
 
   // Ссылка для кнопки "Открыть таблицу"
-  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU/edit?gid=1339045562#gid=1339045562';
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/edit';
 
   // URL опубликованного Apps Script Web App (заканчивается на /exec) — тот же, что в sgi-login.html
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
+  const APPS_SCRIPT_URL = 'ВСТАВЬТЕ_URL_ВАШЕГО_APPS_SCRIPT_/exec';
 
   // ==== Статусы ====
   const STATUSES = [

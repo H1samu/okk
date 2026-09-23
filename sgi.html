@@ -68,11 +68,29 @@
     margin:0;
   }
   .user-badge{
+    display:flex;
+    align-items:center;
+    gap:10px;
     font-size:12px;
     color:var(--text-muted);
     margin-top:8px;
   }
   .user-badge b{color:var(--text-secondary);}
+  .logout-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-secondary);
+    background:none;
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:4px 11px;
+    font-family:inherit;
+    cursor:pointer;
+  }
+  .logout-btn:hover{border-color:var(--danger); color:var(--danger);}
   .ext-links{
     display:flex;
     gap:10px;
@@ -380,7 +398,10 @@
   <header>
     <div class="header-text">
       <h1>Заявки для СГИ</h1>
-      <div class="user-badge">Вы вошли как: <b id="currentUserName">—</b></div>
+      <div class="user-badge">
+        Вы вошли как: <b id="currentUserName">—</b>
+        <button class="logout-btn" id="logoutBtn" type="button">⏻ Выйти</button>
+      </div>
     </div>
   </header>
 
@@ -476,13 +497,15 @@
   document.getElementById('sheetLink').href = SHEET_URL;
 
   // ==== Личная сессия (кто вошёл) ====
+  // Сессия бессрочная: раз войдя, пользователь остаётся авторизованным
+  // до тех пор, пока сам не нажмёт "Выйти" (кнопка ниже) или не очистит
+  // данные браузера. Проверки по времени (TTL) намеренно нет.
   const SESSION_KEY = 'gcheck_sgi_user';
-  const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
 
   let currentUser = null;
   try{
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if(saved && saved.name && saved.time && (Date.now() - saved.time) < SESSION_TTL_MS){
+    if(saved && saved.name){
       currentUser = saved.name;
     }
   } catch(e){ /* игнорируем повреждённые данные сессии */ }
@@ -492,6 +515,12 @@
   } else {
     document.getElementById('currentUserName').textContent = currentUser;
   }
+
+  // Кнопка выхода: чистит личную сессию СГИ и отправляет на экран входа.
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.removeItem(SESSION_KEY);
+    location.replace('sgi-login.html');
+  });
 
   // ==== Состояние списка заявок ====
   let header = [];
@@ -863,7 +892,6 @@
   });
 
   scheduleReload();
-  
 </script>
 
 </body>

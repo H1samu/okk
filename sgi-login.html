@@ -161,13 +161,14 @@
   // URL опубликованного Apps Script Web App (тот же, что в sgi.html)
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
 
-  const SESSION_KEY = 'gcheck_sgi_user'; // { name: "...", time: 169... }
-  const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
+  // Личная сессия СГИ: { name: "..." }. Сессия бессрочная — TTL намеренно
+  // не проверяется, выход только вручную через кнопку "Выйти" на sgi.html.
+  const SESSION_KEY = 'gcheck_sgi_user';
 
-  // Если уже есть действующая личная сессия — сразу на страницу заявок
+  // Если уже есть сохранённая личная сессия — сразу на страницу заявок
   try{
     const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if(saved && saved.name && saved.time && (Date.now() - saved.time) < SESSION_TTL_MS){
+    if(saved && saved.name){
       location.replace('sgi.html');
     }
   } catch(e){ /* игнорируем повреждённые данные сессии */ }
@@ -197,7 +198,7 @@
       const data = await res.json();
 
       if(data.ok && data.name){
-        localStorage.setItem(SESSION_KEY, JSON.stringify({ name: data.name, time: Date.now() }));
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ name: data.name }));
         input.classList.add('valid');
         input.readOnly = true;
         successName.textContent = data.name;

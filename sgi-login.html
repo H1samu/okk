@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>Вход — Заявки для СГИ</title>
+<meta name="theme-color" content="#3a5a52">
+<script src="auth-guard.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  html, body{
+    height:100%;
+    overflow:hidden;
+  }
+  body{
+    margin:0;
+    height:100vh;
+    height:100dvh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    padding:20px;
+    box-sizing:border-box;
+    overscroll-behavior:none;
+  }
+  .card{
+    width:100%;
+    max-width:360px;
+    max-height:100%;
+    overflow:auto;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:32px 28px;
+    text-align:center;
+    box-sizing:border-box;
+  }
+  .back-link{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    font-size:13px;
+    color:var(--text-secondary);
+    text-decoration:none;
+    margin-bottom:18px;
+  }
+  .back-link:hover{color:var(--accent);}
+  h1{
+    font-size:20px;
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  p.sub{
+    font-size:13px;
+    color:var(--text-secondary);
+    margin:0 0 22px;
+  }
+  form{
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+  }
+  input[type="password"]{
+    width:100%;
+    padding:13px 16px;
+    border:1px solid var(--border-strong);
+    border-radius:10px;
+    font-size:15px;
+    font-family:inherit;
+    background:var(--bg);
+    color:var(--text);
+    text-align:center;
+    letter-spacing:2px;
+    transition:border-color .2s ease, background .2s ease;
+  }
+  input[type="password"]:focus{
+    outline:2px solid var(--accent);
+    outline-offset:1px;
+  }
+  input[type="password"].valid{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent);
+    outline:none;
+  }
+  .success{
+    font-size:13px;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    display:none;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+  }
+  .success.show{display:flex;}
+  button{
+    padding:13px 16px;
+    border:none;
+    border-radius:10px;
+    background:var(--accent);
+    color:#fff;
+    font-size:15px;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    transition:opacity .15s ease, transform .15s ease;
+  }
+  button:hover{opacity:0.92;}
+  button:active{transform:scale(0.99);}
+  button:disabled{opacity:0.6; cursor:wait;}
+  .error{
+    font-size:13px;
+    color:var(--danger);
+    background:var(--danger-soft);
+    border-radius:8px;
+    padding:9px 12px;
+    display:none;
+  }
+  .error.show{display:block;}
+</style>
+</head>
+<body>
+
+<div class="card">
+  <a class="back-link" href="index.html">← Все журналы</a>
+  <h1>Заявки для СГИ</h1>
+  <p class="sub">Введите ваш личный пароль</p>
+
+  <form id="loginForm" autocomplete="off">
+    <input type="password" id="passwordInput" placeholder="Пароль" autofocus>
+    <div class="error" id="errorMsg">Неверный пароль</div>
+    <div class="success" id="successMsg">Добро пожаловать, <span id="successName"></span>!</div>
+    <button type="submit" id="loginBtn">Войти</button>
+  </form>
+</div>
+
+<script>
+  // URL опубликованного Apps Script Web App (тот же, что в sgi.html)
+  const APPS_SCRIPT_URL = 'ВСТАВЬТЕ_URL_ВАШЕГО_APPS_SCRIPT_/exec';
+
+  const SESSION_KEY = 'gcheck_sgi_user'; // { name: "...", time: 169... }
+  const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // 12 часов
+
+  // Если уже есть действующая личная сессия — сразу на страницу заявок
+  try{
+    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
+    if(saved && saved.name && saved.time && (Date.now() - saved.time) < SESSION_TTL_MS){
+      location.replace('sgi.html');
+    }
+  } catch(e){ /* игнорируем повреждённые данные сессии */ }
+
+  const form = document.getElementById('loginForm');
+  const input = document.getElementById('passwordInput');
+  const errorMsg = document.getElementById('errorMsg');
+  const successMsg = document.getElementById('successMsg');
+  const successName = document.getElementById('successName');
+  const loginBtn = document.getElementById('loginBtn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const password = input.value;
+    if(!password) return;
+
+    errorMsg.classList.remove('show');
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Проверяем...';
+
+    try{
+      const res = await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'login', password })
+      });
+      const data = await res.json();
+
+      if(data.ok && data.name){
+        localStorage.setItem(SESSION_KEY, JSON.stringify({ name: data.name, time: Date.now() }));
+        input.classList.add('valid');
+        input.readOnly = true;
+        successName.textContent = data.name;
+        successMsg.classList.add('show');
+        loginBtn.textContent = 'Входим...';
+        setTimeout(() => location.replace('sgi.html'), 600);
+      } else {
+        throw new Error(data.error || 'Неверный пароль');
+      }
+    } catch(err){
+      errorMsg.textContent = err.message === 'Неверный пароль' ? 'Неверный пароль' : ('Ошибка: ' + err.message);
+      errorMsg.classList.add('show');
+      input.value = '';
+      input.focus();
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Войти';
+    }
+  });
+</script>
+
+</body>
+</html>

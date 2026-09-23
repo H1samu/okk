@@ -824,6 +824,46 @@
       createSubmit.textContent = 'Отправить заявку';
     }
   });
+
+  // ==== Автообновление страницы при бездействии ====
+  const IDLE_TIMEOUT_MS = 60 * 1000; // 1 минута
+  let idleTimer = null;
+
+  function isBusy(){
+    // Не перезагружаем, пока открыта модалка создания заявки —
+    // иначе пользователь потеряет введённые данные.
+    if(createOverlay.classList.contains('show')) return true;
+    // Не перезагружаем, пока идёт сохранение статуса (select задизейблен).
+    if(document.querySelector('.status-select:disabled')) return true;
+    return false;
+  }
+
+  function scheduleReload(){
+    if(idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if(isBusy()){
+        // Пользователь занят — попробуем снова через тот же интервал,
+        // вместо того чтобы прервать его посреди действия.
+        scheduleReload();
+        return;
+      }
+      location.reload();
+    }, IDLE_TIMEOUT_MS);
+  }
+
+  ['click', 'touchstart', 'input', 'keydown'].forEach(evt => {
+    document.addEventListener(evt, scheduleReload, { passive: true });
+  });
+
+  // Если вкладка была в фоне и простаивала — обновляем сразу при возврате.
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden){
+      scheduleReload();
+    }
+  });
+
+  scheduleReload();
+  
 </script>
 
 </body>

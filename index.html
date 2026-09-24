@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Журналы</title>
+<title>Журналы — Hismar Check</title>
 <script src="auth-guard.js"></script>
 <script src="favorites.js"></script>
 <link rel="manifest" href="manifest.json">
@@ -36,22 +36,21 @@
     font-family:'Manrope', Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+  button{font-family:inherit;}
+  :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
   .wrap{
     max-width:1100px;
     margin:0 auto;
     padding:32px 20px 60px;
   }
+
+  /* ===== Шапка ===== */
   header{
     text-align:center;
-    margin-bottom:28px;
-  }
-  header .eyebrow{
-    font-size:12px;
-    letter-spacing:0.08em;
-    text-transform:uppercase;
-    color:var(--text-muted);
-    font-weight:600;
-    margin-bottom:8px;
+    margin-bottom:24px;
   }
   header .logo{
     height:48px;
@@ -68,26 +67,8 @@
     color:var(--text-secondary);
     margin:0;
   }
-  .inline-refresh{
-    background:none;
-    border:none;
-    padding:0;
-    margin:0;
-    font:inherit;
-    color:inherit;
-    cursor:text;
-    text-decoration:none;
-  }
-  header .total-count{
-    font-size:13px;
-    color:var(--text-muted);
-    margin-top:10px;
-  }
-  .search-box{
-    position:relative;
-    max-width:520px;
-    margin:24px auto 0;
-  }
+
+  /* ===== Поиск + QR ===== */
   .search-row{
     display:flex;
     align-items:center;
@@ -95,13 +76,14 @@
     max-width:520px;
     margin:24px auto 0;
   }
-  .search-row .search-box{
-    margin:0;
+  .search-box{
+    position:relative;
     flex:1;
   }
   .search-box input{
     width:100%;
-    padding:13px 16px 13px 42px;
+    height:46px;
+    padding:0 16px 0 42px;
     border:1px solid var(--border-strong);
     border-radius:999px;
     font-size:15px;
@@ -129,18 +111,303 @@
     justify-content:center;
     gap:6px;
     height:46px;
-    padding:0 16px;
+    min-width:46px;
+    padding:0 14px;
     border-radius:999px;
     border:1px solid var(--border-strong);
     background:var(--surface);
     color:var(--text);
-    font-family:inherit;
     font-size:13px;
     font-weight:600;
     cursor:pointer;
     white-space:nowrap;
   }
   .scan-btn:hover{border-color:var(--accent);}
+  .scan-btn .scan-label{display:none;}
+
+  /* ===== Плитки разделов ===== */
+  .quick-row{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:10px;
+    max-width:520px;
+    margin:22px auto 0;
+  }
+  .tile{
+    position:relative;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    min-height:88px;
+    padding:12px 8px;
+    border-radius:var(--radius);
+    border:1px solid var(--border);
+    background:var(--surface);
+    text-decoration:none;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .tile:hover{border-color:var(--border-strong);}
+  .tile:active{transform:scale(0.97);}
+  .tile .tile-icon{font-size:24px; line-height:1;}
+  .tile .tile-text{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+    text-align:center;
+    line-height:1.25;
+  }
+  .tile-master{ background:#fdf3e3; border-color:#ecd9ab; }
+  .tile-master:hover{ border-color:#dcbf7e; }
+  .tile-master .tile-text{ color:#8a6416; }
+  .tile-sgi{ background:#eaf2fc; border-color:#bcd6f0; }
+  .tile-sgi:hover{ border-color:#93bce4; }
+  .tile-sgi .tile-text{ color:#1d5fa8; }
+  .tile-fav.active{ background:#fdf7e3; border-color:#ecdca0; }
+  .tile-badge{
+    position:absolute;
+    top:8px;
+    right:8px;
+    font-size:11px;
+    font-weight:700;
+    line-height:1;
+  }
+  .tile-badge.count{
+    min-width:20px;
+    height:20px;
+    padding:0 6px;
+    border-radius:999px;
+    background:var(--accent);
+    color:#fff;
+    display:none;
+    align-items:center;
+    justify-content:center;
+  }
+  .tile-badge.count.show{display:inline-flex;}
+  .tile-badge.beta{
+    padding:3px 6px;
+    border-radius:999px;
+    background:#d6e6f8;
+    color:#1d5fa8;
+    letter-spacing:0.02em;
+  }
+
+  /* ===== Категории ===== */
+  .tags-section{margin-top:32px;}
+  .section-head{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+    flex-wrap:wrap;
+  }
+  .section-head h2{
+    font-size:13px;
+    font-weight:600;
+    text-transform:uppercase;
+    letter-spacing:0.05em;
+    color:var(--text-muted);
+    margin:0;
+  }
+  .section-head .hint{
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .tag-grid{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:4px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .tag-grid::-webkit-scrollbar{display:none;}
+  .tag-card{
+    flex-shrink:0;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+    height:40px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:0 14px;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:border-color .15s ease, transform .1s ease, opacity .15s ease;
+  }
+  .tag-card:hover{border-color:var(--border-strong);}
+  .tag-card:active{transform:scale(0.97);}
+  .tag-card.active{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+  }
+  .tag-card.disabled{
+    opacity:0.4;
+    cursor:default;
+    pointer-events:none;
+  }
+  .tag-card .tag-name{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text);
+  }
+  .tag-card .tag-count{
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .tag-card.active .tag-count{color:var(--accent);}
+
+  /* ===== Список ===== */
+  .results-section{margin-top:32px;}
+  .reset-btn{
+    font-size:12px;
+    color:var(--accent);
+    background:none;
+    border:none;
+    cursor:pointer;
+    font-weight:600;
+    display:none;
+    padding:6px 0;
+  }
+  .reset-btn.show{display:inline;}
+  .journal-list{
+    display:flex;
+    flex-direction:column;
+    gap:10px;
+  }
+  .journal-card{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    transition:opacity .15s ease;
+  }
+  .journal-card.removing{opacity:0;}
+  .jc-code{
+    font-size:12px;
+    font-weight:600;
+    color:var(--text-muted);
+    margin-bottom:3px;
+  }
+  .jc-name{
+    font-size:15px;
+    font-weight:500;
+    line-height:1.35;
+    display:-webkit-box;
+    -webkit-line-clamp:3;
+    -webkit-box-orient:vertical;
+    overflow:hidden;
+  }
+  .jc-code mark, .jc-name mark{
+    background:#fde68a;
+    color:inherit;
+    border-radius:3px;
+  }
+  .jc-tags{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+    margin-top:8px;
+  }
+  .jc-tags span{
+    font-size:12px;
+    color:var(--text-secondary);
+    background:var(--bg);
+    border-radius:999px;
+    padding:2px 9px;
+  }
+  .jc-actions{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:12px;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    height:44px;
+    padding:0 16px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    text-decoration:none;
+    cursor:pointer;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--text);
+    transition:border-color .15s ease, opacity .15s ease, transform .1s ease;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .btn-primary:hover{opacity:0.92;}
+  .btn-fill{
+    flex:1 1 100%;
+    flex-direction:column;
+    gap:1px;
+  }
+  .btn-fill .btn-sub{
+    font-size:11px;
+    font-weight:500;
+    opacity:0.85;
+    line-height:1.1;
+  }
+  .btn-fill .btn-main{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn.disabled{
+    opacity:0.5;
+    cursor:default;
+    pointer-events:none;
+  }
+  .btn-view{flex:1;}
+  .btn-icon{
+    width:44px;
+    padding:0;
+    flex-shrink:0;
+    font-size:18px;
+  }
+  .btn-icon.active{
+    background:#fdf7e3;
+    border-color:#ecdca0;
+  }
+
+  /* Режим «Избранное»: «Заполнить» первая, «Просмотр» — только иконка */
+  .favorites-mode .btn-view{
+    flex:0 0 44px;
+    width:44px;
+    padding:0;
+  }
+  .favorites-mode .btn-view .btn-label{display:none;}
+
+  .empty-state, .loading-state{
+    text-align:center;
+    padding:40px 20px;
+    color:var(--text-muted);
+    font-size:14px;
+  }
+
+  .site-footer{
+    text-align:center;
+    margin-top:40px;
+    font-size:12px;
+    color:var(--text-muted);
+    opacity:0.6;
+  }
+
+  /* ===== Сканер ===== */
   .scan-modal-overlay{
     display:none;
     position:fixed;
@@ -177,7 +444,9 @@
     color:var(--text-muted);
     cursor:pointer;
     line-height:1;
-    padding:4px;
+    width:44px;
+    height:44px;
+    margin:-10px -10px -10px 0;
   }
   .scan-video-wrap{
     position:relative;
@@ -207,213 +476,18 @@
     min-height:18px;
   }
   .scan-status.error{color:var(--danger);}
-  .tags-section{margin-top:36px;}
-  .quick-row{
-    display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(150px, 1fr));
-    gap:10px;
-    margin-top:24px;
+
+  /* ===== Адаптив ===== */
+  @media (min-width:600px){
+    .scan-btn .scan-label{display:inline;}
+    .btn-fill{flex:1 1 0; min-width:0;}
+    .jc-actions{flex-wrap:nowrap;}
+    .btn-view{flex:0 0 auto;}
+    .favorites-mode .btn-view{flex:0 0 44px;}
   }
-  .master-link{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#fdf3e3;
-    border:1px solid #ecd9ab;
-    border-radius:var(--radius);
-    padding:14px 16px;
-    text-decoration:none;
-  }
-  .master-link:hover{border-color:#dcbf7e;}
-  .master-link .ml-icon{font-size:17px; flex-shrink:0;}
-  .master-link .ml-text{
-    font-size:13px;
-    font-weight:600;
-    color:#8a6416;
-  }
-  .sgi-link{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:#eaf2fc;
-    border:1px solid #bcd6f0;
-    border-radius:var(--radius);
-    padding:14px 16px;
-    text-decoration:none;
-  }
-  .sgi-link:hover{border-color:#93bce4;}
-  .sgi-link .sl-icon{font-size:17px; flex-shrink:0;}
-  .sgi-link .sl-text{
-    font-size:13px;
-    font-weight:600;
-    color:#1d5fa8;
-  }
-  .fav-toggle{
-    display:flex;
-    align-items:center;
-    gap:10px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    padding:14px 16px;
-    font-family:inherit;
-    cursor:pointer;
-    text-align:left;
-  }
-  .fav-toggle:hover{border-color:var(--border-strong);}
-  .fav-toggle.active{
-    background:#fdf7e3;
-    border-color:#ecdca0;
-  }
-  .fav-toggle .ft-icon{font-size:17px; flex-shrink:0;}
-  .fav-toggle .ft-text{
-    font-size:13px;
-    font-weight:600;
-    color:var(--text);
-  }
-  .tags-section h2{
-    font-size:13px;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:0.05em;
-    color:var(--text-muted);
-    margin:0 0 12px;
-  }
-  .tag-grid{
-    display:flex;
-    gap:8px;
-    overflow-x:auto;
-    padding-bottom:4px;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  .tag-grid::-webkit-scrollbar{display:none;}
-  .tag-card{
-    flex-shrink:0;
-    display:inline-flex;
-    align-items:center;
-    gap:6px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:999px;
-    padding:9px 14px;
-    text-align:left;
-    cursor:pointer;
-    font-family:inherit;
-    white-space:nowrap;
-    transition:border-color .15s ease, transform .1s ease;
-  }
-  .tag-card:hover{border-color:var(--border-strong);}
-  .tag-card:active{transform:scale(0.97);}
-  .tag-card.active{
-    border-color:var(--accent);
-    background:var(--accent-soft);
-  }
-  .tag-card .tag-name{
-    font-size:13px;
-    font-weight:600;
-    color:var(--text);
-  }
-  .tag-card .tag-count{
-    font-size:12px;
-    color:var(--text-muted);
-  }
-  .tag-card.active .tag-count{color:var(--accent);}
-  .results-section{margin-top:36px;}
-  .results-header{
-    display:flex;
-    align-items:baseline;
-    justify-content:space-between;
-    margin-bottom:12px;
-  }
-  .results-header h2{
-    font-size:13px;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:0.05em;
-    color:var(--text-muted);
-    margin:0;
-  }
-  .reset-btn{
-    font-size:12px;
-    color:var(--accent);
-    background:none;
-    border:none;
-    cursor:pointer;
-    font-family:inherit;
-    font-weight:600;
-    display:none;
-    padding:0;
-  }
-  .reset-btn.show{display:inline;}
-  .journal-list{
-    display:flex;
-    flex-direction:column;
-    gap:8px;
-  }
-  .journal-row{
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap:12px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    padding:13px 16px;
-    text-decoration:none;
-    color:var(--text);
-  }
-  .journal-row:hover{border-color:var(--border-strong);}
-  .journal-row .jr-left{
-    display:flex;
-    flex-direction:column;
-    gap:4px;
-    min-width:0;
-  }
-  .journal-row .jr-name{
-    font-size:14px;
-    font-weight:500;
-  }
-  .journal-row .jr-name mark{
-    background:#fde68a;
-    color:inherit;
-    border-radius:3px;
-  }
-  .journal-row .jr-tags{
-    display:flex;
-    gap:6px;
-    flex-wrap:wrap;
-  }
-  .journal-row .jr-tags span{
-    font-size:11px;
-    color:var(--text-muted);
-    background:var(--bg);
-    border-radius:999px;
-    padding:2px 8px;
-  }
-  .journal-row .jr-arrow{
-    flex-shrink:0;
-    color:var(--text-muted);
-    font-size:16px;
-  }
-  .empty-state{
-    text-align:center;
-    padding:40px 20px;
-    color:var(--text-muted);
-    font-size:14px;
-  }
-  .loading-state{
-    text-align:center;
-    padding:40px 20px;
-    color:var(--text-muted);
-    font-size:14px;
-  }
-  .site-footer{
-    text-align:center;
-    margin-top:40px;
-    font-size:12px;
-    color:var(--text-muted);
-    opacity:0.6;
+  @media (max-width:380px){
+    .quick-row{grid-template-columns:1fr 1fr;}
+    .tile-fav{grid-column:1 / -1;}
   }
 </style>
 </head>
@@ -422,19 +496,17 @@
 <div class="wrap">
 
   <header>
-    <img class="logo" src="logo.svg" alt="G-check">
+    <img class="logo" src="logo.svg" alt="Hismar Check">
     <h1>Журналы и чек-листы НАССР</h1>
-    <p>Найдите нужный документ по тегу <button id="refreshBtn" class="inline-refresh" type="button">или</button> через поиск</p>
+    <p>Найдите нужный документ по категории или через поиск</p>
 
     <div class="search-row">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" id="searchInput" placeholder="Поиск журнала" autocomplete="off">
+        <input type="text" id="searchInput" placeholder="Поиск по названию или коду" autocomplete="off">
       </div>
-      <button class="scan-btn" id="scanBtn" type="button">📷 QR</button>
+      <button class="scan-btn" id="scanBtn" type="button" aria-label="Сканировать QR-код">📷<span class="scan-label">QR</span></button>
     </div>
-    <div class="total-count" id="totalCount"></div>
-
   </header>
 
   <div class="scan-modal-overlay" id="scanOverlay">
@@ -452,31 +524,36 @@
   </div>
 
   <div class="quick-row">
-    <a class="master-link" href="master.html">
-      <span class="ml-icon">📊</span>
-      <span class="ml-text">Мастер-таблица</span>
-    </a>
-
-    <a class="sgi-link" href="sgi.html">
-      <span class="sl-icon">🛠️</span>
-      <span class="sl-text">Заявки для СГИ (beta) </span>
-    </a>
-
-    <button class="fav-toggle" id="favToggle" type="button">
-      <span class="ft-icon">⭐</span>
-      <span class="ft-text" id="favText">Избранное</span>
+    <button class="tile tile-fav" id="favToggle" type="button" aria-pressed="false">
+      <span class="tile-icon">⭐</span>
+      <span class="tile-text" id="favText">Избранное</span>
+      <span class="tile-badge count" id="favBadge">0</span>
     </button>
+
+    <a class="tile tile-master" href="master.html">
+      <span class="tile-icon">📊</span>
+      <span class="tile-text">Мастер-таблица</span>
+    </a>
+
+    <a class="tile tile-sgi" href="sgi.html">
+      <span class="tile-icon">🛠️</span>
+      <span class="tile-text">Заявки для СГИ</span>
+      <span class="tile-badge beta">beta</span>
+    </a>
   </div>
 
   <div class="tags-section">
-    <h2>Теги</h2>
+    <div class="section-head">
+      <h2>Категории</h2>
+      <span class="hint">показаны журналы со всеми выбранными</span>
+    </div>
     <div class="tag-grid" id="tagGrid"></div>
   </div>
 
   <div class="results-section">
-    <div class="results-header">
+    <div class="section-head">
       <h2 id="resultsTitle">Все документы</h2>
-      <button class="reset-btn" id="resetBtn">Сбросить фильтр</button>
+      <button class="reset-btn" id="resetBtn" type="button">Сбросить фильтр</button>
     </div>
     <div class="journal-list" id="journalList">
       <div class="loading-state">Загрузка...</div>
@@ -490,7 +567,6 @@
 <script>
   // Надёжное открытие внешних ссылок (Telegram и т.п.) — на части мобильных
   // браузеров и в установленном PWA обычный target="_blank" иногда "теряется".
-  // Пробуем открыть новой вкладкой, если не получилось — переходим в текущей.
   function openExternal(url){
     const win = window.open(url, '_blank');
     if(!win){
@@ -499,30 +575,7 @@
     return false;
   }
 
-  // "Мягкое" обновление: чистит только кэш service worker'а (старые версии
-  // файлов сайта), не трогает localStorage — авторизация и избранное остаются.
-  const refreshBtn = document.getElementById('refreshBtn');
-  refreshBtn.addEventListener('click', async () => {
-    refreshBtn.disabled = true;
-    refreshBtn.textContent = 'обновляем...';
-    try{
-      if('caches' in window){
-        const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
-      }
-      if('serviceWorker' in navigator){
-        const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map(r => r.unregister()));
-      }
-      refreshBtn.textContent = 'готово ✓';
-      setTimeout(() => window.location.reload(), 500);
-    } catch(e){
-      refreshBtn.textContent = 'или';
-      refreshBtn.disabled = false;
-    }
-  });
-
-  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учет","Прочее"];
+  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Прочее"];
 
   let journals = [];
   let activeTags = new Set();
@@ -535,6 +588,7 @@
   const resultsTitle = document.getElementById('resultsTitle');
   const favToggle = document.getElementById('favToggle');
   const favText = document.getElementById('favText');
+  const favBadge = document.getElementById('favBadge');
 
   fetch('journals.json')
     .then(r => {
@@ -542,8 +596,8 @@
       return r.json();
     })
     .then(data => {
-      journals = data;
-      document.getElementById('totalCount').textContent = ``;
+      journals = data.map(normalizeTags);
+      updateFavBadge();
       renderTags();
       renderList();
     })
@@ -551,19 +605,79 @@
       journalList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json. Проверьте, что файл лежит рядом с index.html.</div>';
     });
 
-  function renderTags(){
-    const counts = {};
-    TAG_ORDER.forEach(t => counts[t] = 0);
-    journals.forEach(j => j.tags.forEach(t => { if(counts[t] !== undefined) counts[t]++; }));
+  // Единое написание тега «Учёт» (в данных может встречаться «Учет»)
+  function normalizeTags(j){
+    return Object.assign({}, j, {
+      tags: (j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t)
+    });
+  }
 
+  // Код журнала и название без кода
+  function splitName(j){
+    const full = j.name || '';
+    if(j.id && full.startsWith(j.id)){
+      return { code: j.id, title: full.slice(j.id.length).trim() || full };
+    }
+    return { code: j.id || '', title: full };
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function highlight(text, query){
+    const safe = escapeHtml(text);
+    if(!query) return safe;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if(idx === -1) return safe;
+    return escapeHtml(text.slice(0, idx))
+      + '<mark>' + escapeHtml(text.slice(idx, idx + query.length)) + '</mark>'
+      + escapeHtml(text.slice(idx + query.length));
+  }
+
+  function updateFavBadge(){
+    const validIds = new Set(journals.map(j => j.id));
+    const n = getFavorites().filter(id => validIds.has(id)).length;
+    favBadge.textContent = n;
+    favBadge.classList.toggle('show', n > 0);
+  }
+
+  // Фильтр по поиску и избранному (без учёта тегов) — база для счётчиков тегов
+  function baseFiltered(){
+    const query = searchInput.value.trim().toLowerCase();
+    let list = journals;
+    if(favoritesOnly) list = list.filter(j => isFavorite(j.id));
+    if(query) list = list.filter(j => j.name.toLowerCase().includes(query));
+    return list;
+  }
+
+  function renderTags(){
+    const base = baseFiltered();
     tagGrid.innerHTML = '';
+
     TAG_ORDER.forEach(tag => {
+      const isActive = activeTags.has(tag);
+
+      // Сколько журналов останется, если добавить этот тег к текущему выбору
+      const next = new Set(activeTags);
+      next.add(tag);
+      const count = base.filter(j => Array.from(next).every(t => j.tags.includes(t))).length;
+
+      const disabled = !isActive && count === 0;
+
       const btn = document.createElement('button');
-      btn.className = 'tag-card' + (activeTags.has(tag) ? ' active' : '');
-      btn.setAttribute('aria-pressed', activeTags.has(tag) ? 'true' : 'false');
-      btn.innerHTML = `<span class="tag-name">${activeTags.has(tag) ? '✓ ' : ''}${tag}</span><span class="tag-count">(${counts[tag]})</span>`;
+      btn.type = 'button';
+      btn.className = 'tag-card' + (isActive ? ' active' : '') + (disabled ? ' disabled' : '');
+      btn.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+      if(disabled) btn.setAttribute('aria-disabled', 'true');
+      btn.innerHTML = `<span class="tag-name">${isActive ? '✓ ' : ''}${escapeHtml(tag)}</span><span class="tag-count">(${count})</span>`;
       btn.addEventListener('click', () => {
-        if(activeTags.has(tag)) activeTags.delete(tag);
+        if(disabled) return;
+        if(isActive) activeTags.delete(tag);
         else activeTags.add(tag);
         renderTags();
         renderList();
@@ -572,28 +686,53 @@
     });
   }
 
-  function highlight(text, query){
-    if(!query) return text;
-    const idx = text.toLowerCase().indexOf(query.toLowerCase());
-    if(idx === -1) return text;
-    return text.slice(0, idx) + '<mark>' + text.slice(idx, idx + query.length) + '</mark>' + text.slice(idx + query.length);
+  function fillLink(j){
+    // Предзаполненная форма в приоритете, иначе пустая
+    if(j.formUrlPrefill) return { url: j.formUrlPrefill, prefilled: true };
+    if(j.formUrl) return { url: j.formUrl, prefilled: false };
+    return { url: '', prefilled: false };
+  }
+
+  function cardHtml(j, query){
+    const { code, title } = splitName(j);
+    const fill = fillLink(j);
+    const fav = isFavorite(j.id);
+
+    const fillBtn = fill.url
+      ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fill.url)}" target="_blank" rel="noopener">
+           <span class="btn-main">✏️ Заполнить</span>
+           ${fill.prefilled ? '<span class="btn-sub">с ответами по умолчанию</span>' : ''}
+         </a>`
+      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true">
+           <span class="btn-main">✏️ Заполнить</span>
+           <span class="btn-sub">форма не подключена</span>
+         </span>`;
+
+    return `
+      <div class="journal-card" data-id="${escapeHtml(j.id)}">
+        <div class="jc-code">${highlight(code, query)}</div>
+        <div class="jc-name">${highlight(title, query)}</div>
+        <div class="jc-tags">${j.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="jc-actions">
+          ${fillBtn}
+          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span>👁</span><span class="btn-label">Просмотр</span></a>
+          <button class="btn btn-icon${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
+                  aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
+                  aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>
+        </div>
+      </div>
+    `;
   }
 
   function renderList(){
     const query = searchInput.value.trim();
-    let filtered = journals;
-
-    if(favoritesOnly){
-      filtered = filtered.filter(j => isFavorite(j.id));
-    }
+    let filtered = baseFiltered();
     if(activeTags.size > 0){
       filtered = filtered.filter(j => Array.from(activeTags).every(t => j.tags.includes(t)));
     }
-    if(query){
-      filtered = filtered.filter(j => j.name.toLowerCase().includes(query.toLowerCase()));
-    }
 
     resetBtn.classList.toggle('show', activeTags.size > 0 || !!query || favoritesOnly);
+    journalList.classList.toggle('favorites-mode', favoritesOnly);
 
     if(favoritesOnly){
       resultsTitle.textContent = `⭐ Избранные формы (${filtered.length})`;
@@ -605,45 +744,72 @@
 
     if(filtered.length === 0){
       journalList.innerHTML = favoritesOnly
-        ? '<div class="empty-state">Пока нет избранных форм. Отметьте нужные звёздочкой в мастер-таблице.</div>'
-        : '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или тег.</div>';
+        ? '<div class="empty-state">Пока нет избранных форм. Нажмите ☆ на карточке журнала.</div>'
+        : '<div class="empty-state">Ничего не найдено. Попробуйте другой запрос или категорию.</div>';
       return;
     }
 
-    // В режиме избранного цель — быстро заполнить форму, поэтому ссылка
-    // ведёт сразу на саму форму (в новой вкладке), а не на просмотр журнала.
-    journalList.innerHTML = filtered.map(j => {
-      const favFormUrl = j.formUrlPrefill || j.formUrl;
-      const href = favoritesOnly && favFormUrl ? favFormUrl : `journal.html?id=${encodeURIComponent(j.id)}`;
-      const target = favoritesOnly && favFormUrl ? ' target="_blank" rel="noopener"' : '';
-      return `
-      <a class="journal-row" href="${href}"${target}>
-        <div class="jr-left">
-          <div class="jr-name">${highlight(j.name, query)}</div>
-          <div class="jr-tags">${j.tags.map(t => `<span>${t}</span>`).join('')}</div>
-        </div>
-        <div class="jr-arrow">→</div>
-      </a>
-    `;
-    }).join('');
+    journalList.innerHTML = filtered.map(j => cardHtml(j, query)).join('');
   }
+
+  // Звёздочки: делегирование событий на список
+  journalList.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-fav-id]');
+    if(!btn) return;
+
+    const id = btn.dataset.favId;
+    const nowActive = toggleFavorite(id);
+    updateFavBadge();
+
+    if(favoritesOnly && !nowActive){
+      // В режиме избранного карточка плавно исчезает
+      const card = btn.closest('.journal-card');
+      if(card){
+        card.classList.add('removing');
+        setTimeout(() => { renderTags(); renderList(); }, 150);
+        return;
+      }
+    }
+
+    btn.classList.toggle('active', nowActive);
+    btn.textContent = nowActive ? '⭐' : '☆';
+    btn.setAttribute('aria-pressed', nowActive ? 'true' : 'false');
+    btn.setAttribute('aria-label', nowActive ? 'Убрать из избранного' : 'Добавить в избранное');
+  });
 
   favToggle.addEventListener('click', () => {
     favoritesOnly = !favoritesOnly;
     favToggle.classList.toggle('active', favoritesOnly);
+    favToggle.setAttribute('aria-pressed', favoritesOnly ? 'true' : 'false');
     favText.textContent = favoritesOnly ? '✓ Избранное' : 'Избранное';
+    renderTags();
     renderList();
   });
 
-  searchInput.addEventListener('input', renderList);
+  searchInput.addEventListener('input', () => {
+    renderTags();
+    renderList();
+  });
+
   resetBtn.addEventListener('click', () => {
     activeTags.clear();
     searchInput.value = '';
     favoritesOnly = false;
     favToggle.classList.remove('active');
+    favToggle.setAttribute('aria-pressed', 'false');
     favText.textContent = 'Избранное';
     renderTags();
     renderList();
+  });
+
+  // Если пользователь вернулся на вкладку (например, из мастер-таблицы) —
+  // синхронизируем избранное
+  window.addEventListener('pageshow', () => {
+    if(journals.length){
+      updateFavBadge();
+      renderTags();
+      renderList();
+    }
   });
 
   if('serviceWorker' in navigator){
@@ -669,6 +835,9 @@
   scanBtn.addEventListener('click', openScanner);
   scanClose.addEventListener('click', closeScanner);
   scanOverlay.addEventListener('click', (e) => { if(e.target === scanOverlay) closeScanner(); });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape' && scanOverlay.classList.contains('show')) closeScanner();
+  });
 
   async function openScanner(){
     scanOverlay.classList.add('show');

@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Журнал — НАССР</title>
+<title>Журнал — Hismar Check</title>
+<script src="favorites.js"></script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -33,6 +34,11 @@
     font-family:'Manrope', Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+  button{font-family:inherit;}
+  :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
   .wrap{
     max-width:1100px;
     margin:0 auto;
@@ -46,23 +52,23 @@
     color:var(--text-secondary);
     text-decoration:none;
     margin-bottom:20px;
+    padding:6px 0;
   }
   .back-link:hover{color:var(--accent);}
-  header{
-    margin-bottom:24px;
-  }
-  .eyebrow{
+
+  /* ===== Шапка журнала ===== */
+  header{margin-bottom:20px;}
+  .j-code{
     font-size:12px;
-    letter-spacing:0.08em;
-    text-transform:uppercase;
-    color:var(--text-muted);
     font-weight:600;
-    margin-bottom:6px;
+    color:var(--text-muted);
+    margin-bottom:4px;
   }
   h1{
     font-size:22px;
     font-weight:700;
-    margin:0 0 8px;
+    line-height:1.3;
+    margin:0 0 10px;
   }
   .tag-row{
     display:flex;
@@ -70,12 +76,76 @@
     flex-wrap:wrap;
   }
   .tag-row span{
-    font-size:11px;
+    font-size:12px;
     color:var(--text-secondary);
     background:var(--accent-soft);
     border-radius:999px;
     padding:3px 10px;
   }
+  .head-actions{
+    display:flex;
+    gap:8px;
+    margin-top:16px;
+  }
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    height:44px;
+    padding:0 18px;
+    border-radius:10px;
+    font-size:14px;
+    font-weight:600;
+    text-decoration:none;
+    cursor:pointer;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--text);
+    transition:border-color .15s ease, opacity .15s ease, transform .1s ease;
+  }
+  .btn:hover:not(:disabled){border-color:var(--accent);}
+  .btn:active:not(:disabled){transform:scale(0.97);}
+  .btn:disabled, .btn.disabled{
+    opacity:0.5;
+    cursor:default;
+    pointer-events:none;
+  }
+  .btn-primary{
+    background:var(--accent);
+    border-color:var(--accent);
+    color:#fff;
+  }
+  .btn-primary:hover:not(:disabled){opacity:0.92;}
+  .btn-fill{
+    flex:1;
+    max-width:320px;
+    flex-direction:column;
+    gap:1px;
+  }
+  .btn-fill .btn-main{
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .btn-fill .btn-sub{
+    font-size:11px;
+    font-weight:500;
+    opacity:0.85;
+    line-height:1.1;
+  }
+  .btn-icon{
+    width:44px;
+    padding:0;
+    flex-shrink:0;
+    font-size:18px;
+  }
+  .btn-icon.active{
+    background:#fdf7e3;
+    border-color:#ecdca0;
+  }
+
+  /* ===== Состояния ===== */
   .state-box{
     text-align:center;
     padding:50px 20px;
@@ -90,18 +160,11 @@
     background:var(--danger-soft);
     border-color:transparent;
   }
-  .table-scroll{
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:var(--radius);
-    overflow:auto;
-    max-width:100%;
-    max-height:65vh;
-  }
+
+  /* ===== Поиск ===== */
   .toolbar{
     display:flex;
     align-items:center;
-    justify-content:space-between;
     gap:12px;
     margin-bottom:12px;
     flex-wrap:wrap;
@@ -109,10 +172,11 @@
   .toolbar input{
     flex:1;
     min-width:200px;
-    padding:9px 14px;
+    height:44px;
+    padding:0 14px;
     border:1px solid var(--border-strong);
-    border-radius:8px;
-    font-size:13px;
+    border-radius:10px;
+    font-size:14px;
     font-family:inherit;
     background:var(--surface);
     color:var(--text);
@@ -121,10 +185,42 @@
     outline:2px solid var(--accent);
     outline-offset:1px;
   }
+  .row-count{
+    font-size:12px;
+    color:var(--text-muted);
+    white-space:nowrap;
+  }
+
+  /* ===== Таблица ===== */
+  .table-scroll{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:auto;
+    max-width:100%;
+    max-height:65vh;
+  }
+  table{
+    border-collapse:separate;
+    border-spacing:0;
+    width:100%;
+    font-size:13px;
+    white-space:nowrap;
+  }
+  thead th{
+    position:sticky;
+    top:0;
+    z-index:2;
+    background:var(--accent-soft);
+    color:var(--text);
+    text-align:left;
+    padding:10px 14px;
+    font-weight:600;
+    border-bottom:1px solid var(--border-strong);
+  }
   th.sortable{
     cursor:pointer;
     user-select:none;
-    white-space:nowrap;
   }
   th.sortable:hover{background:#dfe9e5;}
   th .sort-arrow{
@@ -134,33 +230,124 @@
     font-size:11px;
   }
   th.sort-active .sort-arrow{color:var(--accent);}
-  table{
-    border-collapse:collapse;
-    width:100%;
-    font-size:13px;
-    white-space:nowrap;
-  }
-  thead th{
-    position:sticky;
-    top:0;
-    background:var(--accent-soft);
-    color:var(--text);
-    text-align:left;
-    padding:10px 14px;
-    font-weight:600;
-    border-bottom:1px solid var(--border-strong);
-  }
   tbody td{
     padding:9px 14px;
     border-bottom:1px solid var(--border);
     color:var(--text-secondary);
+    max-width:320px;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   tbody tr:last-child td{border-bottom:none;}
   tbody tr:hover td{background:#fbfaf7;}
-  .row-count{
+
+  /* Закреплённый первый столбец */
+  thead th:first-child,
+  tbody td:first-child{
+    position:sticky;
+    left:0;
+    border-right:1px solid var(--border);
+  }
+  thead th:first-child{
+    z-index:3;
+    background:var(--accent-soft);
+  }
+  tbody td:first-child{
+    z-index:1;
+    background:var(--surface);
+    color:var(--text);
+    font-weight:500;
+  }
+  tbody tr:hover td:first-child{background:#fbfaf7;}
+  th.sortable:first-child:hover{background:#dfe9e5;}
+
+  /* ===== Пагинация ===== */
+  .pager{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px 16px;
+    flex-wrap:wrap;
+    margin-top:12px;
+  }
+  .pager.top{margin:0 0 12px;}
+  .pager.compact .size-switch,
+  .pager.compact .range{display:none;}
+  .pager.compact{justify-content:flex-end;}
+  .size-switch{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
     font-size:12px;
     color:var(--text-muted);
-    margin-top:10px;
+  }
+  .seg{
+    display:inline-flex;
+    border:1px solid var(--border-strong);
+    border-radius:999px;
+    overflow:hidden;
+    background:var(--surface);
+  }
+  .seg button{
+    height:36px;
+    min-width:48px;
+    padding:0 12px;
+    border:none;
+    background:none;
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-secondary);
+    cursor:pointer;
+  }
+  .seg button + button{border-left:1px solid var(--border);}
+  .seg button:hover{background:var(--bg);}
+  .seg button.active{
+    background:var(--accent-soft);
+    color:var(--accent);
+  }
+  .range{
+    font-size:12px;
+    color:var(--text-muted);
+  }
+  .nav{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+  }
+  .nav .page-num{
+    font-size:13px;
+    font-weight:600;
+    color:var(--text-secondary);
+    min-width:56px;
+    text-align:center;
+  }
+  .nav .btn-icon{
+    font-size:20px;
+    line-height:1;
+  }
+
+  @media (max-width:600px){
+    .head-actions .btn-fill{max-width:none;}
+    .pager{flex-direction:column; align-items:stretch;}
+    .pager .size-switch{justify-content:space-between;}
+    .pager .lower{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+    .pager.compact{align-items:flex-end;}
+    .toolbar .row-count{width:100%;}
+  }
+  @media (min-width:601px){
+    .pager .lower{
+      display:flex;
+      align-items:center;
+      gap:16px;
+      flex:1;
+      justify-content:space-between;
+    }
+    .pager .lower .range{margin:0 auto;}
   }
 </style>
 </head>
@@ -170,55 +357,95 @@
   <a class="back-link" href="index.html">← Все журналы</a>
 
   <header>
+    <div class="j-code" id="journalCode"></div>
     <h1 id="journalTitle">Загрузка…</h1>
     <div class="tag-row" id="journalTags"></div>
+    <div class="head-actions" id="headActions" style="display:none;"></div>
   </header>
 
-  <div class="toolbar">
-    <input type="text" id="tableSearch" placeholder="Поиск по всем столбцам..." autocomplete="off" style="display:none;">
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <input type="text" id="tableSearch" placeholder="Поиск по всем столбцам..." autocomplete="off">
+    <span class="row-count" id="rowCount"></span>
   </div>
+
+  <div id="pagerTop"></div>
   <div id="content">
     <div class="state-box" id="stateBox">Загрузка данных таблицы…</div>
   </div>
-  <div class="row-count" id="rowCount"></div>
+  <div id="pagerBottom"></div>
 </div>
 
 <script>
   // Вставьте свой ограниченный API-ключ (Google Cloud Console → Credentials)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
 
+  const PAGE_SIZE_KEY = 'gcheck_journal_page_size';
+  const PAGE_SIZES = [25, 50, 100];
+
   const params = new URLSearchParams(window.location.search);
   const journalId = params.get('id');
 
+  const codeEl = document.getElementById('journalCode');
   const titleEl = document.getElementById('journalTitle');
   const tagsEl = document.getElementById('journalTags');
+  const headActions = document.getElementById('headActions');
+  const toolbarEl = document.getElementById('toolbar');
   const contentEl = document.getElementById('content');
   const stateBox = document.getElementById('stateBox');
   const rowCountEl = document.getElementById('rowCount');
+  const pagerTop = document.getElementById('pagerTop');
+  const pagerBottom = document.getElementById('pagerBottom');
+  const tableSearch = document.getElementById('tableSearch');
+
+  let journal = null;
+  let tableHeader = [];
+  let tableRows = [];          // [{cells:[...], idx:number}]
+  let firstColIsDate = false;
+  let sortCol = null;
+  let sortDir = 1;             // 1 = asc, -1 = desc
+  let page = 1;
+  let pageSize = loadPageSize();
+
+  function loadPageSize(){
+    try{
+      const v = parseInt(localStorage.getItem(PAGE_SIZE_KEY), 10);
+      return PAGE_SIZES.includes(v) ? v : 25;
+    } catch(e){
+      return 25;
+    }
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function showError(msg){
+    stateBox.textContent = msg;
+    stateBox.classList.add('error');
+  }
 
   if(!journalId){
     titleEl.textContent = 'Журнал не указан';
-    stateBox.textContent = 'В адресе страницы нет параметра ?id=... — вернитесь в каталог и откройте журнал через карточку.';
-    stateBox.classList.add('error');
+    showError('В адресе страницы нет параметра ?id=... — вернитесь в каталог и откройте журнал через карточку.');
   } else {
     fetch('journals.json')
       .then(r => r.json())
       .then(all => {
-        const journal = all.find(j => j.id === journalId);
+        journal = all.find(j => j.id === journalId);
         if(!journal){
           titleEl.textContent = 'Журнал не найден';
-          stateBox.textContent = `Не найдена запись с id "${journalId}" в journals.json.`;
-          stateBox.classList.add('error');
+          showError(`Не найдена запись с id "${journalId}" в journals.json.`);
           return;
         }
 
-        titleEl.textContent = journal.name;
-        tagsEl.innerHTML = journal.tags.map(t => `<span>${t}</span>`).join('');
-        document.title = journal.name + ' — НАССР';
+        renderHeader();
 
         if(!journal.sheetId || !journal.sheetName){
-          stateBox.textContent = 'Для этого журнала пока не указан sheetId / sheetName в journals.json.';
-          stateBox.classList.add('error');
+          showError('Для этого журнала пока не указан sheetId / sheetName в journals.json.');
           return;
         }
 
@@ -230,97 +457,106 @@
             if(!r.ok) throw new Error('http ' + r.status);
             return r.json();
           })
-          .then(data => renderTable(data.values || []))
+          .then(data => initTable(data.values || []))
           .catch(err => {
-            stateBox.textContent = 'Не удалось загрузить данные таблицы. Проверьте: доступ таблицы "по ссылке — Читатель", правильность sheetId/sheetName, и ограничения API-ключа. (' + err.message + ')';
-            stateBox.classList.add('error');
+            showError('Не удалось загрузить данные таблицы. Проверьте: доступ таблицы "по ссылке — Читатель", правильность sheetId/sheetName, и ограничения API-ключа. (' + err.message + ')');
           });
       })
       .catch(() => {
         titleEl.textContent = 'Ошибка';
-        stateBox.textContent = 'Не удалось загрузить journals.json.';
-        stateBox.classList.add('error');
+        showError('Не удалось загрузить journals.json.');
       });
   }
 
-  let tableHeader = [];
-  let tableRows = [];
-  let sortCol = null;
-  let sortDir = 1; // 1 = asc, -1 = desc
+  // ===== Шапка =====
+  function splitName(j){
+    const full = j.name || '';
+    if(j.id && full.startsWith(j.id)){
+      return { code: j.id, title: full.slice(j.id.length).trim() || full };
+    }
+    return { code: j.id || '', title: full };
+  }
 
-  const tableSearch = document.getElementById('tableSearch');
-  tableSearch.addEventListener('input', () => drawTable());
+  function renderHeader(){
+    const { code, title } = splitName(journal);
+    codeEl.textContent = code;
+    titleEl.textContent = title;
+    document.title = title + ' — Hismar Check';
+    tagsEl.innerHTML = (journal.tags || []).map(t => `<span>${escapeHtml(t)}</span>`).join('');
 
-  function renderTable(rows){
+    const prefilled = !!journal.formUrlPrefill;
+    const fillUrl = journal.formUrlPrefill || journal.formUrl || '';
+
+    const fillBtn = fillUrl
+      ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fillUrl)}" target="_blank" rel="noopener">
+           <span class="btn-main">✏️ Заполнить форму</span>
+           ${prefilled ? '<span class="btn-sub">с ответами по умолчанию</span>' : ''}
+         </a>`
+      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true">
+           <span class="btn-main">✏️ Заполнить форму</span>
+           <span class="btn-sub">форма не подключена</span>
+         </span>`;
+
+    const fav = isFavorite(journal.id);
+    headActions.innerHTML = `
+      ${fillBtn}
+      <button class="btn btn-icon${fav ? ' active' : ''}" id="favBtn" type="button"
+              aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
+              aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>
+    `;
+    headActions.style.display = '';
+
+    document.getElementById('favBtn').addEventListener('click', (e) => {
+      const btn = e.currentTarget;
+      const nowActive = toggleFavorite(journal.id);
+      btn.classList.toggle('active', nowActive);
+      btn.textContent = nowActive ? '⭐' : '☆';
+      btn.setAttribute('aria-pressed', nowActive ? 'true' : 'false');
+      btn.setAttribute('aria-label', nowActive ? 'Убрать из избранного' : 'Добавить в избранное');
+    });
+  }
+
+  // ===== Данные =====
+  function initTable(rows){
     if(rows.length === 0){
       stateBox.textContent = 'В этом журнале пока нет ни одной записи.';
       return;
     }
     const [header, ...body] = rows;
     tableHeader = header;
-    tableRows = body;
-    tableSearch.style.display = '';
+    const maxCols = header.length;
+
+    tableRows = body.map((row, idx) => ({
+      cells: Array.from({length: maxCols}, (_, i) => String(row[i] || '')),
+      idx
+    }));
+
+    if(tableRows.length === 0){
+      stateBox.textContent = 'В этом журнале пока нет ни одной записи.';
+      return;
+    }
+
+    // Первый столбец — дата, если большинство непустых значений распознаются как даты
+    const nonEmpty = tableRows.map(r => r.cells[0]).filter(v => v.trim() !== '');
+    const dated = nonEmpty.filter(v => parseRuDate(v) !== null).length;
+    firstColIsDate = nonEmpty.length > 0 && dated / nonEmpty.length >= 0.8;
+
+    // По умолчанию: новые сверху
+    if(firstColIsDate){
+      sortCol = 0;
+      sortDir = -1;
+    } else {
+      sortCol = null;
+    }
+
+    toolbarEl.style.display = '';
+    tableSearch.addEventListener('input', () => { page = 1; drawTable(); });
     drawTable();
-  }
-
-  function drawTable(){
-    const maxCols = tableHeader.length;
-    const query = tableSearch.value.trim().toLowerCase();
-
-    let rows = tableRows.map(row => Array.from({length: maxCols}, (_, i) => row[i] || ''));
-
-    if(query){
-      rows = rows.filter(row => row.some(cell => cell.toLowerCase().includes(query)));
-    }
-
-    if(sortCol !== null){
-      rows = rows.slice().sort((a, b) => {
-        const av = a[sortCol], bv = b[sortCol];
-        const ad = parseRuDate(av), bd = parseRuDate(bv);
-        const an = parseFloat(av.replace(',', '.'));
-        const bn = parseFloat(bv.replace(',', '.'));
-        let cmp;
-        if(ad !== null && bd !== null){
-          cmp = ad - bd;
-        } else if(!isNaN(an) && !isNaN(bn) && av.trim() !== '' && bv.trim() !== '' && /^-?[\d.,]+$/.test(av.trim()) && /^-?[\d.,]+$/.test(bv.trim())){
-          cmp = an - bn;
-        } else {
-          cmp = av.localeCompare(bv, 'ru');
-        }
-        return cmp * sortDir;
-      });
-    }
-
-    const theadHtml = '<thead><tr>' + tableHeader.map((h, i) => {
-      const active = sortCol === i;
-      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
-      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${escapeHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
-    }).join('') + '</tr></thead>';
-
-    const tbodyHtml = '<tbody>' + rows.map(row =>
-      '<tr>' + row.map(c => `<td>${escapeHtml(c)}</td>`).join('') + '</tr>'
-    ).join('') + '</tbody>';
-
-    contentEl.innerHTML = `<div class="table-scroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
-    rowCountEl.textContent = `Записей: ${rows.length}${query || sortCol !== null ? ` из ${tableRows.length}` : ''}`;
-
-    contentEl.querySelectorAll('th.sortable').forEach(th => {
-      th.addEventListener('click', () => {
-        const col = parseInt(th.dataset.col, 10);
-        if(sortCol === col){
-          sortDir = -sortDir;
-        } else {
-          sortCol = col;
-          sortDir = 1;
-        }
-        drawTable();
-      });
-    });
   }
 
   function parseRuDate(str){
     if(!str) return null;
-    const m = str.trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    const m = String(str).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
     if(!m) return null;
     const [, d, mo, y, h, mi, s] = m;
     const dt = new Date(
@@ -334,11 +570,157 @@
     return isNaN(dt.getTime()) ? null : dt.getTime();
   }
 
-  function escapeHtml(str){
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+  function compareCells(av, bv){
+    const ad = parseRuDate(av), bd = parseRuDate(bv);
+    if(ad !== null && bd !== null) return ad - bd;
+
+    const numRe = /^-?[\d.,]+$/;
+    if(numRe.test(av.trim()) && numRe.test(bv.trim())){
+      const an = parseFloat(av.replace(',', '.'));
+      const bn = parseFloat(bv.replace(',', '.'));
+      if(!isNaN(an) && !isNaN(bn)) return an - bn;
+    }
+    return av.localeCompare(bv, 'ru');
+  }
+
+  function getViewRows(){
+    const query = tableSearch.value.trim().toLowerCase();
+    let rows = tableRows;
+
+    if(query){
+      rows = rows.filter(r => r.cells.some(c => c.toLowerCase().includes(query)));
+    }
+
+    if(sortCol !== null){
+      rows = rows.slice().sort((a, b) => {
+        const cmp = compareCells(a.cells[sortCol], b.cells[sortCol]);
+        // Стабильность: при равных значениях — по исходному порядку в таблице
+        return (cmp * sortDir) || ((a.idx - b.idx) * sortDir);
+      });
+    } else {
+      // Нет даты и нет ручной сортировки: последние строки таблицы — первыми
+      rows = rows.slice().sort((a, b) => b.idx - a.idx);
+    }
+    return rows;
+  }
+
+  // ===== Отрисовка =====
+  function drawTable(){
+    const rows = getViewRows();
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    if(page > pages) page = pages;
+    if(page < 1) page = 1;
+
+    const start = (page - 1) * pageSize;
+    const slice = rows.slice(start, start + pageSize);
+
+    const query = tableSearch.value.trim();
+    rowCountEl.textContent = query
+      ? `Найдено: ${total} из ${tableRows.length}`
+      : `Записей: ${tableRows.length}`;
+
+    if(total === 0){
+      contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
+      pagerTop.innerHTML = '';
+      pagerBottom.innerHTML = '';
+      return;
+    }
+
+    const theadHtml = '<thead><tr>' + tableHeader.map((h, i) => {
+      const active = sortCol === i;
+      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${escapeHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr></thead>';
+
+    const tbodyHtml = '<tbody>' + slice.map(r =>
+      '<tr>' + r.cells.map(c => `<td title="${escapeHtml(c)}">${escapeHtml(c)}</td>`).join('') + '</tr>'
+    ).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll" id="tableScroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
+
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = parseInt(th.dataset.col, 10);
+        if(sortCol === col){
+          sortDir = -sortDir;
+        } else {
+          sortCol = col;
+          sortDir = 1;
+        }
+        page = 1;
+        drawTable();
+      });
+    });
+
+    renderPagers(total, pages, start, slice.length);
+  }
+
+  function renderPagers(total, pages, start, shown){
+    const from = start + 1;
+    const to = start + shown;
+    const query = tableSearch.value.trim();
+    const rangeText = query
+      ? `${from}–${to} из ${total} (всего ${tableRows.length})`
+      : `${from}–${to} из ${total}`;
+
+    const sizeSwitch = `
+      <div class="size-switch">
+        <span>Показывать:</span>
+        <div class="seg" role="group" aria-label="Записей на странице">
+          ${PAGE_SIZES.map(n => `<button type="button" data-size="${n}" class="${n === pageSize ? 'active' : ''}" aria-pressed="${n === pageSize}">${n}</button>`).join('')}
+        </div>
+      </div>`;
+
+    const nav = `
+      <div class="nav">
+        <button class="btn btn-icon" type="button" data-nav="prev" aria-label="Предыдущая страница"${page <= 1 ? ' disabled' : ''}>‹</button>
+        <span class="page-num">${page} / ${pages}</span>
+        <button class="btn btn-icon" type="button" data-nav="next" aria-label="Следующая страница"${page >= pages ? ' disabled' : ''}>›</button>
+      </div>`;
+
+    pagerBottom.innerHTML = `
+      <div class="pager">
+        ${sizeSwitch}
+        <div class="lower">
+          <span class="range">${rangeText}</span>
+          ${nav}
+        </div>
+      </div>`;
+
+    // Компактная панель сверху — только при 100 записях на странице
+    if(pageSize === 100 && pages > 1){
+      pagerTop.innerHTML = `<div class="pager top compact">${nav}</div>`;
+    } else {
+      pagerTop.innerHTML = '';
+    }
+
+    document.querySelectorAll('[data-size]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const n = parseInt(btn.dataset.size, 10);
+        if(n === pageSize) return;
+        pageSize = n;
+        try{ localStorage.setItem(PAGE_SIZE_KEY, String(n)); } catch(e){}
+        page = 1;
+        drawTable();
+      });
+    });
+
+    document.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        page += btn.dataset.nav === 'next' ? 1 : -1;
+        drawTable();
+        const scroller = document.getElementById('tableScroll');
+        if(scroller) scroller.scrollTop = 0;
+        window.scrollTo({ top: document.body.scrollTop, behavior: 'auto' });
+      });
+    });
+  }
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
   }
 </script>
 

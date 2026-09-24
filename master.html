@@ -408,6 +408,9 @@
       masterList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json.</div>';
     });
 
+    function qrDownloadUrl(driveId){
+    return `https://drive.google.com/uc?export=download&id=${driveId}`;
+  }
   function qrThumb(driveId){
     return `https://drive.google.com/thumbnail?id=${driveId}&sz=w1000`;
   }
@@ -542,7 +545,7 @@
     const { title } = splitName(j);
     const url = qrThumb(driveId);
 
-    currentQr = { url, filename: slugify(filenameBase) };
+        currentQr = { url, downloadUrl: qrDownloadUrl(driveId) };
 
     qrTitle.textContent = typeLabel;
     qrSub.textContent = `${j.id} ${title}`;
@@ -579,41 +582,16 @@
     if(e.key === 'Escape' && qrOverlay.classList.contains('show')) closeQr();
   });
 
-  qrDownload.addEventListener('click', async () => {
+    qrDownload.addEventListener('click', () => {
     if(!currentQr) return;
-    qrDownload.disabled = true;
-    qrDownload.textContent = 'Скачиваем...';
-    qrFallback.classList.remove('show');
-
-    try{
-      const res = await fetch(currentQr.url);
-      if(!res.ok) throw new Error('http ' + res.status);
-      const blob = await res.blob();
-      const type = (blob.type || '').toLowerCase();
-      const ext = type.includes('jpeg') ? 'jpg' : type.includes('webp') ? 'webp' : 'png';
-
-      const objUrl = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = objUrl;
-      a.download = `${currentQr.filename}.${ext}`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(objUrl), 1000);
-
-      qrDownload.textContent = '✓ Готово';
-      setTimeout(() => {
-        if(qrOverlay.classList.contains('show')){
-          qrDownload.disabled = false;
-          qrDownload.textContent = '⬇ Скачать';
-        }
-      }, 1500);
-    } catch(err){
-      // Чаще всего — CORS у Google Drive: даём запасной путь
-      qrDownload.disabled = false;
-      qrDownload.textContent = '⬇ Скачать';
-      qrFallback.classList.add('show');
-    }
+    // Прямая ссылка на скачивание Drive: браузер сам сохранит файл.
+    // Через скрытую ссылку, чтобы не уводить пользователя со страницы.
+    const a = document.createElement('a');
+    a.href = currentQr.downloadUrl;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
   });
 
   if('serviceWorker' in navigator){

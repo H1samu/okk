@@ -545,7 +545,7 @@
   <div class="tags-section">
     <div class="section-head">
       <h2>Категории</h2>
-      <span class="hint">показаны журналы со всеми выбранными</span>
+      <span class="hint"></span>
     </div>
     <div class="tag-grid" id="tagGrid"></div>
   </div>
@@ -701,7 +701,7 @@
     const fillBtn = fill.url
       ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fill.url)}" target="_blank" rel="noopener">
            <span class="btn-main">✏️ Заполнить</span>
-           ${fill.prefilled ? '<span class="btn-sub">с ответами по умолчанию</span>' : ''}
+           ${fill.prefilled ? '<span class="btn-sub"></span>' : ''}
          </a>`
       : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true">
            <span class="btn-main">✏️ Заполнить</span>
@@ -715,7 +715,7 @@
         <div class="jc-tags">${j.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
         <div class="jc-actions">
           ${fillBtn}
-          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span>👁</span><span class="btn-label">Просмотр</span></a>
+          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span></span><span class="btn-label">Просмотр</span></a>
           <button class="btn btn-icon${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
                   aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
                   aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>

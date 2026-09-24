@@ -715,7 +715,7 @@
         <div class="jc-tags">${j.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
         <div class="jc-actions">
           ${fillBtn}
-          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span>👁</span><span class="btn-label">Просмотр</span></a>
+          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span>📖</span><span class="btn-label">Просмотр</span></a>
           <button class="btn btn-icon${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
                   aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
                   aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>

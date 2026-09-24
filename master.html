@@ -88,31 +88,7 @@
   }
   .ext-links a:hover{border-color:var(--border-strong);}
 
-  /* Пояснение (сворачиваемое) */
-  .help{
-    margin-top:14px;
-  }
-  .help-toggle{
-    background:none;
-    border:none;
-    padding:6px 0;
-    font-size:13px;
-    font-weight:600;
-    color:var(--accent);
-    cursor:pointer;
-  }
-  .help-body{
-    display:none;
-    margin-top:6px;
-    padding:12px 14px;
-    background:var(--surface);
-    border:1px solid var(--border);
-    border-radius:10px;
-    font-size:13px;
-    line-height:1.5;
-    color:var(--text-secondary);
-  }
-  .help.open .help-body{display:block;}
+  
 
   .search-box{
     position:relative;
@@ -217,21 +193,12 @@
     border-color:#ecdca0;
   }
 
-  .mc-block{
-    margin-top:14px;
-  }
-  .mc-block-title{
-    font-size:11px;
-    font-weight:600;
-    text-transform:uppercase;
-    letter-spacing:0.05em;
-    color:var(--text-muted);
-    margin-bottom:6px;
-  }
+  
   .mc-buttons{
     display:flex;
     gap:8px;
     flex-wrap:wrap;
+    margin-top:14px;
   }
   .mc-btn{
     display:inline-flex;
@@ -388,12 +355,7 @@
       <a href="https://drive.google.com/drive/folders/1DwgG2qoaO3HQJMG_WwZYeFYcy4qT99LQ?dmr=1&ec=wgc-drive-%5Bmodule%5D-goto" target="_blank" rel="noopener">📁 Открыть папку с журналами</a>
     </div>
 
-    <div class="help" id="help">
-      <button class="help-toggle" id="helpToggle" type="button" aria-expanded="false">Что значит «с ответами»?</button>
-      <div class="help-body">
-        QR-код открывает форму на телефоне. «Форма с ответами по умолчанию» означает, что часть полей уже заполнена (обычно «Да») — останется проверить и отправить.
-      </div>
-    </div>
+    
   </header>
 
   <div class="search-box">
@@ -508,15 +470,6 @@
       const fav = isFavorite(j.id);
       const hasPrefill = !!j.formUrlPrefill;
 
-      const prefillBlock = hasPrefill ? `
-        <div class="mc-block">
-          <div class="mc-block-title">Форма с ответами по умолчанию</div>
-          <div class="mc-buttons">
-            ${linkBtn(j.formUrlPrefill, '📝 Форма с ответами')}
-            ${qrBtn(j.qrPrefillDriveId, 'prefill', '▦ QR: форма с ответами', j)}
-          </div>
-        </div>` : '';
-
       return `
       <div class="master-card">
         <div class="mc-head">
@@ -530,22 +483,13 @@
         </div>
         <div class="mc-tags">${(j.tags || []).map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
 
-        <div class="mc-block">
-          <div class="mc-block-title">Данные</div>
-          <div class="mc-buttons">
-            ${linkBtn(j.sheetUrl, '📊 Таблица данных')}
-          </div>
+        <div class="mc-buttons">
+          ${linkBtn(j.sheetUrl, '📊 Таблица данных')}
+          ${linkBtn(j.formUrl, '📝 Пустая форма')}
+          ${qrBtn(j.qrDriveId, 'empty', '▦ QR: пустая форма', j)}
+          ${hasPrefill ? linkBtn(j.formUrlPrefill, '📝 Форма с ответами') : ''}
+          ${hasPrefill ? qrBtn(j.qrPrefillDriveId, 'prefill', '▦ QR: форма с ответами', j) : ''}
         </div>
-
-        <div class="mc-block">
-          <div class="mc-block-title">Форма</div>
-          <div class="mc-buttons">
-            ${linkBtn(j.formUrl, '📝 Пустая форма')}
-            ${qrBtn(j.qrDriveId, 'empty', '▦ QR: пустая форма', j)}
-          </div>
-        </div>
-
-        ${prefillBlock}
       </div>`;
     }).join('');
   }
@@ -571,13 +515,7 @@
 
   searchInput.addEventListener('input', draw);
 
-  // Пояснение
-  const help = document.getElementById('help');
-  const helpToggle = document.getElementById('helpToggle');
-  helpToggle.addEventListener('click', () => {
-    const open = help.classList.toggle('open');
-    helpToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
+  
 
   // ===== QR-модалка =====
   const qrOverlay = document.getElementById('qrOverlay');

@@ -34,6 +34,7 @@
     font-family:'Manrope', Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
   }
+  body.resizing{cursor:col-resize; user-select:none;}
   .wrap{
     max-width:1200px;
     margin:0 auto;
@@ -210,6 +211,7 @@
     border-color:transparent;
   }
 
+  /* ==== Таблица ==== */
   .table-scroll{
     background:var(--surface);
     border:1px solid var(--border);
@@ -219,7 +221,7 @@
   }
   table{
     border-collapse:collapse;
-    width:100%;
+    table-layout:fixed;
     font-size:13px;
   }
   thead th{
@@ -232,6 +234,8 @@
     font-weight:600;
     border-bottom:1px solid var(--border-strong);
     white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
   }
   th.sortable{
     cursor:pointer;
@@ -245,47 +249,130 @@
     font-size:11px;
   }
   th.sort-active .sort-arrow{color:var(--accent);}
+  th .col-resizer{
+    position:absolute;
+    top:0;
+    right:0;
+    width:10px;
+    height:100%;
+    cursor:col-resize;
+    touch-action:none;
+    user-select:none;
+  }
+  th .col-resizer::after{
+    content:'';
+    position:absolute;
+    top:20%;
+    bottom:20%;
+    right:4px;
+    width:2px;
+    background:var(--border-strong);
+    border-radius:1px;
+  }
+  th .col-resizer:hover::after,
+  th .col-resizer.active::after{background:var(--accent);}
+
   tbody td{
     padding:9px 14px;
     border-bottom:1px solid var(--border);
     color:var(--text-secondary);
     vertical-align:middle;
+    overflow:hidden;
   }
   tbody tr:last-child td{border-bottom:none;}
   tbody tr:hover td{background:#fbfaf7;}
   td.name-cell{
     color:var(--text);
     font-weight:500;
-    min-width:200px;
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
   }
+  td.equipment-cell{
+    white-space:normal;
+    word-break:break-word;
+    overflow-wrap:anywhere;
+  }
+  td.nowrap-cell{white-space:nowrap; text-overflow:ellipsis;}
+  td.status-cell{overflow:visible;}
 
-  .status-select{
+  .cell-muted{color:var(--text-muted); font-size:12px; white-space:nowrap; text-overflow:ellipsis;}
+
+  /* ==== Кастомный выбор статуса (с переносом текста) ==== */
+  .status-picker{
+    position:relative;
+    width:100%;
+  }
+  .status-btn{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:8px;
+    width:100%;
     padding:7px 10px;
     border-radius:8px;
     border:1px solid var(--border-strong);
     font-family:inherit;
     font-size:12px;
     font-weight:600;
+    line-height:1.3;
+    text-align:left;
+    white-space:normal;
+    cursor:pointer;
     background:var(--surface);
     color:var(--text);
-    cursor:pointer;
-    min-width:190px;
   }
-  .status-select:disabled{
-    opacity:0.5;
-    cursor:wait;
+  .status-btn .chev{
+    flex-shrink:0;
+    font-size:10px;
+    opacity:0.7;
   }
-  .status-select.s-open{ color:#8a6416; border-color:#ecd9ab; background:#fdf3e3; }
-  .status-select.s-inprogress{ color:#1d5fa8; border-color:#bcd6f0; background:#eaf2fc; }
-  .status-select.s-done{ color:var(--accent); border-color:#c7dcd5; background:var(--accent-soft); }
-  .status-select.s-doneclean{ color:#2f7a3e; border-color:#bfe0c7; background:#eaf7ec; }
+  .status-btn:disabled{opacity:0.5; cursor:wait;}
+  .status-btn.s-open{ color:#8a6416; border-color:#ecd9ab; background:#fdf3e3; }
+  .status-btn.s-inprogress{ color:#1d5fa8; border-color:#bcd6f0; background:#eaf2fc; }
+  .status-btn.s-done{ color:var(--accent); border-color:#c7dcd5; background:var(--accent-soft); }
+  .status-btn.s-doneclean{ color:#2f7a3e; border-color:#bfe0c7; background:#eaf7ec; }
+  .status-btn.static{cursor:default;}
+  .status-btn.static .chev{display:none;}
 
-  .cell-muted{color:var(--text-muted); font-size:12px; white-space:nowrap;}
+  .status-menu{
+    display:none;
+    position:absolute;
+    top:calc(100% + 4px);
+    left:0;
+    right:0;
+    z-index:20;
+    background:var(--surface);
+    border:1px solid var(--border-strong);
+    border-radius:8px;
+    box-shadow:0 6px 20px rgba(0,0,0,0.12);
+    overflow:hidden;
+  }
+  .status-menu.show{display:block;}
+  .status-menu.up{top:auto; bottom:calc(100% + 4px);}
+  .status-option{
+    display:block;
+    width:100%;
+    padding:8px 10px;
+    border:none;
+    background:var(--surface);
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    line-height:1.3;
+    text-align:left;
+    white-space:normal;
+    color:var(--text);
+    cursor:pointer;
+  }
+  .status-option + .status-option{border-top:1px solid var(--border);}
+  .status-option:hover{background:var(--accent-soft);}
 
   .save-error{
     font-size:11px;
     color:var(--danger);
     margin-top:4px;
+    white-space:normal;
   }
 
   /* ==== Модальное окно создания заявки ==== */
@@ -455,7 +542,7 @@
 </div>
 
 <script>
-  // ==== НАСТРОЙКИ — впишите свои значения ====
+  // ==== НАСТРОЙКИ ====
 
   // API-ключ Google Sheets API (тот же, что в journal.html/master.html)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
@@ -485,13 +572,14 @@
     'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
   };
 
-const ALLOWED_TRANSITIONS = {
-  'Открыта': ['В работе'],
-  'В работе': ['Открыта', 'Выполнена', 'Выполнена. Проведена мойка и дезинфекция'],
-  'Выполнена': ['В работе', 'Выполнена. Проведена мойка и дезинфекция'],
-  'Выполнена. Проведена мойка и дезинфекция': ['В работе', 'Выполнена']
-};
-  
+  // Разрешённые переходы (должны совпадать с ALLOWED_TRANSITIONS в Apps Script)
+  const ALLOWED_TRANSITIONS = {
+    'Открыта': ['В работе'],
+    'В работе': ['Открыта', 'Выполнена', 'Выполнена. Проведена мойка и дезинфекция'],
+    'Выполнена': ['В работе', 'Выполнена. Проведена мойка и дезинфекция'],
+    'Выполнена. Проведена мойка и дезинфекция': ['В работе', 'Выполнена']
+  };
+
   // ==== Участки для выпадающего списка в форме создания заявки ====
   const AREAS = [
     'RND', 'АХО', 'Бухгалтерия', 'Горячий цех',
@@ -501,12 +589,29 @@ const ALLOWED_TRANSITIONS = {
     'Столовая', 'Холодный цех', 'Цех сборки', 'Цех упаковки', 'Цех фасовки', 'Другое'
   ];
 
+  // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
+  const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths';
+  // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
+  const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150];
+  const MIN_COL_WIDTH = 70;
+
+  let colWidths = (() => {
+    try{
+      const saved = JSON.parse(localStorage.getItem(COL_WIDTHS_KEY) || 'null');
+      if(Array.isArray(saved) && saved.length === DEFAULT_COL_WIDTHS.length) return saved;
+    } catch(e){}
+    return DEFAULT_COL_WIDTHS.slice();
+  })();
+
+  function saveColWidths(){
+    try{ localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(colWidths)); } catch(e){}
+  }
+
   document.getElementById('sheetLink').href = SHEET_URL;
 
   // ==== Личная сессия (кто вошёл) ====
   // Сессия бессрочная: раз войдя, пользователь остаётся авторизованным
-  // до тех пор, пока сам не нажмёт "Выйти" (кнопка ниже) или не очистит
-  // данные браузера. Проверки по времени (TTL) намеренно нет.
+  // до тех пор, пока сам не нажмёт "Выйти" или не очистит данные браузера.
   const SESSION_KEY = 'gcheck_sgi_user';
 
   let currentUser = null;
@@ -523,7 +628,6 @@ const ALLOWED_TRANSITIONS = {
     document.getElementById('currentUserName').textContent = currentUser;
   }
 
-  // Кнопка выхода: чистит личную сессию СГИ и отправляет на экран входа.
   document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.removeItem(SESSION_KEY);
     location.replace('sgi-login.html');
@@ -546,7 +650,6 @@ const ALLOWED_TRANSITIONS = {
 
   // Порядок должен совпадать со столбцами в таблице
   const COLUMN_KEYS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
-  // Индексы внутри COLUMN_KEYS для удобства
   const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7 };
 
   function loadData(){
@@ -613,6 +716,22 @@ const ALLOWED_TRANSITIONS = {
     });
   }
 
+  function statusPickerHtml(rowIndex, cur){
+    const options = ALLOWED_TRANSITIONS[cur] || [];
+    const cls = STATUS_CLASS[cur] || '';
+    const isStatic = options.length === 0;
+    const menu = options.map(s =>
+      `<button type="button" class="status-option" data-value="${escapeHtml(s)}">${escapeHtml(s)}</button>`
+    ).join('');
+    return `
+      <div class="status-picker" data-row-index="${rowIndex}" data-current="${escapeHtml(cur)}">
+        <button type="button" class="status-btn ${cls}${isStatic ? ' static' : ''}"${isStatic ? ' tabindex="-1"' : ''}>
+          <span class="status-label">${escapeHtml(cur)}</span><span class="chev">▾</span>
+        </button>
+        <div class="status-menu">${menu}</div>
+      </div>`;
+  }
+
   function renderTable(){
     let filtered = rows;
     if(activeStatus){
@@ -655,44 +774,41 @@ const ALLOWED_TRANSITIONS = {
     }
 
     const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
+
+    const colgroupHtml = '<colgroup>' + colWidths.map(w => `<col style="width:${w}px">`).join('') + '</colgroup>';
+    const totalWidth = colWidths.reduce((a, b) => a + b, 0);
+
     const theadHtml = '<thead><tr>' + HEADERS.map((h, i) => {
+      const resizer = `<span class="col-resizer" data-col="${i}"></span>`;
       if(i === IDX.status){
-        return `<th>${h}</th>`;
+        return `<th>${h}${resizer}</th>`;
       }
       const active = sortCol === i;
       const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
-      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span></th>`;
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span>${resizer}</th>`;
     }).join('') + '</tr></thead>';
 
     const tbodyHtml = '<tbody>' + filtered.map(r => `
       <tr data-row-index="${r.rowIndex}">
         <td class="cell-muted">${escapeHtml(r.cells[IDX.createdAt])}</td>
         <td class="name-cell">${escapeHtml(r.cells[IDX.name])}</td>
-        <td>${escapeHtml(r.cells[IDX.area])}</td>
-        <td>${escapeHtml(r.cells[IDX.equipment])}</td>
-        <td>
-          <select class="status-select ${STATUS_CLASS[r.cells[IDX.status]] || ''}" data-row-index="${r.rowIndex}">
-  ${(() => {
-    const cur = r.cells[IDX.status];
-    const opts = [cur].concat(ALLOWED_TRANSITIONS[cur] || []);
-    return opts.map(s => `<option value="${escapeHtml(s)}"${s === cur ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
-  })()}
-</select>
-        </td>
+        <td class="nowrap-cell">${escapeHtml(r.cells[IDX.area])}</td>
+        <td class="equipment-cell">${escapeHtml(r.cells[IDX.equipment])}</td>
+        <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status])}</td>
         <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
         <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[IDX.takenAt])}</td>
         <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[IDX.closedAt])}</td>
       </tr>
     `).join('') + '</tbody>';
 
-    contentEl.innerHTML = `<div class="table-scroll"><table>${theadHtml}${tbodyHtml}</table></div>`;
+    contentEl.innerHTML = `<div class="table-scroll"><table style="width:${totalWidth}px">${colgroupHtml}${theadHtml}${tbodyHtml}</table></div>`;
 
-    contentEl.querySelectorAll('.status-select').forEach(sel => {
-      sel.addEventListener('change', onStatusChange);
-    });
+    initStatusPickers();
+    initResizers();
 
     contentEl.querySelectorAll('th.sortable').forEach(th => {
-      th.addEventListener('click', () => {
+      th.addEventListener('click', (e) => {
+        if(e.target.classList.contains('col-resizer')) return;
         const col = parseInt(th.dataset.col, 10);
         if(sortCol === col){
           sortDir = -sortDir;
@@ -703,6 +819,141 @@ const ALLOWED_TRANSITIONS = {
         renderTable();
       });
     });
+  }
+
+  // ==== Изменение ширины столбцов ====
+  function initResizers(){
+    const table = contentEl.querySelector('table');
+    if(!table) return;
+    const cols = table.querySelectorAll('col');
+
+    table.querySelectorAll('.col-resizer').forEach(handle => {
+      handle.addEventListener('click', e => e.stopPropagation());
+
+      handle.addEventListener('pointerdown', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const i = parseInt(handle.dataset.col, 10);
+        const startX = e.clientX;
+        const startW = colWidths[i];
+
+        handle.setPointerCapture(e.pointerId);
+        handle.classList.add('active');
+        document.body.classList.add('resizing');
+
+        const onMove = (ev) => {
+          const w = Math.max(MIN_COL_WIDTH, startW + (ev.clientX - startX));
+          colWidths[i] = w;
+          cols[i].style.width = w + 'px';
+          table.style.width = colWidths.reduce((a, b) => a + b, 0) + 'px';
+        };
+        const onUp = () => {
+          handle.classList.remove('active');
+          document.body.classList.remove('resizing');
+          handle.removeEventListener('pointermove', onMove);
+          handle.removeEventListener('pointerup', onUp);
+          handle.removeEventListener('pointercancel', onUp);
+          saveColWidths();
+        };
+
+        handle.addEventListener('pointermove', onMove);
+        handle.addEventListener('pointerup', onUp);
+        handle.addEventListener('pointercancel', onUp);
+      });
+
+      // Двойной клик по ручке — сброс ширины этого столбца
+      handle.addEventListener('dblclick', (e) => {
+        e.stopPropagation();
+        const i = parseInt(handle.dataset.col, 10);
+        colWidths[i] = DEFAULT_COL_WIDTHS[i];
+        saveColWidths();
+        renderTable();
+      });
+    });
+  }
+
+  // ==== Выбор статуса ====
+  function closeAllMenus(){
+    document.querySelectorAll('.status-menu.show').forEach(m => m.classList.remove('show'));
+  }
+
+  function initStatusPickers(){
+    contentEl.querySelectorAll('.status-picker').forEach(picker => {
+      const btn = picker.querySelector('.status-btn');
+      const menu = picker.querySelector('.status-menu');
+      if(btn.classList.contains('static')) return;
+
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const wasOpen = menu.classList.contains('show');
+        closeAllMenus();
+        if(wasOpen) return;
+
+        // Если снизу мало места — открываем вверх
+        menu.classList.remove('up');
+        menu.classList.add('show');
+        const rect = menu.getBoundingClientRect();
+        if(rect.bottom > window.innerHeight - 8){
+          menu.classList.add('up');
+        }
+      });
+
+      menu.querySelectorAll('.status-option').forEach(opt => {
+        opt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          closeAllMenus();
+          changeStatus(picker, opt.dataset.value);
+        });
+      });
+    });
+  }
+
+  document.addEventListener('click', closeAllMenus);
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeAllMenus(); });
+
+  function changeStatus(picker, newStatus){
+    const rowIndex = parseInt(picker.dataset.rowIndex, 10);
+    const btn = picker.querySelector('.status-btn');
+    const tr = picker.closest('tr');
+    const rowData = rows.find(r => r.rowIndex === rowIndex);
+    if(!rowData) return;
+
+    btn.disabled = true;
+    btn.className = 'status-btn ' + (STATUS_CLASS[newStatus] || '');
+    picker.querySelector('.status-label').textContent = newStatus;
+
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if(!res.ok){
+          throw new Error(res.error || 'Неизвестная ошибка');
+        }
+        rowData.cells[IDX.status] = newStatus;
+        rowData.cells[IDX.takenAt] = res.takenAt || '';
+        rowData.cells[IDX.closedAt] = res.closedAt || '';
+        renderStatusTabs();
+        renderTable();
+      })
+      .catch(err => {
+        // Откатываем отображение к прежнему статусу
+        const prev = rowData.cells[IDX.status];
+        btn.disabled = false;
+        btn.className = 'status-btn ' + (STATUS_CLASS[prev] || '');
+        picker.querySelector('.status-label').textContent = prev;
+
+        let errBox = tr.querySelector('.save-error');
+        if(!errBox){
+          errBox = document.createElement('div');
+          errBox.className = 'save-error';
+          picker.parentElement.appendChild(errBox);
+        }
+        errBox.textContent = 'Не удалось сохранить: ' + err.message;
+        setTimeout(() => { if(errBox) errBox.remove(); }, 5000);
+      });
   }
 
   function parseRuDate(str){
@@ -721,61 +972,12 @@ const ALLOWED_TRANSITIONS = {
     return isNaN(dt.getTime()) ? null : dt.getTime();
   }
 
-  function onStatusChange(e){
-    const select = e.target;
-    const rowIndex = parseInt(select.dataset.rowIndex, 10);
-    const newStatus = select.value;
-    const tr = select.closest('tr');
-
-    select.disabled = true;
-    select.className = 'status-select ' + (STATUS_CLASS[newStatus] || '');
-
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus })
-    })
-      .then(r => r.json())
-      .then(res => {
-        if(!res.ok){
-          throw new Error(res.error || 'Неизвестная ошибка');
-        }
-        const rowData = rows.find(r => r.rowIndex === rowIndex);
-        if(rowData){
-          rowData.cells[IDX.status] = newStatus;
-          rowData.cells[IDX.takenAt] = res.takenAt || '';
-          rowData.cells[IDX.closedAt] = res.closedAt || '';
-        }
-        if(tr){
-          tr.querySelector('.taken-at-cell').textContent = rowData ? rowData.cells[IDX.takenAt] : '';
-          tr.querySelector('.closed-at-cell').textContent = rowData ? rowData.cells[IDX.closedAt] : '';
-        }
-        select.disabled = false;
-        renderStatusTabs();
-        renderTable();
-      })
-      .catch(err => {
-        select.disabled = false;
-        const rowData = rows.find(r => r.rowIndex === rowIndex);
-        if(rowData) select.value = rowData.cells[IDX.status];
-        select.className = 'status-select ' + (STATUS_CLASS[rowData ? rowData.cells[IDX.status] : ''] || '');
-
-        let errBox = tr.querySelector('.save-error');
-        if(!errBox){
-          errBox = document.createElement('div');
-          errBox.className = 'save-error';
-          select.closest('td').appendChild(errBox);
-        }
-        errBox.textContent = 'Не удалось сохранить: ' + err.message;
-        setTimeout(() => { if(errBox) errBox.remove(); }, 5000);
-      });
-  }
-
   function escapeHtml(str){
     return String(str)
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
   }
 
   searchInput.addEventListener('input', () => {
@@ -871,11 +1073,14 @@ const ALLOWED_TRANSITIONS = {
   let idleTimer = null;
 
   function isBusy(){
-    // Не перезагружаем, пока открыта модалка создания заявки —
-    // иначе пользователь потеряет введённые данные.
+    // Не перезагружаем, пока открыта модалка создания заявки.
     if(createOverlay.classList.contains('show')) return true;
-    // Не перезагружаем, пока идёт сохранение статуса (select задизейблен).
-    if(document.querySelector('.status-select:disabled')) return true;
+    // Не перезагружаем, пока идёт сохранение статуса.
+    if(document.querySelector('.status-btn:disabled')) return true;
+    // Не перезагружаем, пока открыто меню статуса.
+    if(document.querySelector('.status-menu.show')) return true;
+    // Не перезагружаем во время перетаскивания границы столбца.
+    if(document.body.classList.contains('resizing')) return true;
     return false;
   }
 
@@ -883,8 +1088,6 @@ const ALLOWED_TRANSITIONS = {
     if(idleTimer) clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
       if(isBusy()){
-        // Пользователь занят — попробуем снова через тот же интервал,
-        // вместо того чтобы прервать его посреди действия.
         scheduleReload();
         return;
       }
@@ -892,11 +1095,10 @@ const ALLOWED_TRANSITIONS = {
     }, IDLE_TIMEOUT_MS);
   }
 
-  ['click', 'touchstart', 'input', 'keydown'].forEach(evt => {
+  ['click', 'touchstart', 'input', 'keydown', 'pointerdown'].forEach(evt => {
     document.addEventListener(evt, scheduleReload, { passive: true });
   });
 
-  // Если вкладка была в фоне и простаивала — обновляем сразу при возврате.
   document.addEventListener('visibilitychange', () => {
     if(!document.hidden){
       scheduleReload();

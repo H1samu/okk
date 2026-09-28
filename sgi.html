@@ -485,6 +485,13 @@
     'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
   };
 
+const ALLOWED_TRANSITIONS = {
+  'Открыта': ['В работе'],
+  'В работе': ['Открыта', 'Выполнена', 'Выполнена. Проведена мойка и дезинфекция'],
+  'Выполнена': ['В работе', 'Выполнена. Проведена мойка и дезинфекция'],
+  'Выполнена. Проведена мойка и дезинфекция': ['В работе', 'Выполнена']
+};
+  
   // ==== Участки для выпадающего списка в форме создания заявки ====
   const AREAS = [
     'RND', 'АХО', 'Бухгалтерия', 'Горячий цех', 'Другое',
@@ -665,8 +672,12 @@
         <td>${escapeHtml(r.cells[IDX.equipment])}</td>
         <td>
           <select class="status-select ${STATUS_CLASS[r.cells[IDX.status]] || ''}" data-row-index="${r.rowIndex}">
-            ${STATUSES.map(s => `<option value="${escapeHtml(s)}"${s === r.cells[IDX.status] ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('')}
-          </select>
+  ${(() => {
+    const cur = r.cells[IDX.status];
+    const opts = [cur].concat(ALLOWED_TRANSITIONS[cur] || []);
+    return opts.map(s => `<option value="${escapeHtml(s)}"${s === cur ? ' selected' : ''}>${escapeHtml(s)}</option>`).join('');
+  })()}
+</select>
         </td>
         <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
         <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[IDX.takenAt])}</td>
@@ -732,8 +743,8 @@
         const rowData = rows.find(r => r.rowIndex === rowIndex);
         if(rowData){
           rowData.cells[IDX.status] = newStatus;
-          if(res.takenAt) rowData.cells[IDX.takenAt] = res.takenAt;
-          if(res.closedAt) rowData.cells[IDX.closedAt] = res.closedAt;
+          rowData.cells[IDX.takenAt] = res.takenAt || '';
+          rowData.cells[IDX.closedAt] = res.closedAt || '';
         }
         if(tr){
           tr.querySelector('.taken-at-cell').textContent = rowData ? rowData.cells[IDX.takenAt] : '';
@@ -741,6 +752,7 @@
         }
         select.disabled = false;
         renderStatusTabs();
+        renderTable();
       })
       .catch(err => {
         select.disabled = false;

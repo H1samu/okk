@@ -223,6 +223,7 @@
     border-collapse:collapse;
     table-layout:fixed;
     font-size:13px;
+    min-width:100%;
   }
   thead th{
     position:sticky;
@@ -303,12 +304,13 @@
     position:relative;
     width:100%;
   }
-  .status-btn{
+    .status-btn{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:8px;
     width:100%;
+    min-width:0;
     padding:7px 10px;
     border-radius:8px;
     border:1px solid var(--border-strong);
@@ -318,9 +320,15 @@
     line-height:1.3;
     text-align:left;
     white-space:normal;
+    overflow-wrap:anywhere;
+    word-break:break-word;
     cursor:pointer;
     background:var(--surface);
     color:var(--text);
+  }
+  .status-btn .status-label{
+    min-width:0;
+    flex:1 1 auto;
   }
   .status-btn .chev{
     flex-shrink:0;
@@ -592,13 +600,17 @@
   // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
   const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths';
   // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
-  const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150];
-  const MIN_COL_WIDTH = 70;
+ const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150];
+  // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
+  // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
+  const MIN_COL_WIDTHS = [130, 160, 100, 120, 170, 110, 130, 130];
 
-  let colWidths = (() => {
+    let colWidths = (() => {
     try{
       const saved = JSON.parse(localStorage.getItem(COL_WIDTHS_KEY) || 'null');
-      if(Array.isArray(saved) && saved.length === DEFAULT_COL_WIDTHS.length) return saved;
+      if(Array.isArray(saved) && saved.length === DEFAULT_COL_WIDTHS.length){
+        return saved.map((w, i) => Math.max(MIN_COL_WIDTHS[i], Number(w) || DEFAULT_COL_WIDTHS[i]));
+      }
     } catch(e){}
     return DEFAULT_COL_WIDTHS.slice();
   })();
@@ -801,7 +813,7 @@
       </tr>
     `).join('') + '</tbody>';
 
-    contentEl.innerHTML = `<div class="table-scroll"><table style="width:${totalWidth}px">${colgroupHtml}${theadHtml}${tbodyHtml}</table></div>`;
+    contentEl.innerHTML = `<div class="table-scroll"><table style="width:${totalWidth}px; min-width:100%">${colgroupHtml}${theadHtml}${tbodyHtml}</table></div>`;
 
     initStatusPickers();
     initResizers();
@@ -842,10 +854,11 @@
         document.body.classList.add('resizing');
 
         const onMove = (ev) => {
-          const w = Math.max(MIN_COL_WIDTH, startW + (ev.clientX - startX));
+          const w = Math.max(MIN_COL_WIDTHS[i], startW + (ev.clientX - startX));
           colWidths[i] = w;
           cols[i].style.width = w + 'px';
           table.style.width = colWidths.reduce((a, b) => a + b, 0) + 'px';
+          table.style.minWidth = '100%';
         };
         const onUp = () => {
           handle.classList.remove('active');

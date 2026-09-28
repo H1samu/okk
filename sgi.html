@@ -661,7 +661,7 @@
   const searchInput = document.getElementById('searchInput');
 
   // Порядок должен совпадать со столбцами в таблице
-  const COLUMN_KEYS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
+  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
   const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7 };
 
   function loadData(){

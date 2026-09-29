@@ -1078,50 +1078,99 @@
   }
 
   createForm.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    createError.classList.remove('show');
-    createSuccess.classList.remove('show');
-    createSubmit.disabled = true;
-    createSubmit.textContent = 'Отправляем...';
+  e.preventDefault();
+  createError.classList.remove('show');
+  createSubmit.disabled = true;
+  createSubmit.textContent = 'Отправляем...';
 
+  const name = fieldName.value.trim();
+  const photo = currentPhotoDataUrl;
+
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'createRequest',
+        name,
+        area: fieldArea.value,
+        equipment: fieldEquipment.value.trim(),
+        requester: currentUser
+      })
+    });
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Неизвестная ошибка');
+
+    closeCreateModal();
+    createForm.reset();
+    fieldArea.selectedIndex = 0;
+    currentPhotoDataUrl = '';
+    photoPreviewWrap.style.display = 'none';
+    createSubmit.disabled = false;
+    createSubmit.textContent = 'Отправить заявку';
+
+    if(photo){
+      showToast('Заявка создана. Загружаем фото…');
+      uploadPhotoInBackground(data.rowIndex, name, photo);
+    } else {
+      showToast('Заявка создана ✓');
+    }
+    loadData();
+  } catch(err){
+    createError.textContent = 'Не удалось создать заявку: ' + err.message;
+    createError.classList.add('show');
+    createSubmit.disabled = false;
+    createSubmit.textContent = 'Отправить заявку';
+  }
+});
+
+let pendingUploads = 0;
+
+async function uploadPhotoInBackground(rowIndex, name, photo){
+  pendingUploads++;
+  for(let attempt = 1; attempt <= 3; attempt++){
     try{
-      const res = await fetch(APPS_SCRIPT_URL, {
+      const r = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({
-          action: 'createRequest',
-          name: fieldName.value.trim(),
-          area: fieldArea.value,
-          equipment: fieldEquipment.value.trim(),
-          requester: currentUser,
-          photo: currentPhotoDataUrl || '' 
-        })
+        body: JSON.stringify({ action: 'attachPhoto', rowIndex, name, requester: currentUser, photo })
       });
-      const data = await res.json();
-      if(!data.ok){
-        throw new Error(data.error || 'Неизвестная ошибка');
-      }
-
-      createSuccess.classList.add('show');
-      createSubmit.textContent = 'Отправить заявку';
-      createSubmit.disabled = false;
-      createForm.reset();
-      fieldArea.selectedIndex = 0;
-      currentPhotoDataUrl = '';
-      photoPreviewWrap.style.display = 'none';
-
-      setTimeout(() => {
-        closeCreateModal();
-        loadData(); // обновляем список, чтобы новая заявка появилась сразу
-      }, 900);
-
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'Неизвестная ошибка');
+      pendingUploads--;
+      showToast('Фото загружено ✓');
+      loadData();
+      return;
     } catch(err){
-      createError.textContent = 'Не удалось создать заявку: ' + err.message;
-      createError.classList.add('show');
-      createSubmit.disabled = false;
-      createSubmit.textContent = 'Отправить заявку';
+      if(attempt === 3){
+        pendingUploads--;
+        showToast('Не удалось загрузить фото: ' + err.message, true);
+      } else {
+        await new Promise(res => setTimeout(res, 2000 * attempt));
+      }
     }
-  });
+  }
+}
+
+function showToast(text, isError){
+  let t = document.getElementById('toast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90vw;';
+    document.body.appendChild(t);
+  }
+  t.textContent = text;
+  t.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+  t.style.color = '#fff';
+  t.style.display = 'block';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.display = 'none'; }, isError ? 6000 : 3000);
+}
+
+window.addEventListener('beforeunload', (e) => {
+  if(pendingUploads > 0){ e.preventDefault(); e.returnValue = ''; }
+});
 
   // ==== Автообновление страницы при бездействии ====
   const IDLE_TIMEOUT_MS = 60 * 1000; // 1 минута
@@ -1136,6 +1185,7 @@
     if(document.querySelector('.status-menu.show')) return true;
     // Не перезагружаем во время перетаскивания границы столбца.
     if(document.body.classList.contains('resizing')) return true;
+    if(pendingUploads > 0) return true;
     return false;
   }
 

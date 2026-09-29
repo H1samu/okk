@@ -1095,7 +1095,8 @@
         name,
         area: fieldArea.value,
         equipment: fieldEquipment.value.trim(),
-        requester: currentUser
+        requester: currentUser,
+        hasPhoto: !!photo
       })
     });
     const data = await res.json();

@@ -573,6 +573,18 @@
   </div>
 </div>
 
+<div class="modal-overlay" id="photoOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="photoTitle">Фото</h3>
+      <button class="modal-close" id="photoClose" type="button" aria-label="Закрыть">✕</button>
+    </div>
+    <div style="width:100%; border-radius:10px; overflow:hidden; background:var(--bg); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; min-height:200px;">
+      <img id="photoModalImg" style="width:100%; height:auto; display:block;" alt="Фото заявки">
+    </div>
+  </div>
+</div>
+  
 <script>
   // ==== НАСТРОЙКИ ====
 
@@ -1227,17 +1239,7 @@ photoClose.addEventListener('click', () => photoOverlay.classList.remove('show')
 photoOverlay.addEventListener('click', (e) => { if(e.target === photoOverlay) photoOverlay.classList.remove('show'); });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverlay.classList.remove('show'); });
 
-<div class="modal-overlay" id="photoOverlay">
-  <div class="modal" style="max-width:480px;">
-    <div class="modal-header">
-      <h3 id="photoTitle">Фото</h3>
-      <button class="modal-close" id="photoClose" type="button" aria-label="Закрыть">✕</button>
-    </div>
-    <div style="width:100%; border-radius:10px; overflow:hidden; background:var(--bg); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; min-height:200px;">
-      <img id="photoModalImg" style="width:100%; height:auto; display:block;" alt="Фото заявки">
-    </div>
-  </div>
-</div>
+
   
 </script>
 

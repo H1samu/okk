@@ -1226,8 +1226,6 @@ contentEl.addEventListener('click', (e) => {
 photoClose.addEventListener('click', () => photoOverlay.classList.remove('show'));
 photoOverlay.addEventListener('click', (e) => { if(e.target === photoOverlay) photoOverlay.classList.remove('show'); });
 document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverlay.classList.remove('show'); });
-  
-</script>
 
 <div class="modal-overlay" id="photoOverlay">
   <div class="modal" style="max-width:480px;">
@@ -1240,6 +1238,10 @@ document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverla
     </div>
   </div>
 </div>
+  
+</script>
+
+
   
 </body>
 </html>

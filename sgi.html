@@ -483,6 +483,22 @@
     display:none;
   }
   .modal-success.show{display:block;}
+  .photo-link{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  font-size:12px;
+  font-weight:600;
+  color:var(--accent);
+  background:var(--accent-soft);
+  border:1px solid var(--border);
+  border-radius:999px;
+  padding:5px 10px;
+  font-family:inherit;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.photo-link:hover{border-color:var(--border-strong);}
 </style>
 </head>
 <body>
@@ -544,6 +560,14 @@
         <label for="fieldEquipment">Оборудование</label>
         <input type="text" id="fieldEquipment" required autocomplete="off">
       </div>
+      <div class="field">
+        <label for="fieldPhoto">Фото (необязательно)</label>
+        <input type="file" id="fieldPhoto" accept="image/*" capture="environment">
+        <div id="photoPreviewWrap" style="margin-top:8px; display:none;">
+          <img id="photoPreview" style="max-width:100%; max-height:160px; border-radius:8px; border:1px solid var(--border);">
+          <button type="button" id="photoRemove" style="margin-top:6px; font-size:12px; color:var(--danger); background:none; border:none; cursor:pointer; font-family:inherit;">✕ Убрать фото</button>
+        </div>
+      </div>
       <button type="submit" class="modal-submit" id="createSubmit">Отправить заявку</button>
     </form>
   </div>
@@ -600,10 +624,10 @@
   // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
   const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths';
   // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
- const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150];
+ const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150, 130];
   // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
   // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
-  const MIN_COL_WIDTHS = [130, 160, 100, 120, 170, 110, 130, 130];
+  const MIN_COL_WIDTHS = [130, 160, 100, 120, 170, 110, 130, 130, 110];
 
     let colWidths = (() => {
     try{
@@ -661,8 +685,8 @@
   const searchInput = document.getElementById('searchInput');
 
   // Порядок должен совпадать со столбцами в таблице
-  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
-  const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7 };
+  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+  const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7, photo: 8 };
 
   function loadData(){
     const range = encodeURIComponent(SHEET_NAME);
@@ -785,7 +809,7 @@
       return;
     }
 
-    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия'];
+    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
 
     const colgroupHtml = '<colgroup>' + colWidths.map(w => `<col style="width:${w}px">`).join('') + '</colgroup>';
     const totalWidth = colWidths.reduce((a, b) => a + b, 0);
@@ -810,6 +834,7 @@
         <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
         <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[IDX.takenAt])}</td>
         <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[IDX.closedAt])}</td>
+        <td class="cell-muted">${r.cells[IDX.photo] ? `<button type="button" class="photo-link" data-photo-url="${escapeHtml(r.cells[IDX.photo])}" data-photo-name="${escapeHtml(r.cells[IDX.name])}">🖼 Показать фото</button>` : ''}</td>
       </tr>
     `).join('') + '</tbody>';
 
@@ -1029,6 +1054,8 @@
     createSuccess.classList.remove('show');
     createForm.reset();
     fieldArea.selectedIndex = 0;
+    currentPhotoDataUrl = '';
+    photoPreviewWrap.style.display = 'none';
   });
 
   createClose.addEventListener('click', closeCreateModal);
@@ -1054,7 +1081,8 @@
           name: fieldName.value.trim(),
           area: fieldArea.value,
           equipment: fieldEquipment.value.trim(),
-          requester: currentUser
+          requester: currentUser,
+          photo: currentPhotoDataUrl || '' 
         })
       });
       const data = await res.json();
@@ -1067,6 +1095,8 @@
       createSubmit.disabled = false;
       createForm.reset();
       fieldArea.selectedIndex = 0;
+      currentPhotoDataUrl = '';
+      photoPreviewWrap.style.display = 'none';
 
       setTimeout(() => {
         closeCreateModal();
@@ -1119,7 +1149,97 @@
   });
 
   scheduleReload();
+
+// Сжатие фото
+  const fieldPhoto = document.getElementById('fieldPhoto');
+const photoPreviewWrap = document.getElementById('photoPreviewWrap');
+const photoPreview = document.getElementById('photoPreview');
+const photoRemove = document.getElementById('photoRemove');
+
+let currentPhotoDataUrl = ''; // сжатое фото в base64, готовое к отправке
+
+const PHOTO_MAX_DIMENSION = 1000; // px по длинной стороне
+const PHOTO_QUALITY = 0.65;       // JPEG качество
+
+function compressImage(file){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = () => { img.src = reader.result; };
+    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+    img.onload = () => {
+      let { width, height } = img;
+      if(width > height && width > PHOTO_MAX_DIMENSION){
+        height = Math.round(height * (PHOTO_MAX_DIMENSION / width));
+        width = PHOTO_MAX_DIMENSION;
+      } else if(height > PHOTO_MAX_DIMENSION){
+        width = Math.round(width * (PHOTO_MAX_DIMENSION / height));
+        height = PHOTO_MAX_DIMENSION;
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY));
+    };
+    img.onerror = () => reject(new Error('Не удалось обработать изображение'));
+    reader.readAsDataURL(file);
+  });
+}
+
+fieldPhoto.addEventListener('change', async () => {
+  const file = fieldPhoto.files[0];
+  if(!file) return;
+
+  try{
+    currentPhotoDataUrl = await compressImage(file);
+    photoPreview.src = currentPhotoDataUrl;
+    photoPreviewWrap.style.display = '';
+  } catch(err){
+    createError.textContent = 'Не удалось обработать фото: ' + err.message;
+    createError.classList.add('show');
+    fieldPhoto.value = '';
+    currentPhotoDataUrl = '';
+  }
+});
+
+photoRemove.addEventListener('click', () => {
+  currentPhotoDataUrl = '';
+  fieldPhoto.value = '';
+  photoPreviewWrap.style.display = 'none';
+});
+
+// Логика модалки фото
+  const photoOverlay = document.getElementById('photoOverlay');
+const photoModalImg = document.getElementById('photoModalImg');
+const photoTitle = document.getElementById('photoTitle');
+const photoClose = document.getElementById('photoClose');
+
+contentEl.addEventListener('click', (e) => {
+  const btn = e.target.closest('.photo-link');
+  if(!btn) return;
+  photoTitle.textContent = 'Фото — ' + btn.dataset.photoName;
+  photoModalImg.src = btn.dataset.photoUrl;
+  photoOverlay.classList.add('show');
+});
+
+photoClose.addEventListener('click', () => photoOverlay.classList.remove('show'));
+photoOverlay.addEventListener('click', (e) => { if(e.target === photoOverlay) photoOverlay.classList.remove('show'); });
+document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverlay.classList.remove('show'); });
+  
 </script>
 
+<div class="modal-overlay" id="photoOverlay">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <h3 id="photoTitle">Фото</h3>
+      <button class="modal-close" id="photoClose" type="button" aria-label="Закрыть">✕</button>
+    </div>
+    <div style="width:100%; border-radius:10px; overflow:hidden; background:var(--bg); border:1px solid var(--border); display:flex; align-items:center; justify-content:center; min-height:200px;">
+      <img id="photoModalImg" style="width:100%; height:auto; display:block;" alt="Фото заявки">
+    </div>
+  </div>
+</div>
+  
 </body>
 </html>

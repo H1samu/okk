@@ -499,6 +499,31 @@
   white-space:nowrap;
 }
 .photo-link:hover{border-color:var(--border-strong);}
+
+  .ext-links .tg-btn{
+  color:#1d5fa8;
+  background:#eaf2fc;
+  border-color:#bcd6f0;
+}
+.ext-links .tg-btn:hover{border-color:#93bce4;}
+
+.tg-hint{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-top:14px;
+  padding:11px 14px;
+  font-size:13px;
+  line-height:1.4;
+  color:var(--text-secondary);
+  background:#eaf2fc;
+  border:1px solid #bcd6f0;
+  border-radius:var(--radius);
+}
+.tg-hint .tg-hint-icon{font-size:16px; line-height:1.3; flex-shrink:0;}
+.tg-hint a{color:#1d5fa8; font-weight:600; text-decoration:none;}
+.tg-hint a:hover{text-decoration:underline;}
+  
 </style>
 </head>
 <body>
@@ -517,9 +542,17 @@
   </header>
 
   <div class="ext-links">
-    <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
-    <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
-  </div>
+  <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+  <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Подать через Telegram</a>
+  <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
+</div>
+
+<div class="tg-hint">
+  <span class="tg-hint-icon">💡</span>
+  <span>Заявки также можно подавать через Telegram-бота
+    <a href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">@hismar_bot</a>
+    — все для Вашего удобства.</span>
+</div>
 
   <div class="toolbar">
     <div class="search-box">
@@ -588,6 +621,12 @@
 <script>
   // ==== НАСТРОЙКИ ====
 
+function openExternal(url){
+  const win = window.open(url, '_blank');
+  if(!win){ window.location.href = url; }
+  return false;
+}
+  
   // API-ключ Google Sheets API (тот же, что в journal.html/master.html)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
 

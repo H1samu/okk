@@ -160,6 +160,8 @@
     line-height:1.25;
   }
   .tile-master{ background:#fdf3e3; border-color:#ecd9ab; }
+  .tile[hidden]{display:none;}
+  .quick-row.no-master{grid-template-columns:repeat(2, 1fr);}
   .tile-master:hover{ border-color:#dcbf7e; }
   .tile-master .tile-text{ color:#8a6416; }
   .tile-sgi{ background:#eaf2fc; border-color:#bcd6f0; }
@@ -521,7 +523,7 @@
       <span class="tile-badge count" id="favBadge">0</span>
     </button>
 
-    <a class="tile tile-master" href="master.html">
+    <a class="tile tile-master" id="masterTile" href="master.html" hidden>
       <span class="tile-icon">📊</span>
       <span class="tile-text">Мастер-таблица</span>
     </a>
@@ -565,6 +567,19 @@
     }
     return false;
   }
+
+  function isAdmin(){
+  const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
+  return t === 'администратор';
+}
+
+function applyRole(){
+  const admin = isAdmin();
+  document.getElementById('masterTile').hidden = !admin;
+  document.querySelector('.quick-row').classList.toggle('no-master', !admin);
+}
+applyRole();
+document.addEventListener('gcheck:user', applyRole);
 
   const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Прочее"];
 

@@ -679,11 +679,6 @@
   return t === 'администратор';
 }
 
-function isAdmin(){
-  const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
-  return t === 'администратор';
-}
-
 function renderUser(){
   const u = window.gcheckUser || {};
   const name = (u.name || '').trim();
@@ -705,8 +700,23 @@ function applyRole(){
   renderUser();
 }
 applyRole();
-document.addEventListener('gcheck:user', applyRole);
+document.addEventListener('gcheck:user', () => {
+  applyRole();
+  if(allJournals.length){
+    journals = visible(allJournals).map(normalizeTags);
+    updateFavBadge(); renderTags(); renderList();
+  }
+});
 
+function visible(data){
+  const a = window.gcheckUser && window.gcheckUser.allowed;
+  if(a === '*') return data;
+  const set = new Set(Array.isArray(a) ? a : []);
+  return data.filter(j => set.has(j.id));
+}
+let allJournals = [];
+// в fetch: allJournals = data; journals = visible(allJournals).map(normalizeTags);
+  
 // Меню пользователя
 const userChip = document.getElementById('userChip');
 const userDropdown = document.getElementById('userDropdown');

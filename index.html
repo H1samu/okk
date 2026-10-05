@@ -754,17 +754,18 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   const favText = document.getElementById('favText');
   const favBadge = document.getElementById('favBadge');
 
-  fetch('journals.json')
-    .then(r => {
-      if(!r.ok) throw new Error('network');
-      return r.json();
-    })
-    .then(data => {
-      journals = data.map(normalizeTags);
-      updateFavBadge();
-      renderTags();
-      renderList();
-    })
+fetch('journals.json')
+  .then(r => {
+    if(!r.ok) throw new Error('network');
+    return r.json();
+  })
+  .then(data => {
+    allJournals = data;
+    journals = visible(allJournals).map(normalizeTags);
+    updateFavBadge();
+    renderTags();
+    renderList();
+  })
     .catch(() => {
       journalList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json. Проверьте, что файл лежит рядом с index.html.</div>';
     });

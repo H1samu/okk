@@ -418,6 +418,10 @@
       .then(r => r.json())
       .then(all => {
         journal = all.find(j => j.id === journalId);
+        const a = window.gcheckUser.allowed;
+        if(journal && a !== '*' && !(Array.isArray(a) && a.includes(journal.id))){
+          location.replace('index.html'); return;
+        }
         if(!journal){
           titleEl.textContent = 'Журнал не найден';
           showError(`Не найдена запись с id "${journalId}" в journals.json.`);

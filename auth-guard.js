@@ -35,9 +35,9 @@
   }
 
   // Данные вошедшего для страниц: window.gcheckUser.name / .type / .token
-  window.gcheckUser = { name: s.name, type: s.type, token: s.token };
+  window.gcheckUser = { name: s.name, type: s.type, position: s.position, allowed: s.allowed, token: s.token };
 
-  if(!s.checkedAt || Date.now() - s.checkedAt > RECHECK_MS){
+if(!s.checkedAt || !s.allowed || Date.now() - s.checkedAt > RECHECK_MS){
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -51,7 +51,11 @@
             cur.checkedAt = Date.now();
             cur.name = res.name || cur.name;
             cur.type = res.type || cur.type;
+            cur.position = res.position;
+            cur.allowed = res.allowed;
             localStorage.setItem(AUTH_KEY, JSON.stringify(cur));
+            window.gcheckUser = { name: cur.name, type: cur.type, position: cur.position, allowed: cur.allowed, token: cur.token };
+            document.dispatchEvent(new Event('gcheck:user'));
           }
         } else if(res && (res.error === 'invalid' || res.error === 'expired' || res.error === 'inactive')){
           toLogin();

@@ -570,9 +570,9 @@
     .btn-view{flex:0 0 auto;}
   }
   @media (max-width:380px){
-    .quick-row{grid-template-columns:1fr 1fr;}
-    .tile-fav{grid-column:1 / -1;}
-  }
+  .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
+  .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}
+}
 </style>
 </head>
 <body>
@@ -690,7 +690,7 @@ function renderUser(){
   document.getElementById('userAvatar').textContent = initials;
   document.getElementById('userShort').textContent = short;
   document.getElementById('udName').textContent = name || 'Пользователь';
-  document.getElementById('udRole').textContent = u.type || 'Сотрудник';
+  document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
 }
 
 function applyRole(){

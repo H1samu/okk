@@ -400,7 +400,8 @@
       if(d.ok){
         done = true;
         localStorage.setItem(AUTH_KEY, JSON.stringify({
-          token: d.token, name: d.name, type: d.type, exp: d.expiresAt, checkedAt: Date.now()
+          token: d.token, name: d.name, type: d.type, position: d.position, allowed: d.allowed,
+exp: d.expiresAt, checkedAt: Date.now()
         }));
         localStorage.removeItem('gcheck_auth_time'); // старая сессия по общему паролю
 

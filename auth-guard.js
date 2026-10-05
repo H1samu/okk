@@ -45,6 +45,7 @@ if(!s.checkedAt || !s.allowed || Date.now() - s.checkedAt > RECHECK_MS){
     })
       .then(function(r){ return r.json(); })
       .then(function(res){
+        console.log('verify response', res);
         if(res && res.ok){
           var cur = readSession();
           if(cur){

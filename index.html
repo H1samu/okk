@@ -543,42 +543,38 @@ header{position:relative;}
   }
   .scan-status.error{color:var(--danger);}
 
-  /* ===== Адаптив ===== */
-  
+   /* ===== Адаптив ===== */
   @media (min-width:600px){
     .scan-btn .scan-label{display:inline;}
     .btn-fill{flex:1 1 0; min-width:0;}
     .jc-actions{flex-wrap:nowrap;}
     .btn-view{flex:0 0 auto;}
   }
-  @media (max-width:600px){
+  @media (max-width:599px){
     header{
-      display:grid;
-      grid-template-columns:1fr auto;
-      grid-template-areas:
-        "logo menu"
-        "title title"
-        "sub sub"
-        "search search";
+      display:flex;
+      flex-wrap:wrap;
       align-items:center;
-      column-gap:12px;
+      justify-content:space-between;
+    }
+    header .logo{
+      order:1;
+      height:36px;
+      margin-bottom:0;
     }
     .user-menu{
-      grid-area:menu;
+      order:2;
       position:relative;
       top:auto;
       right:auto;
     }
-    header .logo{
-      grid-area:logo;
-      justify-self:start;
-      height:36px;
-      max-width:100%;
-      margin-bottom:0;
+    header h1,
+    header > p,
+    header .search-row{
+      order:3;
+      flex:0 0 100%;
     }
-    header h1{grid-area:title; margin-top:14px;}
-    header > p{grid-area:sub;}
-    header .search-row{grid-area:search;}
+    header h1{margin-top:14px;}
   }
   @media (max-width:380px){
     .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}

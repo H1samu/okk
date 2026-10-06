@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Журналы — Hismar Check</title>
 <script src="auth-guard.js"></script>
 <script src="favorites.js"></script>
@@ -29,12 +29,15 @@
     --radius:12px;
   }
   *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%; overflow-x:hidden;}
   body{
     margin:0;
     background:var(--bg);
     color:var(--text);
     font-family:'Manrope', Arial, sans-serif;
     -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+    touch-action:manipulation;
   }
   button{font-family:inherit;}
   :focus-visible{
@@ -45,81 +48,82 @@
     max-width:1100px;
     margin:0 auto;
     padding:32px 20px 60px;
+    min-width:0;
   }
 
-/* ===== Пользователь (бейдж у логотипа) ===== */
-header{position:relative;}
-.user-menu{
-  position:absolute;
-  top:0;
-  right:0;
-}
-.user-badge-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  width:44px;
-  height:44px;
-  padding:0;
-  border-radius:50%;
-  border:none;
-  background:var(--accent);
-  color:#fff;
-  font-size:14px;
-  font-weight:700;
-  cursor:pointer;
-  transition:opacity .15s ease, transform .1s ease;
-}
-.user-badge-btn:hover{opacity:0.92;}
-.user-badge-btn:active{transform:scale(0.96);}
-.user-dropdown{
-  position:absolute;
-  top:calc(100% + 8px);
-  right:0;
-  z-index:50;
-  width:240px;
-  max-width:calc(100vw - 40px);
-  padding:14px;
-  text-align:left;
-  background:var(--surface);
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius);
-  box-shadow:0 8px 24px rgba(0,0,0,0.12);
-}
-.user-dropdown[hidden]{display:none;}
-.ud-name{
-  font-size:14px;
-  font-weight:700;
-  line-height:1.3;
-  overflow-wrap:anywhere;
-}
-.ud-role{
-  margin-top:4px;
-  font-size:12px;
-  color:var(--text-secondary);
-  line-height:1.3;
-  overflow-wrap:anywhere;
-}
-.ud-logout{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-  width:100%;
-  height:44px;
-  margin-top:12px;
-  border-radius:10px;
-  border:1px solid var(--border-strong);
-  background:var(--surface);
-  color:var(--danger);
-  font-size:14px;
-  font-weight:600;
-  cursor:pointer;
-}
-.ud-logout:hover{border-color:var(--danger); background:var(--danger-soft);}
-  
+  /* ===== Пользователь (бейдж у логотипа) ===== */
+  .user-menu{
+    position:absolute;
+    top:0;
+    right:0;
+  }
+  .user-badge-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:44px;
+    height:44px;
+    padding:0;
+    border-radius:50%;
+    border:none;
+    background:var(--accent);
+    color:#fff;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+    transition:opacity .15s ease, transform .1s ease;
+  }
+  .user-badge-btn:hover{opacity:0.92;}
+  .user-badge-btn:active{transform:scale(0.96);}
+  .user-dropdown{
+    position:absolute;
+    top:calc(100% + 8px);
+    right:0;
+    z-index:50;
+    width:240px;
+    max-width:calc(100vw - 40px);
+    padding:14px;
+    text-align:left;
+    background:var(--surface);
+    border:1px solid var(--border-strong);
+    border-radius:var(--radius);
+    box-shadow:0 8px 24px rgba(0,0,0,0.12);
+  }
+  .user-dropdown[hidden]{display:none;}
+  .ud-name{
+    font-size:14px;
+    font-weight:700;
+    line-height:1.3;
+    overflow-wrap:anywhere;
+  }
+  .ud-role{
+    margin-top:4px;
+    font-size:12px;
+    color:var(--text-secondary);
+    line-height:1.3;
+    overflow-wrap:anywhere;
+  }
+  .ud-logout{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    width:100%;
+    height:44px;
+    margin-top:12px;
+    border-radius:10px;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--danger);
+    font-size:14px;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .ud-logout:hover{border-color:var(--danger); background:var(--danger-soft);}
+
   /* ===== Шапка ===== */
   header{
+    position:relative;
     text-align:center;
     margin-bottom:24px;
   }
@@ -150,6 +154,7 @@ header{position:relative;}
   .search-box{
     position:relative;
     flex:1;
+    min-width:0;
   }
   .search-box input{
     width:100%;
@@ -157,7 +162,7 @@ header{position:relative;}
     padding:0 16px 0 42px;
     border:1px solid var(--border-strong);
     border-radius:999px;
-    font-size:15px;
+    font-size:16px;
     font-family:inherit;
     background:var(--surface);
     color:var(--text);
@@ -268,7 +273,7 @@ header{position:relative;}
   }
 
   /* ===== Категории ===== */
-  .tags-section{margin-top:32px;}
+  .tags-section{margin-top:32px; min-width:0; max-width:100%;}
   .section-head{
     display:flex;
     align-items:baseline;
@@ -292,6 +297,7 @@ header{position:relative;}
   .tag-grid{
     display:flex;
     gap:8px;
+    max-width:100%;
     overflow-x:auto;
     padding-bottom:4px;
     -webkit-overflow-scrolling:touch;
@@ -335,7 +341,7 @@ header{position:relative;}
   .tag-card.active .tag-count{color:var(--accent);}
 
   /* ===== Список ===== */
-  .results-section{margin-top:32px;}
+  .results-section{margin-top:32px; min-width:0; max-width:100%;}
   .reset-btn{
     font-size:12px;
     color:var(--accent);
@@ -457,7 +463,7 @@ header{position:relative;}
     background:#fdf7e3;
     border-color:#ecdca0;
   }
-  
+
   .empty-state, .loading-state{
     text-align:center;
     padding:40px 20px;
@@ -543,7 +549,7 @@ header{position:relative;}
   }
   .scan-status.error{color:var(--danger);}
 
-   /* ===== Адаптив ===== */
+  /* ===== Адаптив ===== */
   @media (min-width:600px){
     .scan-btn .scan-label{display:inline;}
     .btn-fill{flex:1 1 0; min-width:0;}
@@ -551,6 +557,7 @@ header{position:relative;}
     .btn-view{flex:0 0 auto;}
   }
   @media (max-width:599px){
+    .wrap{padding:20px 16px 48px;}
     header{
       display:flex;
       flex-wrap:wrap;
@@ -559,7 +566,8 @@ header{position:relative;}
     }
     header .logo{
       order:1;
-      height:36px;
+      width:min(280px, calc(100% - 56px));
+      height:auto;
       margin-bottom:0;
     }
     .user-menu{
@@ -568,38 +576,43 @@ header{position:relative;}
       top:auto;
       right:auto;
     }
+    .user-badge-btn{width:38px; height:38px; font-size:13px;}
     header h1,
     header > p,
     header .search-row{
       order:3;
       flex:0 0 100%;
     }
-    header h1{margin-top:14px;}
+    header h1{margin-top:14px; font-size:22px;}
+
+    /* плитки: на всю ширину, компактнее */
+    .search-row, .quick-row{max-width:none;}
+    .quick-row{gap:8px; margin-top:18px;}
+    .tile{min-height:68px; padding:10px 6px; gap:6px;}
+    .tile .tile-icon{font-size:20px;}
+    .tile .tile-text{font-size:12px;}
   }
   @media (max-width:380px){
     .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
     .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}
   }
-  
 </style>
 </head>
 <body>
 
 <div class="wrap">
-  
-  <header>
 
-<header>
-  <div class="user-menu" id="userMenu">
-    <button class="user-badge-btn" id="userBadge" type="button"
-            aria-haspopup="true" aria-expanded="false" aria-label="Профиль">?</button>
-    <div class="user-dropdown" id="userDropdown" hidden>
-      <div class="ud-name" id="udName"></div>
-      <div class="ud-role" id="udRole"></div>
-      <button class="ud-logout" id="logoutBtn" type="button">↩ Выйти из аккаунта</button>
+  <header>
+    <div class="user-menu" id="userMenu">
+      <button class="user-badge-btn" id="userBadge" type="button"
+              aria-haspopup="true" aria-expanded="false" aria-label="Профиль">?</button>
+      <div class="user-dropdown" id="userDropdown" hidden>
+        <div class="ud-name" id="udName"></div>
+        <div class="ud-role" id="udRole"></div>
+        <button class="ud-logout" id="logoutBtn" type="button">↩ Выйти из аккаунта</button>
+      </div>
     </div>
-  </div>
-    
+
     <img class="logo" src="logo.svg" alt="Hismar Check">
     <h1>Журналы и чек-листы НАССР</h1>
 
@@ -662,14 +675,15 @@ header{position:relative;}
       <div class="loading-state">Загрузка...</div>
     </div>
   </div>
-  
+
   <div class="site-footer">by <a href="https://t.me/hisamost" onclick="return openExternal(this.href)" rel="noopener" style="color:inherit; text-decoration:none;">hisamost</a> &amp; <a href="https://t.me/katekateem" onclick="return openExternal(this.href)" rel="noopener" style="color:inherit; text-decoration:none;">katekateem</a></div>
 
 </div>
 
 <script>
-  // Надёжное открытие внешних ссылок (Telegram и т.п.) — на части мобильных
-  // браузеров и в установленном PWA обычный target="_blank" иногда "теряется".
+  // Запрет pinch-zoom на iOS Safari (он игнорирует user-scalable=no)
+  document.addEventListener('gesturestart', e => e.preventDefault());
+
   function openExternal(url){
     const win = window.open(url, '_blank');
     if(!win){
@@ -679,72 +693,72 @@ header{position:relative;}
   }
 
   function isAdmin(){
-  const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
-  return t === 'администратор';
-}
-
-function renderUser(){
-  const u = window.gcheckUser || {};
-  const name = (u.name || '').trim();
-  const parts = name.split(/\s+/).filter(Boolean);
-  const initials = parts.slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
-
-  document.getElementById('userBadge').textContent = initials;
-  document.getElementById('udName').textContent = name || 'Пользователь';
-  document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
-}
-
-function applyRole(){
-  const admin = isAdmin();
-  document.getElementById('masterTile').hidden = !admin;
-  document.querySelector('.quick-row').classList.toggle('no-master', !admin);
-  renderUser();
-}
-applyRole();
-document.addEventListener('gcheck:user', () => {
-  applyRole();
-  if(allJournals.length){
-    journals = visible(allJournals).map(normalizeTags);
-    updateFavBadge(); renderTags(); renderList();
+    const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
+    return t === 'администратор';
   }
-});
 
-function visible(data){
-  const a = window.gcheckUser && window.gcheckUser.allowed;
-  if(a === '*') return data;
-  const set = new Set(Array.isArray(a) ? a : []);
-  return data.filter(j => set.has(j.id));
-}
-let allJournals = [];
-// в fetch: allJournals = data; journals = visible(allJournals).map(normalizeTags);
-  
-// Меню пользователя
-const userBadge = document.getElementById('userBadge');
-const userDropdown = document.getElementById('userDropdown');
+  function renderUser(){
+    const u = window.gcheckUser || {};
+    const name = (u.name || '').trim();
+    const parts = name.split(/\s+/).filter(Boolean);
+    const initials = parts.slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
 
-function setUserMenu(open){
-  userDropdown.hidden = !open;
-  userBadge.setAttribute('aria-expanded', open ? 'true' : 'false');
-}
-userBadge.addEventListener('click', (e) => {
-  e.stopPropagation();
-  setUserMenu(userDropdown.hidden);
-});
-document.addEventListener('click', (e) => {
-  if(!userDropdown.hidden && !userDropdown.contains(e.target)) setUserMenu(false);
-});
-document.addEventListener('keydown', (e) => {
-  if(e.key === 'Escape') setUserMenu(false);
-});
-document.getElementById('logoutBtn').addEventListener('click', () => {
-  window.gcheckLogout();
-});
+    document.getElementById('userBadge').textContent = initials;
+    document.getElementById('udName').textContent = name || 'Пользователь';
+    document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
+  }
 
-  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Прочее"];
+  function applyRole(){
+    const admin = isAdmin();
+    document.getElementById('masterTile').hidden = !admin;
+    document.querySelector('.quick-row').classList.toggle('no-master', !admin);
+    renderUser();
+  }
 
+  let allJournals = [];
   let journals = [];
   let activeTags = new Set();
   let favoritesOnly = false;
+
+  applyRole();
+  document.addEventListener('gcheck:user', () => {
+    applyRole();
+    if(allJournals.length){
+      journals = visible(allJournals).map(normalizeTags);
+      updateFavBadge(); renderTags(); renderList();
+    }
+  });
+
+  function visible(data){
+    const a = window.gcheckUser && window.gcheckUser.allowed;
+    if(a === '*') return data;
+    const set = new Set(Array.isArray(a) ? a : []);
+    return data.filter(j => set.has(j.id));
+  }
+
+  // Меню пользователя
+  const userBadge = document.getElementById('userBadge');
+  const userDropdown = document.getElementById('userDropdown');
+
+  function setUserMenu(open){
+    userDropdown.hidden = !open;
+    userBadge.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  userBadge.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setUserMenu(userDropdown.hidden);
+  });
+  document.addEventListener('click', (e) => {
+    if(!userDropdown.hidden && !userDropdown.contains(e.target)) setUserMenu(false);
+  });
+  document.addEventListener('keydown', (e) => {
+    if(e.key === 'Escape') setUserMenu(false);
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    window.gcheckLogout();
+  });
+
+  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Прочее"];
 
   const tagGrid = document.getElementById('tagGrid');
   const journalList = document.getElementById('journalList');
@@ -755,18 +769,18 @@ document.getElementById('logoutBtn').addEventListener('click', () => {
   const favText = document.getElementById('favText');
   const favBadge = document.getElementById('favBadge');
 
-fetch('journals.json')
-  .then(r => {
-    if(!r.ok) throw new Error('network');
-    return r.json();
-  })
-  .then(data => {
-    allJournals = data;
-    journals = visible(allJournals).map(normalizeTags);
-    updateFavBadge();
-    renderTags();
-    renderList();
-  })
+  fetch('journals.json')
+    .then(r => {
+      if(!r.ok) throw new Error('network');
+      return r.json();
+    })
+    .then(data => {
+      allJournals = data;
+      journals = visible(allJournals).map(normalizeTags);
+      updateFavBadge();
+      renderTags();
+      renderList();
+    })
     .catch(() => {
       journalList.innerHTML = '<div class="empty-state">Не удалось загрузить journals.json. Проверьте, что файл лежит рядом с index.html.</div>';
     });
@@ -828,7 +842,6 @@ fetch('journals.json')
     TAG_ORDER.forEach(tag => {
       const isActive = activeTags.has(tag);
 
-      // Сколько журналов останется, если добавить этот тег к текущему выбору
       const next = new Set(activeTags);
       next.add(tag);
       const count = base.filter(j => Array.from(next).every(t => j.tags.includes(t))).length;
@@ -853,7 +866,6 @@ fetch('journals.json')
   }
 
   function fillLink(j){
-    // Предзаполненная форма в приоритете, иначе пустая
     if(j.formUrlPrefill) return { url: j.formUrlPrefill, prefilled: true };
     if(j.formUrl) return { url: j.formUrl, prefilled: false };
     return { url: '', prefilled: false };
@@ -928,7 +940,6 @@ fetch('journals.json')
     updateFavBadge();
 
     if(favoritesOnly && !nowActive){
-      // В режиме избранного карточка плавно исчезает
       const card = btn.closest('.journal-card');
       if(card){
         card.classList.add('removing');
@@ -968,8 +979,6 @@ fetch('journals.json')
     renderList();
   });
 
-  // Если пользователь вернулся на вкладку (например, из мастер-таблицы) —
-  // синхронизируем избранное
   window.addEventListener('pageshow', () => {
     if(journals.length){
       updateFavBadge();

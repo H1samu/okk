@@ -77,21 +77,6 @@
     margin-top:8px;
   }
   .user-badge b{color:var(--text-secondary);}
-  .logout-btn{
-    display:inline-flex;
-    align-items:center;
-    gap:5px;
-    font-size:12px;
-    font-weight:600;
-    color:var(--text-secondary);
-    background:none;
-    border:1px solid var(--border);
-    border-radius:999px;
-    padding:4px 11px;
-    font-family:inherit;
-    cursor:pointer;
-  }
-  .logout-btn:hover{border-color:var(--danger); color:var(--danger);}
   .ext-links{
     display:flex;
     gap:10px;
@@ -120,6 +105,12 @@
     border-color:var(--accent);
   }
   .ext-links .create-btn:hover{opacity:0.92; border-color:var(--accent);}
+  .ext-links .tg-btn{
+    color:#1d5fa8;
+    background:#eaf2fc;
+    border-color:#bcd6f0;
+  }
+  .ext-links .tg-btn:hover{border-color:#93bce4;}
 
   .toolbar{
     display:flex;
@@ -304,7 +295,7 @@
     position:relative;
     width:100%;
   }
-    .status-btn{
+  .status-btn{
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -484,46 +475,21 @@
   }
   .modal-success.show{display:block;}
   .photo-link{
-  display:inline-flex;
-  align-items:center;
-  gap:5px;
-  font-size:12px;
-  font-weight:600;
-  color:var(--accent);
-  background:var(--accent-soft);
-  border:1px solid var(--border);
-  border-radius:999px;
-  padding:5px 10px;
-  font-family:inherit;
-  cursor:pointer;
-  white-space:nowrap;
-}
-.photo-link:hover{border-color:var(--border-strong);}
-
-  .ext-links .tg-btn{
-  color:#1d5fa8;
-  background:#eaf2fc;
-  border-color:#bcd6f0;
-}
-.ext-links .tg-btn:hover{border-color:#93bce4;}
-
-.tg-hint{
-  display:flex;
-  align-items:flex-start;
-  gap:10px;
-  margin-top:14px;
-  padding:11px 14px;
-  font-size:13px;
-  line-height:1.4;
-  color:var(--text-secondary);
-  background:#eaf2fc;
-  border:1px solid #bcd6f0;
-  border-radius:var(--radius);
-}
-.tg-hint .tg-hint-icon{font-size:16px; line-height:1.3; flex-shrink:0;}
-.tg-hint a{color:#1d5fa8; font-weight:600; text-decoration:none;}
-.tg-hint a:hover{text-decoration:underline;}
-  
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    background:var(--accent-soft);
+    border:1px solid var(--border);
+    border-radius:999px;
+    padding:5px 10px;
+    font-family:inherit;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .photo-link:hover{border-color:var(--border-strong);}
 </style>
 </head>
 <body>
@@ -536,16 +502,15 @@
       <h1>Заявки для СГИ</h1>
       <div class="user-badge">
         Вы вошли как: <b id="currentUserName">—</b>
-        <button class="logout-btn" id="logoutBtn" type="button">✖️ Выйти учетной записи</button>
       </div>
     </div>
   </header>
 
   <div class="ext-links">
-  <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
-  <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Создать заявку через Telegram</a>
-  <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
-</div>
+    <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+    <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Создать заявку через Telegram</a>
+    <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
+  </div>
 
   <div class="toolbar">
     <div class="search-box">
@@ -583,6 +548,10 @@
         <select id="fieldArea" required></select>
       </div>
       <div class="field">
+        <label for="fieldEqType">Выберите тип оборудования</label>
+        <select id="fieldEqType" required></select>
+      </div>
+      <div class="field">
         <label for="fieldEquipment">Оборудование</label>
         <input type="text" id="fieldEquipment" required autocomplete="off">
       </div>
@@ -610,16 +579,16 @@
     </div>
   </div>
 </div>
-  
+
 <script>
   // ==== НАСТРОЙКИ ====
 
-function openExternal(url){
-  const win = window.open(url, '_blank');
-  if(!win){ window.location.href = url; }
-  return false;
-}
-  
+  function openExternal(url){
+    const win = window.open(url, '_blank');
+    if(!win){ window.location.href = url; }
+    return false;
+  }
+
   // API-ключ Google Sheets API (тот же, что в journal.html/master.html)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
 
@@ -630,7 +599,7 @@ function openExternal(url){
   // Ссылка для кнопки "Открыть таблицу"
   const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1hj5v7Gcz5usvdb40QyDJSnpUNtxnjfiw35ISt-g-cSU/edit?gid=1339045562#gid=1339045562';
 
-  // URL опубликованного Apps Script Web App (заканчивается на /exec) — тот же, что в sgi-login.html
+  // URL опубликованного Apps Script Web App СГИ (заканчивается на /exec)
   const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
 
   // ==== Статусы ====
@@ -648,12 +617,13 @@ function openExternal(url){
     'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
   };
 
-  // Разрешённые переходы (должны совпадать с ALLOWED_TRANSITIONS в Apps Script)
+  // Разрешённые переходы (должны совпадать с ALLOWED_TRANSITIONS в Apps Script).
+  // Из выполненных статусов можно вернуться только в "В работе".
   const ALLOWED_TRANSITIONS = {
     'Открыта': ['В работе'],
     'В работе': ['Открыта', 'Выполнена', 'Выполнена. Проведена мойка и дезинфекция'],
-    'Выполнена': ['В работе', 'Выполнена. Проведена мойка и дезинфекция'],
-    'Выполнена. Проведена мойка и дезинфекция': ['В работе', 'Выполнена']
+    'Выполнена': ['В работе'],
+    'Выполнена. Проведена мойка и дезинфекция': ['В работе']
   };
 
   // ==== Участки для выпадающего списка в форме создания заявки ====
@@ -665,15 +635,29 @@ function openExternal(url){
     'Столовая', 'Холодный цех', 'Цех сборки', 'Цех упаковки', 'Цех фасовки', 'Другое'
   ];
 
-  // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
-  const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths';
-  // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
- const DEFAULT_COL_WIDTHS = [150, 260, 140, 200, 220, 140, 150, 150, 130];
-  // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
-  // Порядок: Дата создания, Наименование, Участок, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия
-  const MIN_COL_WIDTHS = [130, 160, 100, 120, 170, 110, 130, 130, 110];
+  // ==== Типы оборудования (должны совпадать с EQUIPMENT_TYPES в Apps Script) ====
+  const EQUIPMENT_TYPES = [
+    'Компьютеры и принтеры',
+    'Механизированное',
+    'Тепловой обработки',
+    'Холодильное',
+    'Стерилизации, сан. пропуска, инсектицидное',
+    'Сантехническое',
+    'Фасовочное, упаковочное, дозирующее',
+    'Производственный и хоз. инвентарь',
+    'Здания, помещения, территория'
+  ];
 
-    let colWidths = (() => {
+  // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
+  // Ключ с суффиксом _v2: набор столбцов изменился (добавлен "Тип оборудования"),
+  // старые сохранённые ширины не подходят.
+  const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths_v2';
+  // Порядок: Дата создания, Наименование, Участок, Тип оборудования, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия, Фото
+  const DEFAULT_COL_WIDTHS = [150, 260, 140, 170, 200, 220, 140, 150, 150, 130];
+  // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
+  const MIN_COL_WIDTHS = [130, 160, 100, 120, 120, 170, 110, 130, 130, 110];
+
+  let colWidths = (() => {
     try{
       const saved = JSON.parse(localStorage.getItem(COL_WIDTHS_KEY) || 'null');
       if(Array.isArray(saved) && saved.length === DEFAULT_COL_WIDTHS.length){
@@ -689,28 +673,19 @@ function openExternal(url){
 
   document.getElementById('sheetLink').href = SHEET_URL;
 
-  // ==== Личная сессия (кто вошёл) ====
-  // Сессия бессрочная: раз войдя, пользователь остаётся авторизованным
-  // до тех пор, пока сам не нажмёт "Выйти" или не очистит данные браузера.
-  const SESSION_KEY = 'gcheck_sgi_user';
+  // ==== Текущий пользователь — из общей авторизации (login.html → auth-guard.js) ====
+  // Если токена нет, auth-guard.js уже отправил на login.html.
+  let currentUser = ((window.gcheckUser && window.gcheckUser.name) || '').trim();
+  const currentUserEl = document.getElementById('currentUserName');
+  currentUserEl.textContent = currentUser || '—';
 
-  let currentUser = null;
-  try{
-    const saved = JSON.parse(localStorage.getItem(SESSION_KEY) || 'null');
-    if(saved && saved.name){
-      currentUser = saved.name;
+  // auth-guard.js после фоновой сверки с сервером может обновить данные пользователя
+  document.addEventListener('gcheck:user', () => {
+    const n = ((window.gcheckUser && window.gcheckUser.name) || '').trim();
+    if(n){
+      currentUser = n;
+      currentUserEl.textContent = n;
     }
-  } catch(e){ /* игнорируем повреждённые данные сессии */ }
-
-  if(!currentUser){
-    location.replace('sgi-login.html');
-  } else {
-    document.getElementById('currentUserName').textContent = currentUser;
-  }
-
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.removeItem(SESSION_KEY);
-    location.replace('sgi-login.html');
   });
 
   // ==== Состояние списка заявок ====
@@ -729,8 +704,8 @@ function openExternal(url){
   const searchInput = document.getElementById('searchInput');
 
   // Порядок должен совпадать со столбцами в таблице
-  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
-  const IDX = { createdAt: 0, name: 1, area: 2, equipment: 3, status: 4, requester: 5, takenAt: 6, closedAt: 7, photo: 8 };
+  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+  const IDX = { createdAt: 0, name: 1, area: 2, eqType: 3, equipment: 4, status: 5, requester: 6, takenAt: 7, closedAt: 8, photo: 9 };
 
   function loadData(){
     const range = encodeURIComponent(SHEET_NAME);
@@ -822,6 +797,7 @@ function openExternal(url){
       filtered = filtered.filter(r =>
         r.cells[IDX.name].toLowerCase().includes(q) ||
         r.cells[IDX.area].toLowerCase().includes(q) ||
+        r.cells[IDX.eqType].toLowerCase().includes(q) ||
         r.cells[IDX.equipment].toLowerCase().includes(q) ||
         r.cells[IDX.requester].toLowerCase().includes(q)
       );
@@ -853,7 +829,7 @@ function openExternal(url){
       return;
     }
 
-    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
 
     const colgroupHtml = '<colgroup>' + colWidths.map(w => `<col style="width:${w}px">`).join('') + '</colgroup>';
     const totalWidth = colWidths.reduce((a, b) => a + b, 0);
@@ -873,6 +849,7 @@ function openExternal(url){
         <td class="cell-muted">${escapeHtml(r.cells[IDX.createdAt])}</td>
         <td class="name-cell">${escapeHtml(r.cells[IDX.name])}</td>
         <td class="nowrap-cell">${escapeHtml(r.cells[IDX.area])}</td>
+        <td class="equipment-cell">${escapeHtml(r.cells[IDX.eqType])}</td>
         <td class="equipment-cell">${escapeHtml(r.cells[IDX.equipment])}</td>
         <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status])}</td>
         <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
@@ -1007,7 +984,7 @@ function openExternal(url){
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus })
+      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus, by: currentUser })
     })
       .then(r => r.json())
       .then(res => {
@@ -1087,19 +1064,28 @@ function openExternal(url){
   const createSubmit = document.getElementById('createSubmit');
   const fieldName = document.getElementById('fieldName');
   const fieldArea = document.getElementById('fieldArea');
+  const fieldEqType = document.getElementById('fieldEqType');
   const fieldEquipment = document.getElementById('fieldEquipment');
 
   fieldArea.innerHTML = '<option value="" disabled selected>Выберите участок</option>' +
     AREAS.map(a => `<option value="${escapeHtml(a)}">${escapeHtml(a)}</option>`).join('');
 
+  fieldEqType.innerHTML = '<option value="" disabled selected>Выберите тип оборудования</option>' +
+    EQUIPMENT_TYPES.map(t => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join('');
+
+  function resetCreateForm(){
+    createForm.reset();
+    fieldArea.selectedIndex = 0;
+    fieldEqType.selectedIndex = 0;
+    currentPhotoDataUrl = '';
+    photoPreviewWrap.style.display = 'none';
+  }
+
   openCreateModal.addEventListener('click', () => {
     createOverlay.classList.add('show');
     createError.classList.remove('show');
     createSuccess.classList.remove('show');
-    createForm.reset();
-    fieldArea.selectedIndex = 0;
-    currentPhotoDataUrl = '';
-    photoPreviewWrap.style.display = 'none';
+    resetCreateForm();
   });
 
   createClose.addEventListener('click', closeCreateModal);
@@ -1110,100 +1096,105 @@ function openExternal(url){
   }
 
   createForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  createError.classList.remove('show');
-  createSubmit.disabled = true;
-  createSubmit.textContent = 'Отправляем...';
+    e.preventDefault();
+    createError.classList.remove('show');
 
-  const name = fieldName.value.trim();
-  const photo = currentPhotoDataUrl;
-
-  try{
-    const res = await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'createRequest',
-        name,
-        area: fieldArea.value,
-        equipment: fieldEquipment.value.trim(),
-        requester: currentUser,
-        hasPhoto: !!photo
-      })
-    });
-    const data = await res.json();
-    if(!data.ok) throw new Error(data.error || 'Неизвестная ошибка');
-
-    closeCreateModal();
-    createForm.reset();
-    fieldArea.selectedIndex = 0;
-    currentPhotoDataUrl = '';
-    photoPreviewWrap.style.display = 'none';
-    createSubmit.disabled = false;
-    createSubmit.textContent = 'Отправить заявку';
-
-    if(photo){
-      showToast('Заявка создана. Загружаем фото…');
-      uploadPhotoInBackground(data.rowIndex, name, photo);
-    } else {
-      showToast('Заявка создана ✓');
+    if(!currentUser){
+      createError.textContent = 'Не удалось определить пользователя. Выйдите из аккаунта и войдите заново.';
+      createError.classList.add('show');
+      return;
     }
-    loadData();
-  } catch(err){
-    createError.textContent = 'Не удалось создать заявку: ' + err.message;
-    createError.classList.add('show');
-    createSubmit.disabled = false;
-    createSubmit.textContent = 'Отправить заявку';
-  }
-});
 
-let pendingUploads = 0;
+    createSubmit.disabled = true;
+    createSubmit.textContent = 'Отправляем...';
 
-async function uploadPhotoInBackground(rowIndex, name, photo){
-  pendingUploads++;
-  for(let attempt = 1; attempt <= 3; attempt++){
+    const name = fieldName.value.trim();
+    const photo = currentPhotoDataUrl;
+
     try{
-      const r = await fetch(APPS_SCRIPT_URL, {
+      const res = await fetch(APPS_SCRIPT_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'attachPhoto', rowIndex, name, requester: currentUser, photo })
+        body: JSON.stringify({
+          action: 'createRequest',
+          name,
+          area: fieldArea.value,
+          equipmentType: fieldEqType.value,
+          equipment: fieldEquipment.value.trim(),
+          requester: currentUser,
+          hasPhoto: !!photo
+        })
       });
-      const d = await r.json();
-      if(!d.ok) throw new Error(d.error || 'Неизвестная ошибка');
-      pendingUploads--;
-      showToast('Фото загружено ✓');
-      loadData();
-      return;
-    } catch(err){
-      if(attempt === 3){
-        pendingUploads--;
-        showToast('Не удалось загрузить фото: ' + err.message, true);
+      const data = await res.json();
+      if(!data.ok) throw new Error(data.error || 'Неизвестная ошибка');
+
+      closeCreateModal();
+      resetCreateForm();
+      createSubmit.disabled = false;
+      createSubmit.textContent = 'Отправить заявку';
+
+      if(photo){
+        showToast('Заявка создана. Загружаем фото…');
+        uploadPhotoInBackground(data.rowIndex, name, photo);
       } else {
-        await new Promise(res => setTimeout(res, 2000 * attempt));
+        showToast('Заявка создана ✓');
+      }
+      loadData();
+    } catch(err){
+      createError.textContent = 'Не удалось создать заявку: ' + err.message;
+      createError.classList.add('show');
+      createSubmit.disabled = false;
+      createSubmit.textContent = 'Отправить заявку';
+    }
+  });
+
+  let pendingUploads = 0;
+
+  async function uploadPhotoInBackground(rowIndex, name, photo){
+    pendingUploads++;
+    for(let attempt = 1; attempt <= 3; attempt++){
+      try{
+        const r = await fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'attachPhoto', rowIndex, name, requester: currentUser, photo })
+        });
+        const d = await r.json();
+        if(!d.ok) throw new Error(d.error || 'Неизвестная ошибка');
+        pendingUploads--;
+        showToast('Фото загружено ✓');
+        loadData();
+        return;
+      } catch(err){
+        if(attempt === 3){
+          pendingUploads--;
+          showToast('Не удалось загрузить фото: ' + err.message, true);
+        } else {
+          await new Promise(res => setTimeout(res, 2000 * attempt));
+        }
       }
     }
   }
-}
 
-function showToast(text, isError){
-  let t = document.getElementById('toast');
-  if(!t){
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90vw;';
-    document.body.appendChild(t);
+  function showToast(text, isError){
+    let t = document.getElementById('toast');
+    if(!t){
+      t = document.createElement('div');
+      t.id = 'toast';
+      t.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:2000;padding:11px 18px;border-radius:999px;font-size:13px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.18);max-width:90vw;';
+      document.body.appendChild(t);
+    }
+    t.textContent = text;
+    t.style.background = isError ? 'var(--danger)' : 'var(--accent)';
+    t.style.color = '#fff';
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => { t.style.display = 'none'; }, isError ? 6000 : 3000);
   }
-  t.textContent = text;
-  t.style.background = isError ? 'var(--danger)' : 'var(--accent)';
-  t.style.color = '#fff';
-  t.style.display = 'block';
-  clearTimeout(t._timer);
-  t._timer = setTimeout(() => { t.style.display = 'none'; }, isError ? 6000 : 3000);
-}
 
-window.addEventListener('beforeunload', (e) => {
-  if(pendingUploads > 0){ e.preventDefault(); e.returnValue = ''; }
-});
+  window.addEventListener('beforeunload', (e) => {
+    if(pendingUploads > 0){ e.preventDefault(); e.returnValue = ''; }
+  });
 
   // ==== Автообновление страницы при бездействии ====
   const IDLE_TIMEOUT_MS = 60 * 1000; // 1 минута
@@ -1245,88 +1236,83 @@ window.addEventListener('beforeunload', (e) => {
 
   scheduleReload();
 
-// Сжатие фото
+  // ==== Сжатие фото ====
   const fieldPhoto = document.getElementById('fieldPhoto');
-const photoPreviewWrap = document.getElementById('photoPreviewWrap');
-const photoPreview = document.getElementById('photoPreview');
-const photoRemove = document.getElementById('photoRemove');
+  const photoPreviewWrap = document.getElementById('photoPreviewWrap');
+  const photoPreview = document.getElementById('photoPreview');
+  const photoRemove = document.getElementById('photoRemove');
 
-let currentPhotoDataUrl = ''; // сжатое фото в base64, готовое к отправке
+  let currentPhotoDataUrl = ''; // сжатое фото в base64, готовое к отправке
 
-const PHOTO_MAX_DIMENSION = 1000; // px по длинной стороне
-const PHOTO_QUALITY = 0.65;       // JPEG качество
+  const PHOTO_MAX_DIMENSION = 1000; // px по длинной стороне
+  const PHOTO_QUALITY = 0.65;       // JPEG качество
 
-function compressImage(file){
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const reader = new FileReader();
-    reader.onload = () => { img.src = reader.result; };
-    reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
-    img.onload = () => {
-      let { width, height } = img;
-      if(width > height && width > PHOTO_MAX_DIMENSION){
-        height = Math.round(height * (PHOTO_MAX_DIMENSION / width));
-        width = PHOTO_MAX_DIMENSION;
-      } else if(height > PHOTO_MAX_DIMENSION){
-        width = Math.round(width * (PHOTO_MAX_DIMENSION / height));
-        height = PHOTO_MAX_DIMENSION;
-      }
-      const canvas = document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-      resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY));
-    };
-    img.onerror = () => reject(new Error('Не удалось обработать изображение'));
-    reader.readAsDataURL(file);
-  });
-}
-
-fieldPhoto.addEventListener('change', async () => {
-  const file = fieldPhoto.files[0];
-  if(!file) return;
-
-  try{
-    currentPhotoDataUrl = await compressImage(file);
-    photoPreview.src = currentPhotoDataUrl;
-    photoPreviewWrap.style.display = '';
-  } catch(err){
-    createError.textContent = 'Не удалось обработать фото: ' + err.message;
-    createError.classList.add('show');
-    fieldPhoto.value = '';
-    currentPhotoDataUrl = '';
+  function compressImage(file){
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const reader = new FileReader();
+      reader.onload = () => { img.src = reader.result; };
+      reader.onerror = () => reject(new Error('Не удалось прочитать файл'));
+      img.onload = () => {
+        let { width, height } = img;
+        if(width > height && width > PHOTO_MAX_DIMENSION){
+          height = Math.round(height * (PHOTO_MAX_DIMENSION / width));
+          width = PHOTO_MAX_DIMENSION;
+        } else if(height > PHOTO_MAX_DIMENSION){
+          width = Math.round(width * (PHOTO_MAX_DIMENSION / height));
+          height = PHOTO_MAX_DIMENSION;
+        }
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', PHOTO_QUALITY));
+      };
+      img.onerror = () => reject(new Error('Не удалось обработать изображение'));
+      reader.readAsDataURL(file);
+    });
   }
-});
 
-photoRemove.addEventListener('click', () => {
-  currentPhotoDataUrl = '';
-  fieldPhoto.value = '';
-  photoPreviewWrap.style.display = 'none';
-});
+  fieldPhoto.addEventListener('change', async () => {
+    const file = fieldPhoto.files[0];
+    if(!file) return;
 
-// Логика модалки фото
+    try{
+      currentPhotoDataUrl = await compressImage(file);
+      photoPreview.src = currentPhotoDataUrl;
+      photoPreviewWrap.style.display = '';
+    } catch(err){
+      createError.textContent = 'Не удалось обработать фото: ' + err.message;
+      createError.classList.add('show');
+      fieldPhoto.value = '';
+      currentPhotoDataUrl = '';
+    }
+  });
+
+  photoRemove.addEventListener('click', () => {
+    currentPhotoDataUrl = '';
+    fieldPhoto.value = '';
+    photoPreviewWrap.style.display = 'none';
+  });
+
+  // ==== Модалка просмотра фото ====
   const photoOverlay = document.getElementById('photoOverlay');
-const photoModalImg = document.getElementById('photoModalImg');
-const photoTitle = document.getElementById('photoTitle');
-const photoClose = document.getElementById('photoClose');
+  const photoModalImg = document.getElementById('photoModalImg');
+  const photoTitle = document.getElementById('photoTitle');
+  const photoClose = document.getElementById('photoClose');
 
-contentEl.addEventListener('click', (e) => {
-  const btn = e.target.closest('.photo-link');
-  if(!btn) return;
-  photoTitle.textContent = 'Фото — ' + btn.dataset.photoName;
-  photoModalImg.src = btn.dataset.photoUrl;
-  photoOverlay.classList.add('show');
-});
+  contentEl.addEventListener('click', (e) => {
+    const btn = e.target.closest('.photo-link');
+    if(!btn) return;
+    photoTitle.textContent = 'Фото — ' + btn.dataset.photoName;
+    photoModalImg.src = btn.dataset.photoUrl;
+    photoOverlay.classList.add('show');
+  });
 
-photoClose.addEventListener('click', () => photoOverlay.classList.remove('show'));
-photoOverlay.addEventListener('click', (e) => { if(e.target === photoOverlay) photoOverlay.classList.remove('show'); });
-document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverlay.classList.remove('show'); });
-
-
-  
+  photoClose.addEventListener('click', () => photoOverlay.classList.remove('show'));
+  photoOverlay.addEventListener('click', (e) => { if(e.target === photoOverlay) photoOverlay.classList.remove('show'); });
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') photoOverlay.classList.remove('show'); });
 </script>
 
-
-  
 </body>
 </html>

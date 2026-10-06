@@ -605,7 +605,13 @@
   <header>
     <div class="user-menu" id="userMenu">
       <button class="user-badge-btn" id="userBadge" type="button"
-              aria-haspopup="true" aria-expanded="false" aria-label="Профиль">?</button>
+        aria-haspopup="true" aria-expanded="false" aria-label="Профиль">
+  <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+       stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <circle cx="12" cy="8" r="4"/>
+    <path d="M4 21c0-4.4 3.6-8 8-8s8 3.6 8 8"/>
+  </svg>
+</button>
       <div class="user-dropdown" id="userDropdown" hidden>
         <div class="ud-name" id="udName"></div>
         <div class="ud-role" id="udRole"></div>
@@ -697,16 +703,13 @@
     return t === 'администратор';
   }
 
-  function renderUser(){
-    const u = window.gcheckUser || {};
-    const name = (u.name || '').trim();
-    const parts = name.split(/\s+/).filter(Boolean);
-    const initials = parts.slice(0, 2).map(p => p[0].toUpperCase()).join('') || '?';
+function renderUser(){
+  const u = window.gcheckUser || {};
+  const name = (u.name || '').trim();
 
-    document.getElementById('userBadge').textContent = initials;
-    document.getElementById('udName').textContent = name || 'Пользователь';
-    document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
-  }
+  document.getElementById('udName').textContent = name || 'Пользователь';
+  document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
+}
 
   function applyRole(){
     const admin = isAdmin();

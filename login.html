@@ -315,7 +315,7 @@
           }
         })
         .catch(() => {});
-    }, 250);
+    }, 100);
   });
 
   document.addEventListener('click', (e) => {
@@ -399,6 +399,7 @@
 
       if(d.ok){
         done = true;
+        fetch('journals.json').catch(() => {});
         console.log('login response', d);
         localStorage.setItem(AUTH_KEY, JSON.stringify({
           token: d.token, name: d.name, type: d.type, position: d.position, allowed: d.allowed,

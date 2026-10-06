@@ -551,18 +551,32 @@ header{position:relative;}
     .btn-view{flex:0 0 auto;}
   }
   @media (max-width:600px){
-  header .logo{
-    height:36px;
-    max-width:calc(100% - 120px);
+    header .logo{
+      height:36px;
+      max-width:calc(100% - 120px);
+    }
+    header{
+      padding-top:4px;
+    }
+    .user-badge-btn{
+      width:36px;
+      height:36px;
+      font-size:13px;
+    }
+    .user-menu{top:4px;}
   }
-  header{
-    padding-top:4px;
-  }
-}
   @media (max-width:380px){
-  .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
-  .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}
-}
+    .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
+    .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}
+  }
+  @media (max-width:360px){
+    header .logo{height:30px;}
+    .user-badge-btn{
+      width:30px;
+      height:30px;
+      font-size:12px;
+    }
+  }
 </style>
 </head>
 <body>

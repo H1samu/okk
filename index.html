@@ -353,6 +353,7 @@ header{position:relative;}
     gap:10px;
   }
   .journal-card{
+    text-align:left;
     background:var(--surface);
     border:1px solid var(--border);
     border-radius:var(--radius);
@@ -549,6 +550,15 @@ header{position:relative;}
     .jc-actions{flex-wrap:nowrap;}
     .btn-view{flex:0 0 auto;}
   }
+  @media (max-width:600px){
+  header .logo{
+    height:36px;
+    max-width:calc(100% - 120px);
+  }
+  header{
+    padding-top:4px;
+  }
+}
   @media (max-width:380px){
   .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
   .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}

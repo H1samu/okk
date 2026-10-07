@@ -271,6 +271,20 @@
     color:#1d5fa8;
     letter-spacing:0.02em;
   }
+  .tile-badge.soon{
+  padding:3px 6px;
+  border-radius:999px;
+  background:var(--accent-soft);
+  color:var(--accent);
+  letter-spacing:0.02em;
+  text-transform:lowercase;
+}
+.tile-soon{
+  cursor:default;
+  opacity:0.75;
+}
+.tile-soon:hover{border-color:var(--border);}
+.tile-soon:active{transform:none;}
 
   /* ===== Категории ===== */
   .tags-section{margin-top:32px; min-width:0; max-width:100%;}
@@ -652,16 +666,28 @@
       <span class="tile-badge count" id="favBadge">0</span>
     </button>
 
-    <a class="tile tile-master" id="masterTile" href="master.html" hidden>
-      <span class="tile-icon">📊</span>
-      <span class="tile-text">Мастер-таблица</span>
-    </a>
+<a class="tile tile-master admin-only" id="masterTile" href="master.html" hidden>
+  <span class="tile-icon">📊</span>
+  <span class="tile-text">Мастер-таблица</span>
+</a>
 
     <a class="tile tile-sgi" href="sgi.html">
       <span class="tile-icon">🛠️</span>
       <span class="tile-text">Заявки для СГИ</span>
       <span class="tile-badge beta">beta</span>
     </a>
+<div class="tile tile-soon admin-only" aria-disabled="true" hidden>
+  <span class="tile-icon">🚦</span>
+  <span class="tile-text">Контроль заполнения</span>
+  <span class="tile-badge soon">soon</span>
+</div>
+
+<div class="tile tile-soon admin-only" aria-disabled="true" hidden>
+  <span class="tile-icon">🌡️</span>
+  <span class="tile-text">Датчики температуры и влажности</span>
+  <span class="tile-badge soon">soon</span>
+</div>
+  
   </div>
 
   <div class="tags-section">
@@ -713,7 +739,7 @@ function renderUser(){
 
   function applyRole(){
     const admin = isAdmin();
-    document.getElementById('masterTile').hidden = !admin;
+    document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !admin; });
     document.querySelector('.quick-row').classList.toggle('no-master', !admin);
     renderUser();
   }

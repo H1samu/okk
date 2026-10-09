@@ -1576,6 +1576,14 @@ function setAutoRefresh(on){
 }
 
 autoBtn.addEventListener('click', () => setAutoRefresh(!autoTimer));
+
+// после загрузки страницы восстанавливаем режим
+try{ if(localStorage.getItem(AUTO_KEY) === '1') setAutoRefresh(true); }catch(e){}
+
+// вернулись на вкладку — сразу обновить, не ждать минуту
+document.addEventListener('visibilitychange', () => {
+  if(!document.hidden && autoTimer && !isBusy()) loadData();
+});
   
   // ==== Сжатие фото ====
   const fieldPhoto = document.getElementById('fieldPhoto');

@@ -25,6 +25,11 @@
     --danger:#9c3b34;
     --danger-soft:#fbebe9;
     --radius:12px;
+
+    /* Цвета статусов (мягкие) */
+    --st-red-text:#a3463f;   --st-red-bg:#fbe9e7;   --st-red-border:#ebc4c0;   --st-red-row:#fdf4f3;   --st-red-bar:#e0928b;
+    --st-yel-text:#8a6416;   --st-yel-bg:#fdf3d8;   --st-yel-border:#ecd9ab;   --st-yel-row:#fffaec;   --st-yel-bar:#e3c06a;
+    --st-grn-text:#2f7a3e;   --st-grn-bg:#e8f5ea;   --st-grn-border:#c3e2cb;   --st-grn-row:#f3faf4;   --st-grn-bar:#8fc79b;
   }
   *{box-sizing:border-box;}
   body{
@@ -115,7 +120,7 @@
   .toolbar{
     display:flex;
     flex-direction:column;
-    gap:14px;
+    gap:12px;
     margin:20px 0 18px;
   }
   .search-box{
@@ -144,42 +149,100 @@
     height:16px;
     stroke:var(--text-muted);
   }
-  .status-tabs{
+
+  /* ==== Фильтры: статус (выпадающий список) + даты ==== */
+  .filters-row{
     display:flex;
-    gap:8px;
-    overflow-x:auto;
-    padding-bottom:4px;
-    -webkit-overflow-scrolling:touch;
-    scrollbar-width:none;
-  }
-  .status-tabs::-webkit-scrollbar{display:none;}
-  .status-tab{
-    flex-shrink:0;
-    display:inline-flex;
     align-items:center;
-    gap:6px;
-    background:var(--surface);
-    border:1px solid var(--border);
+    gap:10px;
+    flex-wrap:wrap;
+  }
+  .filter-select{
+    position:relative;
+    flex-shrink:0;
+  }
+  .filter-select select{
+    appearance:none;
+    -webkit-appearance:none;
+    height:38px;
+    padding:0 34px 0 14px;
+    border:1px solid var(--border-strong);
     border-radius:999px;
-    padding:9px 14px;
-    cursor:pointer;
+    background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%2398968a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 14px center;
     font-family:inherit;
-    white-space:nowrap;
     font-size:13px;
     font-weight:600;
     color:var(--text);
+    cursor:pointer;
+    max-width:100%;
   }
-  .status-tab:hover{border-color:var(--border-strong);}
-  .status-tab.active{
+  .filter-select select:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .filter-select.has-value select{
+    border-color:var(--accent);
+    background-color:var(--accent-soft);
+    color:var(--accent);
+  }
+  .filters-sep{
+    width:1px;
+    height:22px;
+    background:var(--border-strong);
+    flex-shrink:0;
+  }
+  .date-chips{
+    display:flex;
+    gap:6px;
+    flex-wrap:wrap;
+  }
+  .date-chip{
+    height:38px;
+    padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--border);
+    background:var(--surface);
+    color:var(--text);
+    font-family:inherit;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .date-chip:hover{border-color:var(--border-strong);}
+  .date-chip.active{
     border-color:var(--accent);
     background:var(--accent-soft);
     color:var(--accent);
   }
-  .status-tab .count{
-    color:var(--text-muted);
-    font-weight:500;
+  .range-wrap{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-wrap:wrap;
   }
-  .status-tab.active .count{color:var(--accent);}
+  .range-wrap[hidden]{display:none;}
+  .range-wrap input[type=date]{
+    height:38px;
+    padding:0 10px;
+    border:1px solid var(--border-strong);
+    border-radius:10px;
+    font-family:inherit;
+    font-size:13px;
+    background:var(--surface);
+    color:var(--text);
+  }
+  .range-wrap input[type=date]:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .range-wrap .dash{color:var(--text-muted);}
+  .reset-filters{
+    display:none;
+    background:none;
+    border:none;
+    font-family:inherit;
+    font-size:12px;
+    font-weight:600;
+    color:var(--accent);
+    cursor:pointer;
+    padding:6px 4px;
+  }
+  .reset-filters.show{display:inline;}
 
   .row-count{
     font-size:12px;
@@ -273,6 +336,18 @@
   }
   tbody tr:last-child td{border-bottom:none;}
   tbody tr:hover td{background:#fbfaf7;}
+
+  /* Подсветка строк по статусу */
+  tbody tr.row-open td{background:var(--st-red-row);}
+  tbody tr.row-progress td{background:var(--st-yel-row);}
+  tbody tr.row-done td{background:var(--st-grn-row);}
+  tbody tr.row-open:hover td{background:#fbeae8;}
+  tbody tr.row-progress:hover td{background:#fff4d6;}
+  tbody tr.row-done:hover td{background:#e9f6ec;}
+  tbody tr.row-open td:first-child{box-shadow:inset 3px 0 0 var(--st-red-bar);}
+  tbody tr.row-progress td:first-child{box-shadow:inset 3px 0 0 var(--st-yel-bar);}
+  tbody tr.row-done td:first-child{box-shadow:inset 3px 0 0 var(--st-grn-bar);}
+
   td.name-cell{
     color:var(--text);
     font-weight:500;
@@ -327,10 +402,10 @@
     opacity:0.7;
   }
   .status-btn:disabled{opacity:0.5; cursor:wait;}
-  .status-btn.s-open{ color:#8a6416; border-color:#ecd9ab; background:#fdf3e3; }
-  .status-btn.s-inprogress{ color:#1d5fa8; border-color:#bcd6f0; background:#eaf2fc; }
-  .status-btn.s-done{ color:var(--accent); border-color:#c7dcd5; background:var(--accent-soft); }
-  .status-btn.s-doneclean{ color:#2f7a3e; border-color:#bfe0c7; background:#eaf7ec; }
+  .status-btn.s-open{ color:var(--st-red-text); border-color:var(--st-red-border); background:var(--st-red-bg); }
+  .status-btn.s-inprogress{ color:var(--st-yel-text); border-color:var(--st-yel-border); background:var(--st-yel-bg); }
+  .status-btn.s-done{ color:var(--st-grn-text); border-color:var(--st-grn-border); background:var(--st-grn-bg); }
+  .status-btn.s-doneclean{ color:var(--st-grn-text); border-color:var(--st-grn-border); background:var(--st-grn-bg); }
   .status-btn.static{cursor:default;}
   .status-btn.static .chev{display:none;}
 
@@ -517,7 +592,27 @@
       <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
       <input type="text" id="searchInput" placeholder="Поиск заявки" autocomplete="off">
     </div>
-    <div class="status-tabs" id="statusTabs"></div>
+
+    <div class="filters-row">
+      <div class="filter-select" id="statusFilterWrap">
+        <select id="statusSelect" aria-label="Фильтр по статусу">
+          <option value="">Все статусы</option>
+        </select>
+      </div>
+      <span class="filters-sep" aria-hidden="true"></span>
+      <div class="date-chips" id="dateChips" role="group" aria-label="Фильтр по дате создания">
+        <button type="button" class="date-chip active" data-d="all">Все даты</button>
+        <button type="button" class="date-chip" data-d="today">Сегодня</button>
+        <button type="button" class="date-chip" data-d="yesterday">Вчера</button>
+        <button type="button" class="date-chip" data-d="range">📅 Период</button>
+      </div>
+      <div class="range-wrap" id="rangeWrap" hidden>
+        <input type="date" id="dateFrom" aria-label="С даты">
+        <span class="dash">—</span>
+        <input type="date" id="dateTo" aria-label="По дату">
+      </div>
+      <button type="button" class="reset-filters" id="resetFilters">Сбросить фильтры</button>
+    </div>
   </div>
 
   <div class="row-count" id="rowCount"></div>
@@ -617,6 +712,14 @@
     'Выполнена. Проведена мойка и дезинфекция': 's-doneclean'
   };
 
+  // Класс подсветки всей строки таблицы
+  const ROW_CLASS = {
+    'Открыта': 'row-open',
+    'В работе': 'row-progress',
+    'Выполнена': 'row-done',
+    'Выполнена. Проведена мойка и дезинфекция': 'row-done'
+  };
+
   // Разрешённые переходы (должны совпадать с ALLOWED_TRANSITIONS в Apps Script).
   // Из выполненных статусов можно вернуться только в "В работе".
   const ALLOWED_TRANSITIONS = {
@@ -649,13 +752,13 @@
   ];
 
   // ==== Ширины столбцов (можно менять перетаскиванием края заголовка) ====
-  // Ключ с суффиксом _v2: набор столбцов изменился (добавлен "Тип оборудования"),
+  // Ключ с суффиксом _v3: изменился порядок столбцов ("Статус" теперь вторым),
   // старые сохранённые ширины не подходят.
-  const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths_v2';
-  // Порядок: Дата создания, Наименование, Участок, Тип оборудования, Оборудование, Статус, Заявитель, Взято в работу, Дата закрытия, Фото
-  const DEFAULT_COL_WIDTHS = [150, 260, 140, 170, 200, 220, 140, 150, 150, 130];
+  const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths_v3';
+  // Порядок: Дата создания, Статус, Наименование, Участок, Тип оборудования, Оборудование, Заявитель, Взято в работу, Дата закрытия, Фото
+  const DEFAULT_COL_WIDTHS = [150, 220, 260, 140, 170, 200, 140, 150, 150, 130];
   // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
-  const MIN_COL_WIDTHS = [130, 160, 100, 120, 120, 170, 110, 130, 130, 110];
+  const MIN_COL_WIDTHS = [130, 170, 160, 100, 120, 120, 110, 130, 130, 110];
 
   let colWidths = (() => {
     try{
@@ -696,16 +799,23 @@
   let searchQuery = '';
   let sortCol = 0;          // по умолчанию сортируем по "Дата создания"
   let sortDir = -1;         // -1 = по убыванию — новые заявки сверху
+  let dateMode = 'all';     // all | today | yesterday | range
 
   const contentEl = document.getElementById('content');
   const stateBox = document.getElementById('stateBox');
   const rowCountEl = document.getElementById('rowCount');
-  const statusTabsEl = document.getElementById('statusTabs');
+  const statusSelect = document.getElementById('statusSelect');
+  const statusFilterWrap = document.getElementById('statusFilterWrap');
+  const dateChips = document.getElementById('dateChips');
+  const rangeWrap = document.getElementById('rangeWrap');
+  const dateFromEl = document.getElementById('dateFrom');
+  const dateToEl = document.getElementById('dateTo');
+  const resetFiltersBtn = document.getElementById('resetFilters');
   const searchInput = document.getElementById('searchInput');
 
   // Порядок должен совпадать со столбцами в таблице
-  const COLUMN_KEYS = ['Дата создания', 'Краткое описание заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
-  const IDX = { createdAt: 0, name: 1, area: 2, eqType: 3, equipment: 4, status: 5, requester: 6, takenAt: 7, closedAt: 8, photo: 9 };
+  const COLUMN_KEYS = ['Дата создания', 'Статус', 'Краткое описание заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+  const IDX = { createdAt: 0, status: 1, name: 2, area: 3, eqType: 4, equipment: 5, requester: 6, takenAt: 7, closedAt: 8, photo: 9 };
 
   function loadData(){
     const range = encodeURIComponent(SHEET_NAME);
@@ -747,28 +857,73 @@
       });
   }
 
+  // ==== Фильтр по дате создания ====
+  function ymd(d){
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function dayStartMs(v){
+    if(!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  }
+  function dayEndMs(v){
+    if(!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+  }
+
+  // Границы выбранного периода: [от, до] (null = без ограничения) или null, если фильтра нет
+  function dateBounds(){
+    const now = new Date();
+    if(dateMode === 'today'){
+      const t = ymd(now);
+      return [dayStartMs(t), dayEndMs(t)];
+    }
+    if(dateMode === 'yesterday'){
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      const t = ymd(y);
+      return [dayStartMs(t), dayEndMs(t)];
+    }
+    if(dateMode === 'range'){
+      const from = dayStartMs(dateFromEl.value);
+      const to = dayEndMs(dateToEl.value);
+      if(from === null && to === null) return null;
+      return [from, to];
+    }
+    return null;
+  }
+
+  function inDateRange(r){
+    const b = dateBounds();
+    if(!b) return true;
+    const ts = parseRuDate(r.cells[IDX.createdAt]);
+    if(ts === null) return false;
+    if(b[0] !== null && ts < b[0]) return false;
+    if(b[1] !== null && ts > b[1]) return false;
+    return true;
+  }
+
+  function hasActiveFilters(){
+    return !!activeStatus || dateMode !== 'all' || !!searchQuery;
+  }
+
+  // Выпадающий список статусов со счётчиками (с учётом выбранного периода)
   function renderStatusTabs(){
+    const inRange = rows.filter(inDateRange);
     const counts = {};
     STATUSES.forEach(s => counts[s] = 0);
-    rows.forEach(r => {
+    inRange.forEach(r => {
       const s = r.cells[IDX.status];
       if(counts[s] !== undefined) counts[s]++;
     });
 
-    const allBtn = `<button class="status-tab${activeStatus === null ? ' active' : ''}" data-status="">Все <span class="count">(${rows.length})</span></button>`;
-    const tabs = STATUSES.map(s =>
-      `<button class="status-tab${activeStatus === s ? ' active' : ''}" data-status="${escapeHtml(s)}">${escapeHtml(s)} <span class="count">(${counts[s]})</span></button>`
-    ).join('');
-
-    statusTabsEl.innerHTML = allBtn + tabs;
-
-    statusTabsEl.querySelectorAll('.status-tab').forEach(btn => {
-      btn.addEventListener('click', () => {
-        activeStatus = btn.dataset.status || null;
-        renderStatusTabs();
-        renderTable();
-      });
-    });
+    statusSelect.innerHTML =
+      `<option value="">Все статусы (${inRange.length})</option>` +
+      STATUSES.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${counts[s]})</option>`).join('');
+    statusSelect.value = activeStatus || '';
+    statusFilterWrap.classList.toggle('has-value', !!activeStatus);
+    resetFiltersBtn.classList.toggle('show', hasActiveFilters());
   }
 
   function statusPickerHtml(rowIndex, cur){
@@ -788,7 +943,7 @@
   }
 
   function renderTable(){
-    let filtered = rows;
+    let filtered = rows.filter(inDateRange);
     if(activeStatus){
       filtered = filtered.filter(r => r.cells[IDX.status] === activeStatus);
     }
@@ -823,13 +978,14 @@
     }
 
     rowCountEl.textContent = `Заявок: ${filtered.length} из ${rows.length}`;
+    resetFiltersBtn.classList.toggle('show', hasActiveFilters());
 
     if(filtered.length === 0){
       contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
       return;
     }
 
-    const HEADERS = ['Дата создания', 'Наименование заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Статус', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+    const HEADERS = ['Дата создания', 'Статус', 'Наименование заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
 
     const colgroupHtml = '<colgroup>' + colWidths.map(w => `<col style="width:${w}px">`).join('') + '</colgroup>';
     const totalWidth = colWidths.reduce((a, b) => a + b, 0);
@@ -845,13 +1001,13 @@
     }).join('') + '</tr></thead>';
 
     const tbodyHtml = '<tbody>' + filtered.map(r => `
-      <tr data-row-index="${r.rowIndex}">
+      <tr data-row-index="${r.rowIndex}" class="${ROW_CLASS[r.cells[IDX.status]] || ''}">
         <td class="cell-muted">${escapeHtml(r.cells[IDX.createdAt])}</td>
+        <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status])}</td>
         <td class="name-cell">${escapeHtml(r.cells[IDX.name])}</td>
         <td class="nowrap-cell">${escapeHtml(r.cells[IDX.area])}</td>
         <td class="equipment-cell">${escapeHtml(r.cells[IDX.eqType])}</td>
         <td class="equipment-cell">${escapeHtml(r.cells[IDX.equipment])}</td>
-        <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status])}</td>
         <td class="cell-muted">${escapeHtml(r.cells[IDX.requester])}</td>
         <td class="cell-muted taken-at-cell">${escapeHtml(r.cells[IDX.takenAt])}</td>
         <td class="cell-muted closed-at-cell">${escapeHtml(r.cells[IDX.closedAt])}</td>
@@ -878,6 +1034,50 @@
       });
     });
   }
+
+  // ==== Обработчики фильтров ====
+  statusSelect.addEventListener('change', () => {
+    activeStatus = statusSelect.value || null;
+    statusFilterWrap.classList.toggle('has-value', !!activeStatus);
+    renderTable();
+  });
+
+  function setDateMode(mode){
+    dateMode = mode;
+    dateChips.querySelectorAll('.date-chip').forEach(b => b.classList.toggle('active', b.dataset.d === mode));
+    rangeWrap.hidden = mode !== 'range';
+    renderStatusTabs();
+    renderTable();
+  }
+
+  dateChips.addEventListener('click', (e) => {
+    const b = e.target.closest('.date-chip');
+    if(!b) return;
+    setDateMode(b.dataset.d);
+    if(b.dataset.d === 'range' && !dateFromEl.value && !dateToEl.value){
+      dateFromEl.focus();
+    }
+  });
+
+  [dateFromEl, dateToEl].forEach(el => el.addEventListener('change', () => {
+    // Если "с" позже "по" — меняем местами
+    if(dateFromEl.value && dateToEl.value && dateFromEl.value > dateToEl.value){
+      const t = dateFromEl.value;
+      dateFromEl.value = dateToEl.value;
+      dateToEl.value = t;
+    }
+    renderStatusTabs();
+    renderTable();
+  }));
+
+  resetFiltersBtn.addEventListener('click', () => {
+    activeStatus = null;
+    searchQuery = '';
+    searchInput.value = '';
+    dateFromEl.value = '';
+    dateToEl.value = '';
+    setDateMode('all');
+  });
 
   // ==== Изменение ширины столбцов ====
   function initResizers(){

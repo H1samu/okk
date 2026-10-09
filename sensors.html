@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="auth-guard.js"></script>
+<script>
+  if(!window.gcheckUser || (window.gcheckUser.type || '').trim().toLowerCase() !== 'администратор'){
+    location.replace('index.html');
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Датчики — Hismar Check</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --warn:#8a6416;
+    --warn-soft:#fdf3e3;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button, input, select{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .wrap{max-width:1200px; margin:0 auto; padding:24px 20px 60px;}
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; color:var(--text-secondary);
+    text-decoration:none; margin-bottom:20px; padding:6px 0;
+  }
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  h1{font-size:22px; font-weight:700; margin:0 0 6px;}
+  header p{font-size:13px; color:var(--text-secondary); margin:0;}
+
+  /* ===== Фильтры ===== */
+  .filters{
+    display:flex; flex-direction:column; gap:12px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    padding:14px 16px;
+    margin-bottom:14px;
+  }
+  .f-row{display:flex; gap:12px; flex-wrap:wrap; align-items:flex-end;}
+  .f-field{display:flex; flex-direction:column; gap:5px; min-width:0;}
+  .f-field.grow{flex:1 1 280px;}
+  .f-field label{font-size:12px; font-weight:600; color:var(--text-secondary);}
+  .f-field select, .f-field input[type=date], .f-field input[type=text]{
+    height:44px; padding:0 12px;
+    border:1px solid var(--border-strong);
+    border-radius:10px;
+    font-size:14px;
+    background:var(--surface);
+    color:var(--text);
+    width:100%;
+  }
+  .f-field input[type=date]{min-width:150px;}
+  .quick{display:flex; gap:6px; flex-wrap:wrap;}
+  .chip{
+    height:44px; padding:0 14px;
+    border-radius:999px;
+    border:1px solid var(--border-strong);
+    background:var(--surface);
+    color:var(--text);
+    font-size:13px; font-weight:600;
+    cursor:pointer;
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .chip:hover{border-color:var(--accent);}
+  .chip:active{transform:scale(0.97);}
+  .chip.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  .chip.warn.active{border-color:var(--danger); background:var(--danger-soft); color:var(--danger);}
+  .chip.icon{width:44px; padding:0; font-size:18px;}
+
+  .meta{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:12px; flex-wrap:wrap; margin-bottom:12px;
+    font-size:12px; color:var(--text-muted);
+  }
+  .meta .bad{color:var(--danger); font-weight:600;}
+  .meta .warnb{color:var(--warn); font-weight:600;}
+
+  /* ===== Состояния ===== */
+  .state-box{
+    text-align:center; padding:50px 20px;
+    color:var(--text-muted); font-size:14px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+  }
+  .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+
+  /* ===== Таблица ===== */
+  .table-scroll{
+    background:var(--surface);
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    overflow:auto; max-width:100%; max-height:65vh;
+  }
+  table{border-collapse:separate; border-spacing:0; width:100%; font-size:13px; white-space:nowrap;}
+  thead th{
+    position:sticky; top:0; z-index:2;
+    background:var(--accent-soft);
+    color:var(--text);
+    text-align:left;
+    padding:10px 14px;
+    font-weight:600;
+    border-bottom:1px solid var(--border-strong);
+  }
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{background:#dfe9e5;}
+  th .sort-arrow{display:inline-block; margin-left:4px; color:var(--text-muted); font-size:11px;}
+  th.sort-active .sort-arrow{color:var(--accent);}
+  tbody td{
+    padding:9px 14px;
+    border-bottom:1px solid var(--border);
+    color:var(--text-secondary);
+    max-width:420px; overflow:hidden; text-overflow:ellipsis;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fbfaf7;}
+  td.loc{color:var(--text); font-weight:500;}
+  td.bad{background:var(--danger-soft); color:var(--danger); font-weight:700;}
+  td.low{background:var(--warn-soft); color:var(--warn); font-weight:700;}
+  tbody tr:hover td.bad{background:#f8dedb;}
+  tbody tr:hover td.low{background:#faebd0;}
+
+  /* ===== Пагинация ===== */
+  .pager{display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin-top:12px;}
+  .size-switch{display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted);}
+  .seg{display:inline-flex; border:1px solid var(--border-strong); border-radius:999px; overflow:hidden; background:var(--surface);}
+  .seg button{
+    height:36px; min-width:48px; padding:0 12px;
+    border:none; background:none;
+    font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer;
+  }
+  .seg button + button{border-left:1px solid var(--border);}
+  .seg button:hover{background:var(--bg);}
+  .seg button.active{background:var(--accent-soft); color:var(--accent);}
+  .range{font-size:12px; color:var(--text-muted);}
+  .nav{display:inline-flex; align-items:center; gap:8px;}
+  .nav .page-num{font-size:13px; font-weight:600; color:var(--text-secondary); min-width:56px; text-align:center;}
+  .nav button{
+    width:44px; height:44px; font-size:20px; line-height:1;
+    border-radius:10px;
+    border:1px solid var(--border-strong);
+    background:var(--surface); color:var(--text); cursor:pointer;
+  }
+  .nav button:hover:not(:disabled){border-color:var(--accent);}
+  .nav button:disabled{opacity:0.5; cursor:default;}
+
+  @media (max-width:600px){
+    .pager{flex-direction:column; align-items:stretch;}
+    .pager .size-switch{justify-content:space-between;}
+    .pager .lower{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+    .f-field input[type=date]{min-width:0;}
+    .f-row .f-field:not(.grow){flex:1 1 140px;}
+  }
+  @media (min-width:601px){
+    .pager .lower{display:flex; align-items:center; gap:16px; flex:1; justify-content:space-between;}
+    .pager .lower .range{margin:0 auto;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+
+  <header>
+    <h1>Датчики</h1>
+    <p>Показания температуры и влажности</p>
+  </header>
+
+  <div class="filters">
+    <div class="f-row">
+      <div class="f-field grow">
+        <label for="deviceSelect">Датчик</label>
+        <select id="deviceSelect"></select>
+      </div>
+    </div>
+    <div class="f-row">
+      <div class="f-field">
+        <label for="dateFrom">С даты</label>
+        <input type="date" id="dateFrom">
+      </div>
+      <div class="f-field">
+        <label for="dateTo">По дату</label>
+        <input type="date" id="dateTo">
+      </div>
+      <div class="quick" id="quick">
+        <button type="button" class="chip" data-q="today">Сегодня</button>
+        <button type="button" class="chip" data-q="yesterday">Вчера</button>
+        <button type="button" class="chip" data-q="week">7 дней</button>
+        <button type="button" class="chip" data-q="all">Всё время</button>
+      </div>
+    </div>
+    <div class="f-row">
+      <button type="button" class="chip warn" id="onlyBad" aria-pressed="false">⚠ Только отклонения</button>
+      <button type="button" class="chip icon" id="refreshBtn" aria-label="Обновить данные" title="Обновить данные">↻</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <span id="rowCount"></span>
+    <span id="badInfo"></span>
+  </div>
+
+  <div id="content">
+    <div class="state-box">Загрузка данных…</div>
+  </div>
+  <div id="pager"></div>
+</div>
+
+<script>
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+  const SHEET_ID = '1RmyGCE_GbRS6ofl1aTNVAXVobqEV8n5ZlbRCXZJyRlc';
+  const SHEET_NAME = 'Показания датчиков (реальные)';
+  const BATTERY_MIN = 30;
+
+  const PAGE_SIZE_KEY = 'gcheck_sensors_page_size';
+  const PAGE_SIZES = [50, 100, 200];
+
+  // Полный список расположений (для фильтра: показываем все, даже без данных)
+  const DEVICES = [
+    'Баночная перетарка 1003',
+    'Рефрижератор 1',
+    'Рефрижератор 2',
+    'Рефрижератор 3',
+    'Склад бакалеи 1081',
+    'Склад бакалеи ХК 1002',
+    'Среднетемпературная камера баночной ХК 1003.1',
+    'Холодильная камера (растарка)',
+    'Холодильная камера 001 - среднетемпературная камера приемки мяса',
+    'Холодильная камера 002 - Среднетемпературная камера',
+    'Холодильная камера 003 - Среднетемпературная камера',
+    'Холодильная камера 004 - Среднетемпературная камера Гастрономия',
+    'Холодильная камера 005 - Низкотемпературная камера хранения',
+    'Холодильная камера 006 - Камера созревания мяса',
+    'Холодильная камера 007 - Среднетемпературная камера овощного цеха',
+    'Холодильная камера 008 Помещение экспедиции',
+    'Холодильная камера 009 - Низкотемпературная камера экспедиции',
+    'Холодильная камера 010 - Среднетемпературная камера хранения обходов',
+    'Холодильная камера 1001 - помещение приемки',
+    'Холодильная камера 1003 - среднетемпературный склад Бакалеи',
+    'Холодильная камера 1020 - Среднетемпературная камера Пищевые отходы',
+    'Холодильная камера 1024 Передача сырья',
+    'Холодильная камера 1025 - Мясной цех',
+    'Холодильная камера 1031 - Мясной цех',
+    'Холодильная камера 1043 - Помещение выгрузки',
+    'Холодильная камера 2001 - Камера хранения нерастаренной продукции',
+    'Холодильная камера 2008 - Среднетемпературная камера холодного цеха',
+    'Холодильная камера 2010 - Среднетемпературная камера горячего цеха',
+    'Холодильная камера 2011 - Салатный цех',
+    'Холодильная камера 2015 - Холодильная камера горячего цеха',
+    'Холодильная камера 2015.1 - среднетемпературная камера',
+    'Холодильная камера 2016 - Цех фасовки готовой продукции',
+    'Холодильная камера 2017 - Цех упаковки готовой продукции',
+    'Холодильная камера 2021.1 - Среднетемпературная камера охлаждения горячего цеха'
+  ];
+
+  const HEADERS = ['Дата/время', 'Расположение', 'Температура, °C', 'Допустимая температура, °C', 'Влажность, %', 'Допустимая влажность, %', 'Батарея, %'];
+
+  const contentEl = document.getElementById('content');
+  const pagerEl = document.getElementById('pager');
+  const rowCountEl = document.getElementById('rowCount');
+  const badInfoEl = document.getElementById('badInfo');
+  const deviceSelect = document.getElementById('deviceSelect');
+  const dateFrom = document.getElementById('dateFrom');
+  const dateTo = document.getElementById('dateTo');
+  const quickEl = document.getElementById('quick');
+  const onlyBadBtn = document.getElementById('onlyBad');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  let allRows = [];     // {cells:[7], idx, ts, loc, tempBad, humBad, battLow}
+  let sortCol = 0;
+  let sortDir = -1;     // новые сверху
+  let page = 1;
+  let pageSize = loadPageSize();
+  let selectedDevice = '';
+  let onlyBad = false;
+
+  function loadPageSize(){
+    try{
+      const v = parseInt(localStorage.getItem(PAGE_SIZE_KEY), 10);
+      return PAGE_SIZES.includes(v) ? v : 50;
+    } catch(e){ return 50; }
+  }
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function normName(s){ return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+  function parseNum(s){
+    const t = String(s == null ? '' : s).replace(/\s/g, '').replace(',', '.');
+    if(t === '') return null;
+    const n = parseFloat(t);
+    return isNaN(n) ? null : n;
+  }
+  function parseRange(s){
+    const m = String(s || '').replace(/\s/g, '').replace(/,/g, '.')
+      .match(/^([+-]?\d+(?:\.\d+)?)(?:\.{2,3}|…|—|–)([+-]?\d+(?:\.\d+)?)$/);
+    if(!m) return null;
+    const a = parseFloat(m[1]), b = parseFloat(m[2]);
+    return [Math.min(a, b), Math.max(a, b)];
+  }
+  function outOfRange(valStr, rangeStr){
+    const v = parseNum(valStr), r = parseRange(rangeStr);
+    if(v === null || r === null) return false;
+    return v < r[0] || v > r[1];
+  }
+
+  function parseRuDate(str){
+    if(!str) return null;
+    const m = String(str).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if(!m) return null;
+    const [, d, mo, y, h, mi, s] = m;
+    const dt = new Date(+y, +mo - 1, +d, h ? +h : 0, mi ? +mi : 0, s ? +s : 0);
+    return isNaN(dt.getTime()) ? null : dt.getTime();
+  }
+
+  // ===== Даты в фильтре =====
+  function ymd(d){
+    const p = n => String(n).padStart(2, '0');
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+  }
+  function dayStart(v){ // 'yyyy-mm-dd' -> ms (локально)
+    if(!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  }
+  function dayEnd(v){
+    if(!v) return null;
+    const [y, m, d] = v.split('-').map(Number);
+    return new Date(y, m - 1, d, 23, 59, 59, 999).getTime();
+  }
+
+  function setQuick(q){
+    const now = new Date();
+    if(q === 'today'){
+      dateFrom.value = dateTo.value = ymd(now);
+    } else if(q === 'yesterday'){
+      const y = new Date(now); y.setDate(y.getDate() - 1);
+      dateFrom.value = dateTo.value = ymd(y);
+    } else if(q === 'week'){
+      const w = new Date(now); w.setDate(w.getDate() - 6);
+      dateFrom.value = ymd(w); dateTo.value = ymd(now);
+    } else {
+      dateFrom.value = ''; dateTo.value = '';
+    }
+    onFilterChange();
+  }
+
+  function detectQuick(){
+    const now = new Date();
+    const t = ymd(now);
+    const y = new Date(now); y.setDate(y.getDate() - 1);
+    const w = new Date(now); w.setDate(w.getDate() - 6);
+    const f = dateFrom.value, to = dateTo.value;
+    let cur = '';
+    if(f === t && to === t) cur = 'today';
+    else if(f === ymd(y) && to === ymd(y)) cur = 'yesterday';
+    else if(f === ymd(w) && to === t) cur = 'week';
+    else if(!f && !to) cur = 'all';
+    quickEl.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.q === cur));
+  }
+
+  // ===== Загрузка =====
+  function load(){
+    contentEl.innerHTML = '<div class="state-box">Загрузка данных…</div>';
+    pagerEl.innerHTML = '';
+    const range = encodeURIComponent(SHEET_NAME);
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
+
+    fetch(url)
+      .then(r => { if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(data => {
+        const values = data.values || [];
+        const body = values.slice(1);
+        allRows = body.map((r, idx) => {
+          const cells = Array.from({length: 7}, (_, i) => String(r[i] == null ? '' : r[i]));
+          return {
+            cells, idx,
+            ts: parseRuDate(cells[0]),
+            loc: normName(cells[1]),
+            tempBad: outOfRange(cells[2], cells[3]),
+            humBad: outOfRange(cells[4], cells[5]),
+            battLow: parseNum(cells[6]) !== null && parseNum(cells[6]) < BATTERY_MIN
+          };
+        }).filter(r => r.cells.some(c => c !== ''));
+        buildDeviceOptions();
+        draw();
+      })
+      .catch(err => {
+        contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить данные. Проверьте доступ таблицы «по ссылке — Читатель» и название листа. (' + escapeHtml(err.message) + ')</div>';
+      });
+  }
+
+  // ===== Фильтрация =====
+  function rowsInDateRange(){
+    const from = dayStart(dateFrom.value), to = dayEnd(dateTo.value);
+    return allRows.filter(r => {
+      if(from === null && to === null) return true;
+      if(r.ts === null) return false;
+      if(from !== null && r.ts < from) return false;
+      if(to !== null && r.ts > to) return false;
+      return true;
+    });
+  }
+
+  function buildDeviceOptions(){
+    const inRange = rowsInDateRange();
+    const counts = {};
+    inRange.forEach(r => { counts[r.loc] = (counts[r.loc] || 0) + 1; });
+
+    const known = new Set(DEVICES.map(normName));
+    // Расположения из таблицы, которых нет в списке — тоже показываем
+    const extra = [];
+    const seen = new Set();
+    allRows.forEach(r => {
+      if(r.loc && !known.has(r.loc) && !seen.has(r.loc)){
+        seen.add(r.loc);
+        extra.push(r.cells[1].replace(/\s+/g, ' ').trim());
+      }
+    });
+    const all = DEVICES.concat(extra);
+
+    let html = `<option value="">Все датчики (${inRange.length})</option>`;
+    all.forEach(name => {
+      const n = counts[normName(name)] || 0;
+      const label = n > 0 ? `${name} (${n})` : `${name} — нет данных`;
+      html += `<option value="${escapeHtml(normName(name))}"${normName(name) === selectedDevice ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+    });
+    deviceSelect.innerHTML = html;
+    deviceSelect.value = selectedDevice;
+  }
+
+  function getViewRows(){
+    let rows = rowsInDateRange();
+    if(selectedDevice) rows = rows.filter(r => r.loc === selectedDevice);
+    return rows;
+  }
+
+  function compareCells(a, b, col){
+    if(col === 0){
+      const ad = a.ts, bd = b.ts;
+      if(ad !== null && bd !== null) return ad - bd;
+      if(ad !== null) return -1;
+      if(bd !== null) return 1;
+      return 0;
+    }
+    const av = a.cells[col], bv = b.cells[col];
+    if(col === 2 || col === 4 || col === 6){
+      const an = parseNum(av), bn = parseNum(bv);
+      if(an !== null && bn !== null) return an - bn;
+      if(an !== null) return -1;
+      if(bn !== null) return 1;
+      return 0;
+    }
+    return av.localeCompare(bv, 'ru');
+  }
+
+  // ===== Отрисовка =====
+  function onFilterChange(){
+    page = 1;
+    detectQuick();
+    buildDeviceOptions();
+    draw();
+  }
+
+  function draw(){
+    detectQuick();
+    let rows = getViewRows();
+    const badCount = rows.filter(r => r.tempBad || r.humBad).length;
+    const lowCount = rows.filter(r => r.battLow).length;
+
+    if(onlyBad) rows = rows.filter(r => r.tempBad || r.humBad || r.battLow);
+
+    rows = rows.slice().sort((a, b) => {
+      const c = compareCells(a, b, sortCol);
+      return (c * sortDir) || ((a.idx - b.idx) * sortDir);
+    });
+
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    if(page > pages) page = pages;
+    const start = (page - 1) * pageSize;
+    const slice = rows.slice(start, start + pageSize);
+
+    rowCountEl.textContent = `Записей: ${total}` + (allRows.length !== total ? ` из ${allRows.length}` : '');
+    badInfoEl.innerHTML =
+      (badCount ? `<span class="bad">Вне нормы: ${badCount}</span>` : '') +
+      (badCount && lowCount ? ' · ' : '') +
+      (lowCount ? `<span class="warnb">Низкий заряд: ${lowCount}</span>` : '');
+
+    if(allRows.length === 0){
+      contentEl.innerHTML = '<div class="state-box">В таблице пока нет показаний.</div>';
+      pagerEl.innerHTML = '';
+      return;
+    }
+    if(total === 0){
+      contentEl.innerHTML = '<div class="state-box">Нет показаний за выбранный период или по выбранному датчику.</div>';
+      pagerEl.innerHTML = '';
+      return;
+    }
+
+    const thead = '<thead><tr>' + HEADERS.map((h, i) => {
+      const active = sortCol === i;
+      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${escapeHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr></thead>';
+
+    const tbody = '<tbody>' + slice.map(r => {
+      const c = r.cells;
+      return '<tr>' +
+        `<td>${escapeHtml(c[0])}</td>` +
+        `<td class="loc" title="${escapeHtml(c[1])}">${escapeHtml(c[1])}</td>` +
+        `<td class="${r.tempBad ? 'bad' : ''}">${escapeHtml(c[2])}</td>` +
+        `<td>${escapeHtml(c[3])}</td>` +
+        `<td class="${r.humBad ? 'bad' : ''}">${escapeHtml(c[4])}</td>` +
+        `<td>${escapeHtml(c[5])}</td>` +
+        `<td class="${r.battLow ? 'low' : ''}">${escapeHtml(c[6])}</td>` +
+        '</tr>';
+    }).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll" id="tableScroll"><table>${thead}${tbody}</table></div>`;
+
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = parseInt(th.dataset.col, 10);
+        if(sortCol === col) sortDir = -sortDir;
+        else { sortCol = col; sortDir = 1; }
+        page = 1;
+        draw();
+      });
+    });
+
+    renderPager(total, pages, start, slice.length);
+  }
+
+  function renderPager(total, pages, start, shown){
+    pagerEl.innerHTML = `
+      <div class="pager">
+        <div class="size-switch">
+          <span>Показывать:</span>
+          <div class="seg" role="group" aria-label="Записей на странице">
+            ${PAGE_SIZES.map(n => `<button type="button" data-size="${n}" class="${n === pageSize ? 'active' : ''}" aria-pressed="${n === pageSize}">${n}</button>`).join('')}
+          </div>
+        </div>
+        <div class="lower">
+          <span class="range">${start + 1}–${start + shown} из ${total}</span>
+          <div class="nav">
+            <button type="button" data-nav="prev" aria-label="Предыдущая страница"${page <= 1 ? ' disabled' : ''}>‹</button>
+            <span class="page-num">${page} / ${pages}</span>
+            <button type="button" data-nav="next" aria-label="Следующая страница"${page >= pages ? ' disabled' : ''}>›</button>
+          </div>
+        </div>
+      </div>`;
+
+    pagerEl.querySelectorAll('[data-size]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const n = parseInt(btn.dataset.size, 10);
+        if(n === pageSize) return;
+        pageSize = n;
+        try{ localStorage.setItem(PAGE_SIZE_KEY, String(n)); } catch(e){}
+        page = 1;
+        draw();
+      });
+    });
+    pagerEl.querySelectorAll('[data-nav]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        page += btn.dataset.nav === 'next' ? 1 : -1;
+        draw();
+        const sc = document.getElementById('tableScroll');
+        if(sc) sc.scrollTop = 0;
+      });
+    });
+  }
+
+  // ===== События =====
+  deviceSelect.addEventListener('change', () => {
+    selectedDevice = deviceSelect.value;
+    page = 1;
+    draw();
+  });
+  dateFrom.addEventListener('change', onFilterChange);
+  dateTo.addEventListener('change', onFilterChange);
+  quickEl.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-q]');
+    if(b) setQuick(b.dataset.q);
+  });
+  onlyBadBtn.addEventListener('click', () => {
+    onlyBad = !onlyBad;
+    onlyBadBtn.classList.toggle('active', onlyBad);
+    onlyBadBtn.setAttribute('aria-pressed', onlyBad ? 'true' : 'false');
+    page = 1;
+    draw();
+  });
+  refreshBtn.addEventListener('click', load);
+
+  // По умолчанию — сегодня
+  const _now = new Date();
+  dateFrom.value = dateTo.value = ymd(_now);
+  detectQuick();
+  load();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

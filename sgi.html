@@ -117,6 +117,13 @@
   }
   .ext-links .tg-btn:hover{border-color:#93bce4;}
 
+  .ext-links button.on{
+    color:#2f7a3e;
+    background:#e8f5ea;
+    border-color:#c3e2cb;
+  }
+
+  
   .toolbar{
     display:flex;
     flex-direction:column;
@@ -296,6 +303,7 @@
   thead th{
     position:sticky;
     top:0;
+    z-index:10;
     background:var(--accent-soft);
     color:var(--text);
     text-align:left;
@@ -599,6 +607,7 @@
     <a href="#" id="sheetLink" target="_blank" rel="noopener" hidden>📊 Открыть таблицу</a>
     <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Создать заявку через Telegram</a>
     <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
+    <button id="autoRefreshBtn" type="button" aria-pressed="false">🔄 Автообновление: выкл</button>
   </div>
 
   <div class="toolbar">
@@ -771,9 +780,9 @@
   // старые сохранённые ширины не подходят.
   const COL_WIDTHS_KEY = 'gcheck_sgi_col_widths_v3';
   // Порядок: Дата создания, Статус, Наименование, Участок, Тип оборудования, Оборудование, Заявитель, Взято в работу, Дата закрытия, Фото
-  const DEFAULT_COL_WIDTHS = [150, 220, 260, 140, 170, 200, 140, 150, 150, 130];
+  const DEFAULT_COL_WIDTHS = [150, 220, 260, 140, 170, 200, 140, 150, 150, 175];
   // Минимальная ширина каждого столбца: чтобы данные не превращались в кашу
-  const MIN_COL_WIDTHS = [130, 170, 160, 100, 120, 120, 110, 130, 130, 110];
+  const MIN_COL_WIDTHS = [130, 170, 160, 100, 120, 120, 110, 130, 130, 170];
 
   let colWidths = (() => {
     try{
@@ -1137,16 +1146,17 @@
   }
 
   // ==== Высота таблицы: нижний отступ виден без прокрутки страницы ====
-  const TABLE_BOTTOM_GAP = 24;
-  function fitTable(){
-    const sc = contentEl.querySelector('.table-scroll');
-    if(!sc) return;
-    sc.style.maxHeight = 'none';
-    const absTop = sc.getBoundingClientRect().top + window.scrollY;
-    const h = Math.max(260, window.innerHeight - absTop - TABLE_BOTTOM_GAP);
-    sc.style.maxHeight = h + 'px';
-  }
-  window.addEventListener('resize', fitTable);
+  
+const TABLE_BOTTOM_GAP = 24; // = padding-bottom у .wrap
+function fitTable(){
+  const sc = contentEl.querySelector('.table-scroll');
+  if(!sc) return;
+  // Таблица занимает всю высоту экрана; страница прокручивается
+  // ровно до того момента, когда шапка таблицы упирается в верх окна
+  const h = Math.max(260, window.innerHeight - TABLE_BOTTOM_GAP);
+  sc.style.maxHeight = h + 'px';
+}
+window.addEventListener('resize', fitTable);
 
   // ==== Обработчики фильтров ====
   function setStatusPanel(open){
@@ -1532,9 +1542,8 @@
     if(pendingUploads > 0){ e.preventDefault(); e.returnValue = ''; }
   });
 
-  // ==== Автообновление страницы при бездействии ====
-  const IDLE_TIMEOUT_MS = 60 * 1000; // 1 минута
-  let idleTimer = null;
+// ==== Автообновление: включается кнопкой, раз в минуту ====
+
 
   function isBusy(){
     // Не перезагружаем, пока открыта модалка создания заявки.
@@ -1549,29 +1558,25 @@
     return false;
   }
 
-  function scheduleReload(){
-    if(idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(() => {
-      if(isBusy()){
-        scheduleReload();
-        return;
-      }
-      location.reload();
-    }, IDLE_TIMEOUT_MS);
+const AUTO_REFRESH_MS = 60 * 1000;
+const autoBtn = document.getElementById('autoRefreshBtn');
+let autoTimer = null;
+
+function setAutoRefresh(on){
+  clearInterval(autoTimer);
+  autoTimer = null;
+  if(on){
+    autoTimer = setInterval(() => {
+      if(!document.hidden && !isBusy()) loadData();
+    }, AUTO_REFRESH_MS);
   }
+  autoBtn.classList.toggle('on', on);
+  autoBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+  autoBtn.textContent = on ? '🔄 Автообновление: вкл (1 мин)' : '🔄 Автообновление: выкл';
+}
 
-  ['click', 'touchstart', 'input', 'keydown', 'pointerdown'].forEach(evt => {
-    document.addEventListener(evt, scheduleReload, { passive: true });
-  });
-
-  document.addEventListener('visibilitychange', () => {
-    if(!document.hidden){
-      scheduleReload();
-    }
-  });
-
-  scheduleReload();
-
+autoBtn.addEventListener('click', () => setAutoRefresh(!autoTimer));
+  
   // ==== Сжатие фото ====
   const fieldPhoto = document.getElementById('fieldPhoto');
   const photoPreviewWrap = document.getElementById('photoPreviewWrap');

@@ -43,7 +43,7 @@
   .wrap{
     max-width:1200px;
     margin:0 auto;
-    padding:24px 20px 60px;
+    padding:24px 20px 24px;
   }
   .back-link{
     display:inline-flex;
@@ -157,31 +157,44 @@
     gap:10px;
     flex-wrap:wrap;
   }
-  .filter-select{
-    position:relative;
-    flex-shrink:0;
+  /* Мультивыбор статусов */
+  .ms{position:relative; flex-shrink:0; max-width:100%;}
+  .ms-btn{
+    display:inline-flex; align-items:center; gap:8px;
+    height:38px; max-width:100%; padding:0 14px;
+    border:1px solid var(--border-strong); border-radius:999px;
+    background:var(--surface); font-family:inherit; font-size:13px; font-weight:600;
+    color:var(--text); cursor:pointer;
   }
-  .filter-select select{
-    appearance:none;
-    -webkit-appearance:none;
-    height:38px;
-    padding:0 34px 0 14px;
-    border:1px solid var(--border-strong);
-    border-radius:999px;
-    background:var(--surface) url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%2398968a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>") no-repeat right 14px center;
-    font-family:inherit;
-    font-size:13px;
-    font-weight:600;
-    color:var(--text);
-    cursor:pointer;
-    max-width:100%;
+  .ms-btn:hover{border-color:var(--accent);}
+  .ms-btn .lbl{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:240px;}
+  .ms-btn .chev{font-size:10px; opacity:0.6; flex-shrink:0;}
+  .ms.has-value .ms-btn{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  .ms-panel{
+    position:absolute; top:calc(100% + 6px); left:0; z-index:30;
+    min-width:290px; max-width:calc(100vw - 40px);
+    background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:12px; box-shadow:0 8px 24px rgba(0,0,0,0.12); padding:6px;
   }
-  .filter-select select:focus{outline:2px solid var(--accent); outline-offset:1px;}
-  .filter-select.has-value select{
-    border-color:var(--accent);
-    background-color:var(--accent-soft);
-    color:var(--accent);
+  .ms-panel[hidden]{display:none;}
+  .ms-item{
+    display:flex; align-items:center; gap:10px; min-height:44px;
+    padding:6px 10px; border-radius:8px; cursor:pointer;
+    font-size:13px; font-weight:600;
   }
+  .ms-item:hover{background:var(--bg);}
+  .ms-item input{width:18px; height:18px; accent-color:var(--accent); flex-shrink:0; margin:0;}
+  .ms-dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .ms-text{flex:1; min-width:0; line-height:1.3;}
+  .ms-count{color:var(--text-muted); font-weight:500;}
+  .ms-clear{
+    display:block; width:100%; margin-top:4px; padding:12px 10px;
+    border:none; border-top:1px solid var(--border); background:none;
+    font-family:inherit; font-size:12px; font-weight:600; color:var(--accent); cursor:pointer;
+  }
+  .ms-clear:disabled{opacity:0.4; cursor:default;}
+  @media (max-width:700px){ .filters-sep{display:none;} }
+  .ext-links a[hidden]{display:none;}
   .filters-sep{
     width:1px;
     height:22px;
@@ -272,6 +285,7 @@
     border-radius:var(--radius);
     overflow:auto;
     max-width:100%;
+    min-height:240px;
   }
   table{
     border-collapse:collapse;
@@ -582,7 +596,7 @@
   </header>
 
   <div class="ext-links">
-    <a href="#" id="sheetLink" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+    <a href="#" id="sheetLink" target="_blank" rel="noopener" hidden>📊 Открыть таблицу</a>
     <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Создать заявку через Telegram</a>
     <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
   </div>
@@ -594,10 +608,11 @@
     </div>
 
     <div class="filters-row">
-      <div class="filter-select" id="statusFilterWrap">
-        <select id="statusSelect" aria-label="Фильтр по статусу">
-          <option value="">Все статусы</option>
-        </select>
+      <div class="ms" id="statusFilterWrap">
+        <button type="button" class="ms-btn" id="statusBtn" aria-haspopup="true" aria-expanded="false">
+          <span class="lbl" id="statusBtnLabel">Все статусы</span><span class="chev">▾</span>
+        </button>
+        <div class="ms-panel" id="statusPanel" hidden></div>
       </div>
       <span class="filters-sep" aria-hidden="true"></span>
       <div class="date-chips" id="dateChips" role="group" aria-label="Фильтр по дате создания">
@@ -770,11 +785,65 @@
     return DEFAULT_COL_WIDTHS.slice();
   })();
 
+  // ==== Максимальная ширина столбца = ширина самой длинной строки в нём ====
+  const COL_HEADER_TEXT = ['Дата создания', 'Статус', 'Наименование заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
+  const FONT_FAMILY = "Manrope, Arial, sans-serif";
+  // Шрифт ячеек по столбцам (как в таблице)
+  const COL_FONTS = [
+    `12px ${FONT_FAMILY}`,        // дата создания (muted)
+    `600 12px ${FONT_FAMILY}`,    // статус
+    `500 13px ${FONT_FAMILY}`,    // наименование
+    `13px ${FONT_FAMILY}`,        // участок
+    `13px ${FONT_FAMILY}`,        // тип оборудования
+    `13px ${FONT_FAMILY}`,        // оборудование
+    `12px ${FONT_FAMILY}`,        // заявитель
+    `12px ${FONT_FAMILY}`,        // взято в работу
+    `12px ${FONT_FAMILY}`,        // дата закрытия
+    `600 12px ${FONT_FAMILY}`     // фото
+  ];
+  let maxColWidths = null;
+  const measureCtx = document.createElement('canvas').getContext('2d');
+
+  function textWidth(text, font){
+    measureCtx.font = font;
+    return measureCtx.measureText(text).width;
+  }
+
+  function computeMaxWidths(){
+    maxColWidths = COL_HEADER_TEXT.map((h, i) => {
+      // заголовок: текст + стрелка сортировки + отступы
+      let w = textWidth(h, `600 13px ${FONT_FAMILY}`) + 28 + 26;
+      if(i === 9){
+        w = Math.max(w, 165); // кнопка "Показать фото"
+      } else {
+        rows.forEach(r => {
+          let cw = textWidth(r.cells[i] || '', COL_FONTS[i]) + 28;
+          if(i === 1) cw += 38; // кнопка статуса: внутренние отступы + стрелка
+          if(cw > w) w = cw;
+        });
+      }
+      return Math.max(MIN_COL_WIDTHS[i], Math.ceil(w) + 6);
+    });
+  }
+
+  function colMax(i){
+    return maxColWidths ? maxColWidths[i] : Infinity;
+  }
+
   function saveColWidths(){
     try{ localStorage.setItem(COL_WIDTHS_KEY, JSON.stringify(colWidths)); } catch(e){}
   }
 
   document.getElementById('sheetLink').href = SHEET_URL;
+
+  // Ссылка на исходную таблицу — только для администраторов
+  function isAdmin(){
+    return ((window.gcheckUser && window.gcheckUser.type) || '').trim().toLowerCase() === 'администратор';
+  }
+  function applyRole(){
+    document.getElementById('sheetLink').hidden = !isAdmin();
+  }
+  applyRole();
 
   // ==== Текущий пользователь — из общей авторизации (login.html → auth-guard.js) ====
   // Если токена нет, auth-guard.js уже отправил на login.html.
@@ -784,6 +853,7 @@
 
   // auth-guard.js после фоновой сверки с сервером может обновить данные пользователя
   document.addEventListener('gcheck:user', () => {
+    applyRole();
     const n = ((window.gcheckUser && window.gcheckUser.name) || '').trim();
     if(n){
       currentUser = n;
@@ -795,7 +865,7 @@
   let header = [];
   let colIdx = {};
   let rows = [];
-  let activeStatus = null; // null = "Все"
+  const activeStatuses = new Set(); // пусто = "Все статусы"
   let searchQuery = '';
   let sortCol = 0;          // по умолчанию сортируем по "Дата создания"
   let sortDir = -1;         // -1 = по убыванию — новые заявки сверху
@@ -804,8 +874,10 @@
   const contentEl = document.getElementById('content');
   const stateBox = document.getElementById('stateBox');
   const rowCountEl = document.getElementById('rowCount');
-  const statusSelect = document.getElementById('statusSelect');
   const statusFilterWrap = document.getElementById('statusFilterWrap');
+  const statusBtn = document.getElementById('statusBtn');
+  const statusBtnLabel = document.getElementById('statusBtnLabel');
+  const statusPanel = document.getElementById('statusPanel');
   const dateChips = document.getElementById('dateChips');
   const rangeWrap = document.getElementById('rangeWrap');
   const dateFromEl = document.getElementById('dateFrom');
@@ -905,12 +977,34 @@
   }
 
   function hasActiveFilters(){
-    return !!activeStatus || dateMode !== 'all' || !!searchQuery;
+    return activeStatuses.size > 0 || dateMode !== 'all' || !!searchQuery;
   }
 
-  // Выпадающий список статусов со счётчиками (с учётом выбранного периода)
+  // Мультивыбор статусов со счётчиками (с учётом выбранного периода)
+  const STATUS_DOT = {
+    'Открыта': 'var(--st-red-bar)',
+    'В работе': 'var(--st-yel-bar)',
+    'Выполнена': 'var(--st-grn-bar)',
+    'Выполнена. Проведена мойка и дезинфекция': 'var(--st-grn-bar)'
+  };
+  let statusTotalInRange = 0;
+
+  function updateStatusLabel(){
+    let text;
+    if(activeStatuses.size === 0) text = `Все статусы (${statusTotalInRange})`;
+    else if(activeStatuses.size === 1) text = Array.from(activeStatuses)[0];
+    else text = `Статусы: ${activeStatuses.size}`;
+    statusBtnLabel.textContent = text;
+    statusBtnLabel.title = text;
+    statusFilterWrap.classList.toggle('has-value', activeStatuses.size > 0);
+    const clr = document.getElementById('msClear');
+    if(clr) clr.disabled = activeStatuses.size === 0;
+    resetFiltersBtn.classList.toggle('show', hasActiveFilters());
+  }
+
   function renderStatusTabs(){
     const inRange = rows.filter(inDateRange);
+    statusTotalInRange = inRange.length;
     const counts = {};
     STATUSES.forEach(s => counts[s] = 0);
     inRange.forEach(r => {
@@ -918,12 +1012,15 @@
       if(counts[s] !== undefined) counts[s]++;
     });
 
-    statusSelect.innerHTML =
-      `<option value="">Все статусы (${inRange.length})</option>` +
-      STATUSES.map(s => `<option value="${escapeHtml(s)}">${escapeHtml(s)} (${counts[s]})</option>`).join('');
-    statusSelect.value = activeStatus || '';
-    statusFilterWrap.classList.toggle('has-value', !!activeStatus);
-    resetFiltersBtn.classList.toggle('show', hasActiveFilters());
+    statusPanel.innerHTML = STATUSES.map(s => `
+      <label class="ms-item">
+        <input type="checkbox" value="${escapeHtml(s)}"${activeStatuses.has(s) ? ' checked' : ''}>
+        <span class="ms-dot" style="background:${STATUS_DOT[s]}"></span>
+        <span class="ms-text">${escapeHtml(s)}</span>
+        <span class="ms-count">${counts[s]}</span>
+      </label>`).join('') +
+      '<button type="button" class="ms-clear" id="msClear">Сбросить выбор</button>';
+    updateStatusLabel();
   }
 
   function statusPickerHtml(rowIndex, cur){
@@ -944,8 +1041,8 @@
 
   function renderTable(){
     let filtered = rows.filter(inDateRange);
-    if(activeStatus){
-      filtered = filtered.filter(r => r.cells[IDX.status] === activeStatus);
+    if(activeStatuses.size > 0){
+      filtered = filtered.filter(r => activeStatuses.has(r.cells[IDX.status]));
     }
     if(searchQuery){
       const q = searchQuery.toLowerCase();
@@ -987,6 +1084,9 @@
 
     const HEADERS = ['Дата создания', 'Статус', 'Наименование заявки', 'Участок', 'Тип оборудования', 'Оборудование', 'Заявитель', 'Взято в работу', 'Дата закрытия', 'Фото'];
 
+    computeMaxWidths();
+    colWidths = colWidths.map((w, i) => Math.min(w, colMax(i)));
+
     const colgroupHtml = '<colgroup>' + colWidths.map(w => `<col style="width:${w}px">`).join('') + '</colgroup>';
     const totalWidth = colWidths.reduce((a, b) => a + b, 0);
 
@@ -1019,6 +1119,7 @@
 
     initStatusPickers();
     initResizers();
+    fitTable();
 
     contentEl.querySelectorAll('th.sortable').forEach(th => {
       th.addEventListener('click', (e) => {
@@ -1035,12 +1136,45 @@
     });
   }
 
+  // ==== Высота таблицы: нижний отступ виден без прокрутки страницы ====
+  const TABLE_BOTTOM_GAP = 24;
+  function fitTable(){
+    const sc = contentEl.querySelector('.table-scroll');
+    if(!sc) return;
+    sc.style.maxHeight = 'none';
+    const absTop = sc.getBoundingClientRect().top + window.scrollY;
+    const h = Math.max(260, window.innerHeight - absTop - TABLE_BOTTOM_GAP);
+    sc.style.maxHeight = h + 'px';
+  }
+  window.addEventListener('resize', fitTable);
+
   // ==== Обработчики фильтров ====
-  statusSelect.addEventListener('change', () => {
-    activeStatus = statusSelect.value || null;
-    statusFilterWrap.classList.toggle('has-value', !!activeStatus);
+  function setStatusPanel(open){
+    statusPanel.hidden = !open;
+    statusBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+  statusBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    setStatusPanel(statusPanel.hidden);
+  });
+  statusPanel.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if(e.target.id === 'msClear'){
+      activeStatuses.clear();
+      statusPanel.querySelectorAll('input[type=checkbox]').forEach(c => { c.checked = false; });
+      updateStatusLabel();
+      renderTable();
+    }
+  });
+  statusPanel.addEventListener('change', (e) => {
+    const cb = e.target;
+    if(cb.type !== 'checkbox') return;
+    if(cb.checked) activeStatuses.add(cb.value); else activeStatuses.delete(cb.value);
+    updateStatusLabel();
     renderTable();
   });
+  document.addEventListener('click', () => setStatusPanel(false));
+  document.addEventListener('keydown', (e) => { if(e.key === 'Escape') setStatusPanel(false); });
 
   function setDateMode(mode){
     dateMode = mode;
@@ -1071,7 +1205,7 @@
   }));
 
   resetFiltersBtn.addEventListener('click', () => {
-    activeStatus = null;
+    activeStatuses.clear();
     searchQuery = '';
     searchInput.value = '';
     dateFromEl.value = '';
@@ -1100,7 +1234,7 @@
         document.body.classList.add('resizing');
 
         const onMove = (ev) => {
-          const w = Math.max(MIN_COL_WIDTHS[i], startW + (ev.clientX - startX));
+          const w = Math.min(colMax(i), Math.max(MIN_COL_WIDTHS[i], startW + (ev.clientX - startX)));
           colWidths[i] = w;
           cols[i].style.width = w + 'px';
           table.style.width = colWidths.reduce((a, b) => a + b, 0) + 'px';
@@ -1124,7 +1258,7 @@
       handle.addEventListener('dblclick', (e) => {
         e.stopPropagation();
         const i = parseInt(handle.dataset.col, 10);
-        colWidths[i] = DEFAULT_COL_WIDTHS[i];
+        colWidths[i] = Math.min(DEFAULT_COL_WIDTHS[i], colMax(i));
         saveColWidths();
         renderTable();
       });
@@ -1152,7 +1286,9 @@
         menu.classList.remove('up');
         menu.classList.add('show');
         const rect = menu.getBoundingClientRect();
-        if(rect.bottom > window.innerHeight - 8){
+        const sc = picker.closest('.table-scroll');
+        const limit = Math.min(window.innerHeight, sc ? sc.getBoundingClientRect().bottom : window.innerHeight) - 8;
+        if(rect.bottom > limit){
           menu.classList.add('up');
         }
       });

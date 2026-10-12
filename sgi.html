@@ -607,7 +607,7 @@
     <a href="#" id="sheetLink" target="_blank" rel="noopener" hidden>📊 Открыть таблицу</a>
     <a class="tg-btn" href="https://t.me/hismar_bot" onclick="return openExternal(this.href)" rel="noopener">✈️ Создать заявку через Telegram</a>
     <button class="create-btn" id="openCreateModal" type="button">➕ Создать заявку</button>
-    <button id="autoRefreshBtn" type="button" aria-pressed="false">🔄 Автообновление: выкл</button>
+    <button id="autoRefreshBtn" type="button" aria-pressed="false" hidden>🔄 Автообновление: выкл</button>
   </div>
 
   <div class="toolbar">
@@ -849,9 +849,11 @@
   function isAdmin(){
     return ((window.gcheckUser && window.gcheckUser.type) || '').trim().toLowerCase() === 'администратор';
   }
-  function applyRole(){
-    document.getElementById('sheetLink').hidden = !isAdmin();
-  }
+function applyRole(){
+  const admin = isAdmin();
+  document.getElementById('sheetLink').hidden = !admin;
+  document.getElementById('autoRefreshBtn').hidden = !admin;
+}
   applyRole();
 
   // ==== Текущий пользователь — из общей авторизации (login.html → auth-guard.js) ====

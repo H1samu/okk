@@ -107,7 +107,7 @@
   }
   .date-chip:hover{border-color:var(--border-strong);}
   .date-chip.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
-  .range-wrap{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+  .range-wrap{display:flex; align-items:center; gap:8px; flex-wrap:nowrap;}
   .range-wrap[hidden]{display:none;}
   .range-wrap input[type=date]{
     height:44px; padding:0 10px;
@@ -116,9 +116,12 @@
     font-size:13px;
     background:var(--surface);
     color:var(--text);
+    flex:1 1 0;
+    min-width:0;
+    width:100%;
   }
   .range-wrap input[type=date]:focus{outline:2px solid var(--accent); outline-offset:1px;}
-  .range-wrap .dash{color:var(--text-muted);}
+  .range-wrap .dash{color:var(--text-muted); flex:0 0 auto;}
   
   .meta{
     display:flex; align-items:center; justify-content:space-between;
@@ -212,6 +215,7 @@
     .pager .lower{display:flex; align-items:center; justify-content:space-between; gap:12px;}
     .f-field input[type=date]{min-width:0;}
     .f-row .f-field:not(.grow){flex:1 1 140px;}
+    .range-wrap{flex:1 1 100%;}
   }
   @media (min-width:601px){
     .pager .lower{display:flex; align-items:center; gap:16px; flex:1; justify-content:space-between;}

@@ -88,11 +88,11 @@
     cursor:pointer;
     transition:border-color .15s ease, transform .1s ease;
   }
-  .chip:hover{border-color:var(--accent);}
-  .chip:active{transform:scale(0.97);}
+  .chip:hover:not(:disabled){border-color:var(--accent);}
+  .chip:active:not(:disabled){transform:scale(0.97);}
+  .chip:disabled{opacity:0.6; cursor:wait;}
   .chip.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
   .chip.warn.active{border-color:var(--danger); background:var(--danger-soft); color:var(--danger);}
-  .chip.icon{width:44px; padding:0; font-size:18px;}
 
   .meta{
     display:flex; align-items:center; justify-content:space-between;
@@ -171,6 +171,15 @@
   .nav button:hover:not(:disabled){border-color:var(--accent);}
   .nav button:disabled{opacity:0.5; cursor:default;}
 
+  /* ===== Уведомление ===== */
+  .toast{
+    position:fixed; left:50%; bottom:24px; transform:translateX(-50%);
+    z-index:2000; padding:11px 18px; border-radius:999px;
+    font-size:13px; font-weight:600; color:#fff; background:var(--accent);
+    box-shadow:0 6px 20px rgba(0,0,0,.18); max-width:90vw; display:none;
+  }
+  .toast.error{background:var(--danger);}
+
   @media (max-width:600px){
     .pager{flex-direction:column; align-items:stretch;}
     .pager .size-switch{justify-content:space-between;}
@@ -212,14 +221,12 @@
       </div>
       <div class="quick" id="quick">
         <button type="button" class="chip" data-q="today">Сегодня</button>
-        <button type="button" class="chip" data-q="yesterday">Вчера</button>
-        <button type="button" class="chip" data-q="week">7 дней</button>
         <button type="button" class="chip" data-q="all">Всё время</button>
       </div>
     </div>
     <div class="f-row">
       <button type="button" class="chip warn" id="onlyBad" aria-pressed="false">⚠ Только отклонения</button>
-      <button type="button" class="chip icon" id="refreshBtn" aria-label="Обновить данные" title="Обновить данные">↻</button>
+      <button type="button" class="chip" id="syncBtn">📡 Получить данные сейчас</button>
     </div>
   </div>
 
@@ -234,11 +241,17 @@
   <div id="pager"></div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
   const SHEET_ID = '1RmyGCE_GbRS6ofl1aTNVAXVobqEV8n5ZlbRCXZJyRlc';
   const SHEET_NAME = 'Показания датчиков (реальные)';
   const BATTERY_MIN = 30;
+
+  // URL веб-приложения Apps Script (Tuya-скрипт, развёрнутый как Web App, заканчивается на /exec).
+  // В скрипте должна быть функция doPost — см. инструкцию.
+  const SENSORS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwCLXSs9P9mbB1__1ZoAJ17gzWLpzOhANb2LyCveBk-NPkb7aZDb9zHfIkdZxVtwUp9/exec';
 
   const PAGE_SIZE_KEY = 'gcheck_sensors_page_size';
   const PAGE_SIZES = [50, 100, 200];
@@ -292,7 +305,8 @@
   const dateTo = document.getElementById('dateTo');
   const quickEl = document.getElementById('quick');
   const onlyBadBtn = document.getElementById('onlyBad');
-  const refreshBtn = document.getElementById('refreshBtn');
+  const syncBtn = document.getElementById('syncBtn');
+  const toastEl = document.getElementById('toast');
 
   let allRows = [];     // {cells:[7], idx, ts, loc, tempBad, humBad, battLow}
   let sortCol = 0;
@@ -315,6 +329,14 @@
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
   function normName(s){ return String(s || '').replace(/\s+/g, ' ').trim().toLowerCase(); }
+
+  function showToast(text, isError){
+    toastEl.textContent = text;
+    toastEl.classList.toggle('error', !!isError);
+    toastEl.style.display = 'block';
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => { toastEl.style.display = 'none'; }, isError ? 6000 : 3500);
+  }
 
   function parseNum(s){
     const t = String(s == null ? '' : s).replace(/\s/g, '').replace(',', '.');
@@ -361,15 +383,8 @@
   }
 
   function setQuick(q){
-    const now = new Date();
     if(q === 'today'){
-      dateFrom.value = dateTo.value = ymd(now);
-    } else if(q === 'yesterday'){
-      const y = new Date(now); y.setDate(y.getDate() - 1);
-      dateFrom.value = dateTo.value = ymd(y);
-    } else if(q === 'week'){
-      const w = new Date(now); w.setDate(w.getDate() - 6);
-      dateFrom.value = ymd(w); dateTo.value = ymd(now);
+      dateFrom.value = dateTo.value = ymd(new Date());
     } else {
       dateFrom.value = ''; dateTo.value = '';
     }
@@ -377,15 +392,10 @@
   }
 
   function detectQuick(){
-    const now = new Date();
-    const t = ymd(now);
-    const y = new Date(now); y.setDate(y.getDate() - 1);
-    const w = new Date(now); w.setDate(w.getDate() - 6);
+    const t = ymd(new Date());
     const f = dateFrom.value, to = dateTo.value;
     let cur = '';
     if(f === t && to === t) cur = 'today';
-    else if(f === ymd(y) && to === ymd(y)) cur = 'yesterday';
-    else if(f === ymd(w) && to === t) cur = 'week';
     else if(!f && !to) cur = 'all';
     quickEl.querySelectorAll('.chip').forEach(b => b.classList.toggle('active', b.dataset.q === cur));
   }
@@ -397,7 +407,7 @@
     const range = encodeURIComponent(SHEET_NAME);
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${range}?key=${API_KEY}`;
 
-    fetch(url)
+    return fetch(url)
       .then(r => { if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
       .then(data => {
         const values = data.values || [];
@@ -421,6 +431,35 @@
       });
   }
 
+  // ===== Запрос свежих показаний (Apps Script → logTuyaData) =====
+  async function syncNow(){
+    if(!confirm('Вы действительно хотите получить данные датчиков на текущий момент?\n\nПоказания будут запрошены у датчиков и добавлены в таблицу. Это может занять до минуты.')) return;
+
+    if(!/^https:\/\//.test(SENSORS_SCRIPT_URL)){
+      showToast('Не указан URL скрипта датчиков (SENSORS_SCRIPT_URL)', true);
+      return;
+    }
+
+    syncBtn.disabled = true;
+    syncBtn.textContent = '⏳ Получаем данные…';
+    try{
+      const res = await fetch(SENSORS_SCRIPT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'logTuyaData', token: window.gcheckUser.token })
+      });
+      const d = await res.json();
+      if(!d.ok) throw new Error(d.error || 'Неизвестная ошибка');
+      showToast('Данные получены ✓');
+      await load();
+    } catch(err){
+      showToast('Не удалось получить данные: ' + err.message, true);
+    } finally {
+      syncBtn.disabled = false;
+      syncBtn.textContent = '📡 Получить данные сейчас';
+    }
+  }
+
   // ===== Фильтрация =====
   function rowsInDateRange(){
     const from = dayStart(dateFrom.value), to = dayEnd(dateTo.value);
@@ -434,12 +473,8 @@
   }
 
   function buildDeviceOptions(){
-    const inRange = rowsInDateRange();
-    const counts = {};
-    inRange.forEach(r => { counts[r.loc] = (counts[r.loc] || 0) + 1; });
-
     const known = new Set(DEVICES.map(normName));
-    // Расположения из таблицы, которых нет в списке — тоже показываем
+    // Расположения из таблицы, которых нет в списке, — тоже показываем
     const extra = [];
     const seen = new Set();
     allRows.forEach(r => {
@@ -450,11 +485,9 @@
     });
     const all = DEVICES.concat(extra);
 
-    let html = `<option value="">Все датчики (${inRange.length})</option>`;
+    let html = `<option value="">Все датчики (${all.length})</option>`;
     all.forEach(name => {
-      const n = counts[normName(name)] || 0;
-      const label = n > 0 ? `${name} (${n})` : `${name} — нет данных`;
-      html += `<option value="${escapeHtml(normName(name))}"${normName(name) === selectedDevice ? ' selected' : ''}>${escapeHtml(label)}</option>`;
+      html += `<option value="${escapeHtml(normName(name))}">${escapeHtml(name)}</option>`;
     });
     deviceSelect.innerHTML = html;
     deviceSelect.value = selectedDevice;
@@ -489,7 +522,6 @@
   function onFilterChange(){
     page = 1;
     detectQuick();
-    buildDeviceOptions();
     draw();
   }
 
@@ -621,11 +653,9 @@
     page = 1;
     draw();
   });
-  refreshBtn.addEventListener('click', load);
+  syncBtn.addEventListener('click', syncNow);
 
-  // По умолчанию — сегодня
-  const _now = new Date();
-  dateFrom.value = dateTo.value = ymd(_now);
+  // По умолчанию — всё время (даты пустые)
   detectQuick();
   load();
 

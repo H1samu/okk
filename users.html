@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="auth-guard.js"></script>
+<script>
+  if(!window.gcheckUser || (window.gcheckUser.type || '').trim().toLowerCase() !== 'администратор'){
+    location.replace('index.html');
+  }
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Пользователи системы — Hismar Check</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1;
+    --surface:#ffffff;
+    --border:#e4e2d9;
+    --border-strong:#c9c6b8;
+    --text:#20201c;
+    --text-secondary:#6b6a61;
+    --text-muted:#98968a;
+    --accent:#3a5a52;
+    --accent-soft:#e8efec;
+    --danger:#9c3b34;
+    --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Manrope', Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .wrap{max-width:900px; margin:0 auto; padding:24px 20px 60px;}
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:13px; color:var(--text-secondary);
+    text-decoration:none; margin-bottom:20px; padding:6px 0;
+  }
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  h1{font-size:22px; font-weight:700; margin:0 0 6px;}
+  header p{font-size:13px; color:var(--text-secondary); margin:0;}
+  .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
+  .ext-links a{
+    display:inline-flex; align-items:center; gap:7px; min-height:44px;
+    font-size:13px; font-weight:600; text-decoration:none;
+    color:var(--accent); background:var(--accent-soft);
+    border:1px solid var(--border); border-radius:999px; padding:0 16px;
+  }
+  .ext-links a:hover{border-color:var(--border-strong);}
+
+  .toolbar{display:flex; align-items:center; gap:12px; margin:18px 0 12px; flex-wrap:wrap;}
+  .search-box{position:relative; flex:1; min-width:200px;}
+  .search-box input{
+    width:100%; height:46px; padding:0 16px 0 40px;
+    border:1px solid var(--border-strong); border-radius:999px;
+    font-size:14px; font-family:inherit; background:var(--surface); color:var(--text);
+  }
+  .search-box input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .search-box svg{
+    position:absolute; left:14px; top:50%; transform:translateY(-50%);
+    width:16px; height:16px; stroke:var(--text-muted);
+  }
+  .refresh-btn{
+    width:46px; height:46px; border-radius:999px;
+    border:1px solid var(--border-strong); background:var(--surface);
+    color:var(--text); font-size:18px; cursor:pointer;
+  }
+  .refresh-btn:hover{border-color:var(--accent);}
+  .row-count{font-size:12px; color:var(--text-muted); margin-bottom:12px;}
+
+  .state-box{
+    text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px;
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  }
+  .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+
+  .table-scroll{
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:var(--radius); overflow:auto; max-width:100%; max-height:70vh;
+  }
+  table{border-collapse:separate; border-spacing:0; width:100%; font-size:13px; white-space:nowrap;}
+  thead th{
+    position:sticky; top:0; z-index:2; background:var(--accent-soft);
+    color:var(--text); text-align:left; padding:10px 14px; font-weight:600;
+    border-bottom:1px solid var(--border-strong);
+  }
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{background:#dfe9e5;}
+  th .sort-arrow{display:inline-block; margin-left:4px; color:var(--text-muted); font-size:11px;}
+  th.sort-active .sort-arrow{color:var(--accent);}
+  tbody td{
+    padding:9px 14px; border-bottom:1px solid var(--border);
+    color:var(--text-secondary); max-width:420px; overflow:hidden; text-overflow:ellipsis;
+  }
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fbfaf7;}
+  td.name{color:var(--text); font-weight:500;}
+  td.pin{font-variant-numeric:tabular-nums; letter-spacing:2px;}
+  mark{background:#fde68a; color:inherit; border-radius:3px;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="master.html">← Мастер-таблица</a>
+
+  <header>
+    <h1>Пользователи системы</h1>
+    <p>Только просмотр. Изменения вносятся в Google Таблице.</p>
+    <div class="ext-links">
+      <a href="https://docs.google.com/spreadsheets/d/1HwSWknOgkaHRKmDuJGH7jo6E5eUy1KKm4KYe5DErZbE/edit?gid=0#gid=0" target="_blank" rel="noopener">📊 Открыть таблицу пользователей</a>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Поиск по ФИО или должности" autocomplete="off">
+    </div>
+    <button class="refresh-btn" id="refreshBtn" type="button" aria-label="Обновить" title="Обновить">↻</button>
+  </div>
+
+  <div class="row-count" id="rowCount"></div>
+  <div id="content"><div class="state-box">Загрузка...</div></div>
+</div>
+
+<script>
+  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw65iyi4m1X3Bu1KIrcJwiQCnqQ83odteQc2MtEYnkEjHCiVqQV6sIVwJoUYrCQFR2ALQ/exec';
+
+  const contentEl = document.getElementById('content');
+  const rowCountEl = document.getElementById('rowCount');
+  const searchInput = document.getElementById('searchInput');
+  const refreshBtn = document.getElementById('refreshBtn');
+
+  // cols: 0 = ФИО, 1 = Пинкод, 2 = Должность
+  let users = [];
+  let sortCol = 0;
+  let sortDir = 1;
+
+  function escapeHtml(str){
+    return String(str)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+  function highlight(text, query){
+    if(!query) return escapeHtml(text);
+    const i = text.toLowerCase().indexOf(query.toLowerCase());
+    if(i === -1) return escapeHtml(text);
+    return escapeHtml(text.slice(0, i)) + '<mark>' + escapeHtml(text.slice(i, i + query.length)) + '</mark>' + escapeHtml(text.slice(i + query.length));
+  }
+
+  function load(){
+    contentEl.innerHTML = '<div class="state-box">Загрузка...</div>';
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action: 'listUsers', token: window.gcheckUser.token })
+    })
+      .then(r => r.json())
+      .then(res => {
+        if(!res.ok){
+          if(res.error === 'invalid' || res.error === 'expired' || res.error === 'inactive'){
+            window.gcheckLogout(); return;
+          }
+          if(res.error === 'forbidden'){ location.replace('index.html'); return; }
+          throw new Error(res.error || 'Неизвестная ошибка');
+        }
+        users = (res.users || []).map(u => ({
+          name: String(u.name || ''),
+          pin: String(u.pin || ''),
+          position: String(u.position || '')
+        }));
+        draw();
+      })
+      .catch(err => {
+        contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить пользователей. (' + escapeHtml(err.message) + ')</div>';
+        rowCountEl.textContent = '';
+      });
+  }
+
+  function draw(){
+    const q = searchInput.value.trim();
+    let rows = users;
+    if(q){
+      const ql = q.toLowerCase();
+      rows = rows.filter(u => u.name.toLowerCase().includes(ql) || u.position.toLowerCase().includes(ql));
+    }
+    const key = ['name', 'pin', 'position'][sortCol];
+    rows = rows.slice().sort((a, b) => a[key].localeCompare(b[key], 'ru') * sortDir);
+
+    rowCountEl.textContent = q ? `Найдено: ${rows.length} из ${users.length}` : `Пользователей: ${users.length}`;
+
+    if(rows.length === 0){
+      contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
+      return;
+    }
+
+    const heads = [['ФИО', true], ['Пинкод', false], ['Должность', true]];
+    const thead = '<thead><tr>' + heads.map(([h, sortable], i) => {
+      if(!sortable) return `<th>${h}</th>`;
+      const active = sortCol === i;
+      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr></thead>';
+
+    const tbody = '<tbody>' + rows.map(u =>
+      `<tr><td class="name">${highlight(u.name, q)}</td><td class="pin">${escapeHtml(u.pin)}</td><td>${highlight(u.position, q)}</td></tr>`
+    ).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll"><table>${thead}${tbody}</table></div>`;
+
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const c = parseInt(th.dataset.col, 10);
+        if(sortCol === c) sortDir = -sortDir; else { sortCol = c; sortDir = 1; }
+        draw();
+      });
+    });
+  }
+
+  searchInput.addEventListener('input', draw);
+  refreshBtn.addEventListener('click', load);
+  load();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('sw.js').catch(() => {});
+    });
+  }
+</script>
+
+</body>
+</html>

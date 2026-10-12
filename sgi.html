@@ -1584,10 +1584,6 @@ function canAutoRefresh(){
   return isAdmin() || pos === 'сотрудник сги';
 }
 
-function applyRole(){
-  document.getElementById('sheetLink').hidden = !isAdmin();
-  document.getElementById('autoRefreshBtn').hidden = !canAutoRefresh();
-}
   
 autoBtn.addEventListener('click', () => setAutoRefresh(!autoTimer));
 

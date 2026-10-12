@@ -851,9 +851,9 @@
     return ((window.gcheckUser && window.gcheckUser.type) || '').trim().toLowerCase() === 'администратор';
   }
 function applyRole(){
-  const admin = isAdmin();
-  document.getElementById('sheetLink').hidden = !admin;
-  document.getElementById('autoRefreshBtn').hidden = !admin;
+  const allowed = canAutoRefresh();
+  document.getElementById('sheetLink').hidden = !allowed;
+  document.getElementById('autoRefreshBtn').hidden = !allowed;
 }
   applyRole();
 

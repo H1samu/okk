@@ -124,7 +124,6 @@
     border-color:#c3e2cb;
   }
 
-  
   .toolbar{
     display:flex;
     flex-direction:column;
@@ -850,11 +849,20 @@
   function isAdmin(){
     return ((window.gcheckUser && window.gcheckUser.type) || '').trim().toLowerCase() === 'администратор';
   }
-function applyRole(){
-  const allowed = canAutoRefresh();
-  document.getElementById('sheetLink').hidden = !allowed;
-  document.getElementById('autoRefreshBtn').hidden = !allowed;
-}
+
+  // ← ПРАВКА: кто может менять статусы (и включать автообновление)
+  function canEditStatus(){
+    const u = window.gcheckUser || {};
+    const type = (u.type || '').trim().toLowerCase();
+    const pos  = (u.position || '').trim().toLowerCase();
+    return type === 'администратор' || pos === 'сотрудник сги';
+  }
+
+  function applyRole(){
+    const allowed = canEditStatus();  // ← ПРАВКА: было canAutoRefresh()
+    document.getElementById('sheetLink').hidden = !allowed;
+    document.getElementById('autoRefreshBtn').hidden = !allowed;
+  }
   applyRole();
 
   // ==== Текущий пользователь — из общей авторизации (login.html → auth-guard.js) ====
@@ -871,6 +879,7 @@ function applyRole(){
       currentUser = n;
       currentUserEl.textContent = n;
     }
+    if(rows.length) renderTable();   // ← ПРАВКА: перерисовка после смены прав
   });
 
   // ==== Состояние списка заявок ====
@@ -1035,9 +1044,21 @@ function applyRole(){
     updateStatusLabel();
   }
 
-  function statusPickerHtml(rowIndex, cur){
-    const options = ALLOWED_TRANSITIONS[cur] || [];
+  // ← ПРАВКА: третий аргумент editable — можно ли менять статус
+  function statusPickerHtml(rowIndex, cur, editable){
     const cls = STATUS_CLASS[cur] || '';
+
+    // Нет прав — статичный бейдж без меню
+    if(!editable){
+      return `
+        <div class="status-picker" data-row-index="${rowIndex}" data-current="${escapeHtml(cur)}">
+          <button type="button" class="status-btn ${cls} static" tabindex="-1" aria-disabled="true">
+            <span class="status-label">${escapeHtml(cur)}</span>
+          </button>
+        </div>`;
+    }
+
+    const options = ALLOWED_TRANSITIONS[cur] || [];
     const isStatic = options.length === 0;
     const menu = options.map(s =>
       `<button type="button" class="status-option" data-value="${escapeHtml(s)}">${escapeHtml(s)}</button>`
@@ -1045,7 +1066,7 @@ function applyRole(){
     return `
       <div class="status-picker" data-row-index="${rowIndex}" data-current="${escapeHtml(cur)}">
         <button type="button" class="status-btn ${cls}${isStatic ? ' static' : ''}"${isStatic ? ' tabindex="-1"' : ''}>
-          <span class="status-label">${escapeHtml(cur)}</span><span class="chev">▾</span>
+          <span class="status-label">${escapeHtml(cur)}</span>${isStatic ? '' : '<span class="chev">▾</span>'}
         </button>
         <div class="status-menu">${menu}</div>
       </div>`;
@@ -1112,10 +1133,13 @@ function applyRole(){
       return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span>${resizer}</th>`;
     }).join('') + '</tr></thead>';
 
+    // ← ПРАВКА: вычисляем один раз и передаём в рендер пикера
+    const editable = canEditStatus();
+
     const tbodyHtml = '<tbody>' + filtered.map(r => `
       <tr data-row-index="${r.rowIndex}" class="${ROW_CLASS[r.cells[IDX.status]] || ''}">
         <td class="cell-muted">${escapeHtml(r.cells[IDX.createdAt])}</td>
-        <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status])}</td>
+        <td class="status-cell">${statusPickerHtml(r.rowIndex, r.cells[IDX.status], editable)}</td>
         <td class="name-cell">${escapeHtml(r.cells[IDX.name])}</td>
         <td class="nowrap-cell">${escapeHtml(r.cells[IDX.area])}</td>
         <td class="equipment-cell">${escapeHtml(r.cells[IDX.eqType])}</td>
@@ -1149,7 +1173,7 @@ function applyRole(){
   }
 
   // ==== Высота таблицы: нижний отступ виден без прокрутки страницы ====
-  
+
 const TABLE_BOTTOM_GAP = 24; // = padding-bottom у .wrap
 function fitTable(){
   const sc = contentEl.querySelector('.table-scroll');
@@ -1287,6 +1311,7 @@ window.addEventListener('resize', fitTable);
     contentEl.querySelectorAll('.status-picker').forEach(picker => {
       const btn = picker.querySelector('.status-btn');
       const menu = picker.querySelector('.status-menu');
+      if(!menu) return;               // ← ПРАВКА: у read-only бейджа меню нет
       if(btn.classList.contains('static')) return;
 
       btn.addEventListener('click', (e) => {
@@ -1320,6 +1345,8 @@ window.addEventListener('resize', fitTable);
   document.addEventListener('keydown', (e) => { if(e.key === 'Escape') closeAllMenus(); });
 
   function changeStatus(picker, newStatus){
+    if(!canEditStatus()) return;   // ← ПРАВКА: страховка на случай ручного вызова
+
     const rowIndex = parseInt(picker.dataset.rowIndex, 10);
     const btn = picker.querySelector('.status-btn');
     const tr = picker.closest('tr');
@@ -1333,7 +1360,13 @@ window.addEventListener('resize', fitTable);
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'setStatus', rowIndex, newStatus, by: currentUser })
+      // ← ПРАВКА: шлём token вместо by — сервер сам определит пользователя
+      body: JSON.stringify({
+        action: 'setStatus',
+        rowIndex,
+        newStatus,
+        token: (window.gcheckUser && window.gcheckUser.token) || ''
+      })
     })
       .then(r => r.json())
       .then(res => {
@@ -1547,7 +1580,6 @@ window.addEventListener('resize', fitTable);
 
 // ==== Автообновление: включается кнопкой, раз в минуту ====
 
-
   function isBusy(){
     // Не перезагружаем, пока открыта модалка создания заявки.
     if(createOverlay.classList.contains('show')) return true;
@@ -1578,13 +1610,11 @@ function setAutoRefresh(on){
   autoBtn.textContent = on ? '🔄 Автообновление: вкл (1 мин)' : '🔄 Автообновление: выкл';
 }
 
+// ← ПРАВКА: раньше дублировало логику, теперь просто ссылаемся на canEditStatus()
 function canAutoRefresh(){
-  const u = window.gcheckUser || {};
-  const pos = (u.position || '').trim().toLowerCase();
-  return isAdmin() || pos === 'сотрудник сги';
+  return canEditStatus();
 }
 
-  
 autoBtn.addEventListener('click', () => setAutoRefresh(!autoTimer));
 
 // после загрузки страницы восстанавливаем режим
@@ -1594,7 +1624,7 @@ try{ if(localStorage.getItem(AUTO_KEY) === '1') setAutoRefresh(true); }catch(e){
 document.addEventListener('visibilitychange', () => {
   if(!document.hidden && autoTimer && !isBusy()) loadData();
 });
-  
+
   // ==== Сжатие фото ====
   const fieldPhoto = document.getElementById('fieldPhoto');
   const photoPreviewWrap = document.getElementById('photoPreviewWrap');

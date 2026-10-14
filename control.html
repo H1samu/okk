@@ -129,24 +129,13 @@
 </div>
 
 <script>
-  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+
 
   // Часовой пояс предприятия: по нему определяется "сегодня" и граница суток (24:00)
   const TIMEZONE = 'Europe/Moscow';
 
-  // Журналы, у которых проверяются несколько листов (берётся самая свежая запись)
-  const EXTRA_SHEETS = {
-    'НАССР-Ч-09': ['Ответы на форму (1)'],
-    'НАССР-Ч-13': ['Ответы на форму (1)'],
-    'НАССР-Ч-14': ['Ответы на форму (1)'],
-    'НАССР-Ч-15': ['Ответы на форму (1)']
-  };
-
   const FREQS = ['Ежедневно', '2 раза в день', '3 раза в день', '1 раз в три дня', '1 раз в неделю', '1 раз в месяц', 'Произвольно'];
   const TAG_ORDER = ['Санитария','АХО','Оборудование','Продукт','Включения','Температурные','Вредители','Учёт','Прочее'];
-  const CONCURRENCY = 12;                 // параллельных запросов к Sheets API
-  const CACHE_KEY = 'gcheck_control_cache_v1';
-  const KEEP_DAYS = 70;                   // сколько дней записей хранить в кэше (нужно ≥ 2 месяцев для проверок)
   const CONTROL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPDJMU64rTBfZ1bK_Di1Guo_SJ7VAaT7r4xqGhN_W-RZsD1BE5YSlMvtKjEs7uUEG_/exec';
 
   // Группы статусов
@@ -234,58 +223,9 @@
     return { y, mo, d, day: dayNumOf(y, mo, d), month: monthKeyOf(y, mo), t };
   }
 
-  // ===== Кэш =====
-  function readCache(){
-    try{
-      const c = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
-      if(c && c.data && c.day) return c;
-    } catch(e){}
-    return null;
-  }
-  function writeCache(day, data){
-    try{
-      localStorage.setItem(CACHE_KEY, JSON.stringify({ day, savedAt: Date.now(), data }));
-    } catch(e){ /* переполнение localStorage — работаем без кэша */ }
-  }
 
-  // ===== Чтение таблиц =====
-  async function fetchColumn(sheetId, sheetName, attempt){
-    attempt = attempt || 1;
-    const range = encodeURIComponent(`'${sheetName.replace(/'/g, "''")}'!A:A`);
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${API_KEY}`;
-    const r = await fetch(url);
-    if((r.status === 429 || r.status >= 500) && attempt < 4){
-      await new Promise(res => setTimeout(res, 1200 * attempt));
-      return fetchColumn(sheetId, sheetName, attempt + 1);
-    }
-    if(!r.ok) throw new Error('http ' + r.status);
-    const data = await r.json();
-    return (data.values || []).slice(1).map(v => v[0]); // без заголовка
-  }
 
-  // Листы одного журнала читаются параллельно. Возвращает компактную запись для кэша:
-  // { total, lastT, recs:[t,...] } — только записи за последние KEEP_DAYS дней.
-  async function loadCompact(j, today){
-    const names = [j.sheetName].concat(EXTRA_SHEETS[j.id] || []);
-    const uniq = Array.from(new Set(names.filter(Boolean)));
-    const results = await Promise.allSettled(uniq.map(n => fetchColumn(j.sheetId, n)));
-    const okRes = results.filter(r => r.status === 'fulfilled');
-    if(okRes.length === 0){
-      const bad = results.find(r => r.status === 'rejected');
-      throw (bad && bad.reason) || new Error('нет листа');
-    }
-    const cutoff = (dayNumOf(today.y, today.m, today.d) - KEEP_DAYS) * 86400000;
-    let total = 0, lastT = null;
-    const recs = [];
-    okRes.forEach(r => r.value.forEach(v => {
-      const p = parseRu(v);
-      if(!p) return;
-      total++;
-      if(lastT === null || p.t > lastT) lastT = p.t;
-      if(p.t >= cutoff) recs.push(p.t);
-    }));
-    return { total, lastT, recs };
-  }
+
 
   // ===== Статистика и правила =====
   function buildStat(compact, today){
@@ -360,100 +300,48 @@
   // force = true — полный пересбор по кнопке «Обновить».
   // Иначе: если кэш за сегодня есть — показываем его мгновенно без запросов;
   // если кэш за прошлый день (наступила полночь) — показываем и сразу обновляем в фоне.
-  async function loadAll(force){
-    if(loading) return;
-    loading = true;
-    refreshBtn.disabled = true;
+async function loadAll(force){
+  if(loading) return;
+  loading = true;
+  refreshBtn.disabled = true;
 
-    let journals;
-    try{
-      const r = await fetch('journals.json', { cache:'no-cache' });
-      if(!r.ok) throw new Error('http ' + r.status);
-      journals = await r.json();
-    } catch(e){
-      contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить journals.json</div>';
-      loading = false; refreshBtn.disabled = false;
-      return;
-    }
-
-    const today = nowInTz();
-    const dayKey = todayKey(today);
-    const cache = readCache();
-    const data = {};                         // что сохраним в кэш
-    if(cache) Object.keys(cache.data).forEach(k => { data[k] = cache.data[k]; });
-
-    const list = journals.map(j => ({
-      journal: Object.assign({}, j, { tags:(j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t) }),
-      freq: normFreq(j.fillFrequency),
-      stat: null, status:'nodata', note:''
-    }));
-
-    // мгновенный показ из кэша
-    list.forEach(it => {
-      const j = it.journal;
-      if(!it.freq){ applyCompact(it, null, today); return; }
-      if(!j.sheetId || !j.sheetName){ it.status = 'error'; it.note = 'Не указан sheetId / sheetName'; return; }
-      if(data[j.id]) applyCompact(it, data[j.id], today);
-      else { it.status = 'nodata'; it.note = 'Загрузка…'; }
-    });
-    items = list;
-    renderFilters();
-    draw();
-
-    // что нужно скачать
-    const fullRefresh = force || !cache || cache.day !== dayKey;
-    const toFetch = list.filter(it => {
-      const j = it.journal;
-      if(!it.freq || !j.sheetId || !j.sheetName) return false;
-      return fullRefresh || !data[j.id];
-    });
-
-    if(cache){
-      cacheDay = cache.day;
-      updatedEl.textContent = 'Данные от: ' + new Date(cache.savedAt).toLocaleString('ru-RU', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) + (toFetch.length ? ' · обновляем…' : ' (из кэша)');
-    }
-
-    if(toFetch.length === 0){
-      loading = false; refreshBtn.disabled = false;
-      return;
-    }
-
-    progressEl.hidden = false;
-    progressBar.style.width = '0%';
-    if(!cache) contentEl.innerHTML = '<div class="state-box">Загрузка журналов…</div>';
-
-    let done = 0, idx = 0, sinceDraw = 0;
-    async function worker(){
-      while(idx < toFetch.length){
-        const it = toFetch[idx++];
-        const j = it.journal;
-        try{
-          const compact = await loadCompact(j, today);
-          data[j.id] = compact;
-          applyCompact(it, compact, today);
-        } catch(e){
-          it.stat = null; it.status = 'error'; it.note = 'Не удалось прочитать таблицу (' + e.message + ')';
-        }
-        done++; sinceDraw++;
-        progressBar.style.width = Math.round(done / toFetch.length * 100) + '%';
-        // постепенная перерисовка, чтобы результаты появлялись по мере загрузки
-        if(sinceDraw >= 8 || done === toFetch.length){ sinceDraw = 0; draw(); }
-      }
-    }
-    await Promise.all(Array.from({length: Math.min(CONCURRENCY, toFetch.length)}, worker));
-
-    // в кэш пишем только если не было ошибок чтения (иначе остался бы неполный снимок «на сегодня»)
-    const hadErrors = toFetch.some(it => it.status === 'error');
-    writeCache(hadErrors && fullRefresh ? (cache ? cache.day : '') : dayKey, data);
-    if(!hadErrors || !fullRefresh) cacheDay = dayKey;
-
-    progressEl.hidden = true;
-    loading = false;
-    refreshBtn.disabled = false;
-    updatedEl.textContent = 'Обновлено: ' + new Date().toLocaleTimeString('ru-RU', { hour:'2-digit', minute:'2-digit' });
-    renderFilters();
-    draw();
+  let journals;
+  try{
+    const r = await fetch('journals.json', { cache:'no-cache' });
+    if(!r.ok) throw new Error('http ' + r.status);
+    journals = await r.json();
+  } catch(e){
+    contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить journals.json</div>';
+    loading = false; refreshBtn.disabled = false;
+    return;
   }
+
+  const today = nowInTz();
+  items = journals.map(j => ({
+    journal: Object.assign({}, j, { tags:(j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t) }),
+    freq: normFreq(j.fillFrequency),
+    stat: null, status:'nodata', note:''
+  }));
+
+  try{
+    if(force) updatedEl.textContent = 'Обновляем…';
+    let snap = await callServer(force ? 'refresh' : 'getSnapshot');
+    if(!snap && !force) snap = await callServer('refresh'); // снапшота ещё нет
+    if(!snap) throw new Error('пустой снапшот');
+
+    applySnapshot(items, snap, today);
+    cacheDay = snap.day;
+    updatedEl.textContent = 'Снапшот от: ' + new Date(snap.savedAt).toLocaleString('ru-RU',
+      { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    renderFilters();
+    draw();
+  } catch(e){
+    contentEl.innerHTML = '<div class="state-box error">Не удалось получить снапшот: ' + escapeHtml(e.message) + '</div>';
+  }
+
+  loading = false;
+  refreshBtn.disabled = false;
+}
 
   // ===== Отрисовка =====
   function baseFiltered(ignoreGroup){
@@ -548,6 +436,32 @@
     });
   }
 
+async function callServer(action){
+  const s = window.gcheckUser;
+  const r = await fetch(CONTROL_SCRIPT_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action, token: s && s.token })
+  });
+  const d = await r.json();
+  if(!d.ok){
+    if(d.error === 'invalid' || d.error === 'expired' || d.error === 'inactive'){ window.gcheckLogout(); }
+    throw new Error(d.error || 'server');
+  }
+  return d.snapshot; // может быть null
+}
+
+function applySnapshot(list, snap, today){
+  list.forEach(it => {
+    const j = it.journal;
+    if(!it.freq){ applyCompact(it, null, today); return; }
+    const c = snap.data[j.id];
+    if(!c){ it.status = 'nodata'; it.note = 'Нет данных в снапшоте'; return; }
+    if(c.error){ it.status = 'error'; it.note = 'Не удалось прочитать таблицу (' + c.error + ')'; return; }
+    applyCompact(it, c, today);
+  });
+}
+  
   // ===== События =====
   summaryEl.addEventListener('click', e => {
     const b = e.target.closest('[data-group]'); if(!b) return;

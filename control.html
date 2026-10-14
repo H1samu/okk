@@ -97,6 +97,23 @@
   .open:hover{border-color:var(--accent);}
   mark{background:#fde68a; color:inherit; border-radius:3px;}
   @media (max-width:700px){ .summary{grid-template-columns:repeat(2, 1fr);} }
+
+  /* сворачиваемые фильтры */
+  .filters-toggle{ display:none; }
+  .filters-panel{ display:block; }
+  .filters-badge{
+    display:inline-block; min-width:18px; padding:0 6px; margin-left:4px;
+    border-radius:999px; background:var(--accent); color:#fff;
+    font-size:11px; line-height:18px; text-align:center;
+  }
+
+  @media (max-width:700px){
+    .filters-toggle{ display:inline-flex; align-items:center; gap:6px; }
+    .filters-panel{ display:none; margin-bottom:12px; }
+    .filters-panel.open{ display:block; }
+    .chips{ margin-bottom:8px; }
+  }
+  
 </style>
 </head>
 <body>
@@ -119,8 +136,14 @@
     <button class="btn" id="refreshBtn" type="button">🔄 Обновить</button>
   </div>
 
-  <div class="chips" id="freqChips"></div>
-  <div class="chips" id="tagChips"></div>
+  <button class="btn filters-toggle" id="filtersToggle" type="button" aria-expanded="false">
+    ⚙ Фильтры <span class="filters-badge" id="filtersBadge" hidden></span>
+  </button>
+
+  <div class="filters-panel" id="filtersPanel">
+    <div class="chips" id="freqChips"></div>
+    <div class="chips" id="tagChips"></div>
+  </div>
 
   <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
   <div class="meta"><span id="rowCount"></span><span id="updated"></span></div>
@@ -167,6 +190,9 @@
   const tagChipsEl = document.getElementById('tagChips');
   const progressEl = document.getElementById('progress');
   const progressBar = document.getElementById('progressBar');
+  const filtersToggle = document.getElementById('filtersToggle');
+  const filtersPanel  = document.getElementById('filtersPanel');
+  const filtersBadge  = document.getElementById('filtersBadge');
 
   let items = [];          // {journal, freq, stat, status, note}
   let activeGroup = '';
@@ -403,6 +429,7 @@ async function callRefresh(){
     const tags = TAG_ORDER.filter(t => items.some(it => it.journal.tags.includes(t)));
     tagChipsEl.innerHTML = '<button type="button" class="chip' + (!activeTag ? ' active' : '') + '" data-tag="">Все категории</button>' +
       tags.map(t => `<button type="button" class="chip${activeTag === t ? ' active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+      updateFiltersBadge();
   }
 
   function renderSummary(){
@@ -503,6 +530,22 @@ function applySnapshot(list, snap, today){
     applyCompact(it, c, today);
   });
 }
+
+  // ===== Сворачиваемые фильтры =====
+  filtersToggle.addEventListener('click', () => {
+    const open = filtersPanel.classList.toggle('open');
+    filtersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+
+  function updateFiltersBadge(){
+    const n = (activeFreq ? 1 : 0) + (activeTag ? 1 : 0);
+    if(n > 0){
+      filtersBadge.textContent = n;
+      filtersBadge.hidden = false;
+    } else {
+      filtersBadge.hidden = true;
+    }
+  }
   
   // ===== События =====
   summaryEl.addEventListener('click', e => {
@@ -513,10 +556,12 @@ function applySnapshot(list, snap, today){
   freqChipsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-freq]'); if(!b) return;
     activeFreq = b.dataset.freq; renderFilters(); draw();
+    if(window.matchMedia('(max-width:700px)').matches) filtersPanel.classList.remove('open');
   });
   tagChipsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-tag]'); if(!b) return;
     activeTag = b.dataset.tag; renderFilters(); draw();
+    if(window.matchMedia('(max-width:700px)').matches) filtersPanel.classList.remove('open');
   });
   searchInput.addEventListener('input', draw);
   refreshBtn.addEventListener('click', () => loadAll(true));

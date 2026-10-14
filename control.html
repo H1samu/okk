@@ -132,7 +132,10 @@
 
 
   // Часовой пояс предприятия: по нему определяется "сегодня" и граница суток (24:00)
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
   const TIMEZONE = 'Europe/Moscow';
+  const SNAP_SHEET_ID = '1VnRbQos4ZOViJy2arblfIOOdjHbUtk2rnnhfPIEVz4o';
+  const CONTROL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPDJMU64rTBfZ1bK_Di1Guo_SJ7VAaT7r4xqGhN_W-RZsD1BE5YSlMvtKjEs7uUEG_/exec';
 
   const FREQS = ['Ежедневно', '2 раза в день', '3 раза в день', '1 раз в три дня', '1 раз в неделю', '1 раз в месяц', 'Произвольно'];
   const TAG_ORDER = ['Санитария','АХО','Оборудование','Продукт','Включения','Температурные','Вредители','Учёт','Прочее'];
@@ -228,24 +231,26 @@
 
 
   // ===== Статистика и правила =====
-  function buildStat(compact, today){
-    const todayDay = dayNumOf(today.y, today.m, today.d);
-    const weekStart = todayDay - ((todayDay + 3) % 7);       // понедельник текущей недели
-    const curMonth = monthKeyOf(today.y, today.m);
-    const c = compact || { total:0, lastT:null, recs:[] };
-    const s = { total: c.total, last: c.lastT !== null ? fromT(c.lastT) : null, lastT: c.lastT,
-                today:0, yest:0, wk:0, pwk:0, mo:0, pmo:0, todayDay };
-    c.recs.forEach(t => {
-      const p = fromT(t);
-      if(p.day === todayDay) s.today++;
-      if(p.day === todayDay - 1) s.yest++;
-      if(p.day >= weekStart && p.day <= weekStart + 6) s.wk++;
-      if(p.day >= weekStart - 7 && p.day < weekStart) s.pwk++;
-      if(p.month === curMonth) s.mo++;
-      if(p.month === curMonth - 1) s.pmo++;
-    });
-    return s;
-  }
+function buildStat(compact, today){
+  const todayDay = dayNumOf(today.y, today.m, today.d);
+  const weekStart = todayDay - ((todayDay + 3) % 7);
+  const curMonth = monthKeyOf(today.y, today.m);
+  const c = compact || { total:0, lastT:null, days:{} };
+  const s = { total:c.total, last:c.lastT !== null ? fromT(c.lastT) : null, lastT:c.lastT,
+              today:0, yest:0, wk:0, pwk:0, mo:0, pmo:0, todayDay };
+  Object.keys(c.days || {}).forEach(k => {
+    const day = +k, n = c.days[k];
+    const dt = new Date(day * 86400000);
+    const month = monthKeyOf(dt.getUTCFullYear(), dt.getUTCMonth() + 1);
+    if(day === todayDay) s.today += n;
+    if(day === todayDay - 1) s.yest += n;
+    if(day >= weekStart && day <= weekStart + 6) s.wk += n;
+    if(day >= weekStart - 7 && day < weekStart) s.pwk += n;
+    if(month === curMonth) s.mo += n;
+    if(month === curMonth - 1) s.pmo += n;
+  });
+  return s;
+}
 
   function evaluate(freq, s){
     if(!freq) return { status:'nofreq', note:'Укажите fillFrequency в journals.json' };
@@ -300,7 +305,40 @@
   // force = true — полный пересбор по кнопке «Обновить».
   // Иначе: если кэш за сегодня есть — показываем его мгновенно без запросов;
   // если кэш за прошлый день (наступила полночь) — показываем и сразу обновляем в фоне.
-async function loadAll(force){
+
+async function readSnapshot(){
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SNAP_SHEET_ID}/values/snapshot?key=${API_KEY}`;
+  const r = await fetch(url, { cache:'no-store' });
+  if(!r.ok) throw new Error('http ' + r.status);
+  const v = (await r.json()).values || [];
+  const data = {};
+  v.slice(1).forEach(row => {
+    if(!row[0]) return;
+    if(row[4] && !row[1]){ data[row[0]] = { error: row[4] }; return; }
+    const days = {};
+    String(row[3] || '').split(';').forEach(p => {
+      const [d, n] = p.split('x');
+      if(d && n) days[d] = +n;
+    });
+    data[row[0]] = { total:+row[1] || 0, lastT: row[2] ? +row[2] : null, days, stale: row[4] || '' };
+  });
+  const meta = (v[1] || []);
+  return { day: meta[5] || '', savedAt: +meta[6] || 0, data };
+}
+
+async function callRefresh(){
+  const r = await fetch(CONTROL_SCRIPT_URL, {
+    method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action:'refresh', token: window.gcheckUser.token })
+  });
+  const d = await r.json();
+  if(!d.ok){
+    if(['invalid','expired','inactive'].includes(d.error)) window.gcheckLogout();
+    throw new Error(d.error || 'server');
+  }
+}
+  
+  async function loadAll(force){
   if(loading) return;
   loading = true;
   refreshBtn.disabled = true;
@@ -312,24 +350,30 @@ async function loadAll(force){
     journals = await r.json();
   } catch(e){
     contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить journals.json</div>';
-    loading = false; refreshBtn.disabled = false;
-    return;
+    loading = false; refreshBtn.disabled = false; return;
   }
 
   const today = nowInTz();
   items = journals.map(j => ({
     journal: Object.assign({}, j, { tags:(j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t) }),
-    freq: normFreq(j.fillFrequency),
-    stat: null, status:'nodata', note:''
+    freq: normFreq(j.fillFrequency), stat:null, status:'nodata', note:''
   }));
 
   try{
-    if(force) updatedEl.textContent = 'Обновляем…';
-    let snap = await callServer(force ? 'refresh' : 'getSnapshot');
-    if(!snap && !force) snap = await callServer('refresh'); // снапшота ещё нет
-    if(!snap) throw new Error('пустой снапшот');
-
-    applySnapshot(items, snap, today);
+    if(force){
+      updatedEl.textContent = 'Обновляем снапшот…';
+      await callRefresh();
+    }
+    const snap = await readSnapshot();
+    items.forEach(it => {
+      const j = it.journal;
+      if(!it.freq){ applyCompact(it, null, today); return; }
+      const c = snap.data[j.id];
+      if(!c){ it.status = 'nodata'; it.note = 'Нет данных в снапшоте'; return; }
+      if(c.error){ it.status = 'error'; it.note = 'Не удалось прочитать таблицу (' + c.error + ')'; return; }
+      applyCompact(it, c, today);
+      if(c.stale) it.note += ' · ' + c.stale;
+    });
     cacheDay = snap.day;
     updatedEl.textContent = 'Снапшот от: ' + new Date(snap.savedAt).toLocaleString('ru-RU',
       { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
@@ -338,7 +382,6 @@ async function loadAll(force){
   } catch(e){
     contentEl.innerHTML = '<div class="state-box error">Не удалось получить снапшот: ' + escapeHtml(e.message) + '</div>';
   }
-
   loading = false;
   refreshBtn.disabled = false;
 }

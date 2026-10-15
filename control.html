@@ -363,7 +363,7 @@ async function callRefresh(){
   }
 }
   
-  async function loadAll(force){
+async function loadAll(force){
   if(loading) return;
   loading = true;
   refreshBtn.disabled = true;
@@ -384,14 +384,10 @@ async function callRefresh(){
     freq: normFreq(j.fillFrequency), stat:null, status:'nodata', note:''
   }));
 
-  try{
-    if(force){
-      updatedEl.textContent = 'Обновляем снапшот…';
-      await callRefresh();
-    }
-    const snap = await readSnapshot();
+  const render = snap => {
     items.forEach(it => {
       const j = it.journal;
+      it.note = '';
       if(!it.freq){ applyCompact(it, null, today); return; }
       const c = snap.data[j.id];
       if(!c){ it.status = 'nodata'; it.note = 'Нет данных в снапшоте'; return; }
@@ -404,9 +400,28 @@ async function callRefresh(){
       { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
     renderFilters();
     draw();
+  };
+
+  try{
+    // 1) сразу показываем то, что уже есть
+    render(await readSnapshot());
+
+    // 2) по кнопке — пересбор в фоне, затем перерисовка
+    if(force){
+      refreshBtn.textContent = '⏳ Обновляем…';
+      updatedEl.textContent += ' · обновляем…';
+      try{
+        await callRefresh();
+        render(await readSnapshot());
+      } catch(e){
+        updatedEl.textContent += ' · не удалось обновить (' + e.message + ')';
+      }
+    }
   } catch(e){
     contentEl.innerHTML = '<div class="state-box error">Не удалось получить снапшот: ' + escapeHtml(e.message) + '</div>';
   }
+
+  refreshBtn.textContent = '🔄 Обновить';
   loading = false;
   refreshBtn.disabled = false;
 }
@@ -505,31 +520,6 @@ async function callRefresh(){
     });
   }
 
-async function callServer(action){
-  const s = window.gcheckUser;
-  const r = await fetch(CONTROL_SCRIPT_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ action, token: s && s.token })
-  });
-  const d = await r.json();
-  if(!d.ok){
-    if(d.error === 'invalid' || d.error === 'expired' || d.error === 'inactive'){ window.gcheckLogout(); }
-    throw new Error(d.error || 'server');
-  }
-  return d.snapshot; // может быть null
-}
-
-function applySnapshot(list, snap, today){
-  list.forEach(it => {
-    const j = it.journal;
-    if(!it.freq){ applyCompact(it, null, today); return; }
-    const c = snap.data[j.id];
-    if(!c){ it.status = 'nodata'; it.note = 'Нет данных в снапшоте'; return; }
-    if(c.error){ it.status = 'error'; it.note = 'Не удалось прочитать таблицу (' + c.error + ')'; return; }
-    applyCompact(it, c, today);
-  });
-}
 
   // ===== Сворачиваемые фильтры =====
   filtersToggle.addEventListener('click', () => {

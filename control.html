@@ -98,21 +98,13 @@
   mark{background:#fde68a; color:inherit; border-radius:3px;}
   @media (max-width:700px){ .summary{grid-template-columns:repeat(2, 1fr);} }
 
-  /* сворачиваемые фильтры */
-  .filters-toggle{ display:none; }
-  .filters-panel{ display:block; }
-  .filters-badge{
-    display:inline-block; min-width:18px; padding:0 6px; margin-left:4px;
-    border-radius:999px; background:var(--accent); color:#fff;
-    font-size:11px; line-height:18px; text-align:center;
-  }
-
-  @media (max-width:700px){
-    .filters-toggle{ display:inline-flex; align-items:center; gap:6px; }
-    .filters-panel{ display:none; margin-bottom:12px; }
-    .filters-panel.open{ display:block; }
-    .chips{ margin-bottom:8px; }
-  }
+/* фильтры: два чипа + раскрывающиеся списки */
+.fbar{display:flex; gap:8px; margin-bottom:10px;}
+.fbar .chip{height:40px; display:inline-flex; align-items:center; gap:6px;}
+.fbar .chip.has-value{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+.fbar .chip .chev{font-size:10px; opacity:.6; transition:transform .15s ease;}
+.fbar .chip[aria-expanded="true"] .chev{transform:rotate(180deg);}
+.chips[hidden]{display:none;}
   
 </style>
 </head>
@@ -136,14 +128,16 @@
     <button class="btn" id="refreshBtn" type="button">🔄 Обновить</button>
   </div>
 
-  <button class="btn filters-toggle" id="filtersToggle" type="button" aria-expanded="false">
-    ⚙ Фильтры <span class="filters-badge" id="filtersBadge" hidden></span>
+<div class="fbar">
+  <button type="button" class="chip" id="freqToggle" aria-expanded="false">
+    <span id="freqLabel">Периодичность</span><span class="chev">▼</span>
   </button>
-
-  <div class="filters-panel" id="filtersPanel">
-    <div class="chips" id="freqChips"></div>
-    <div class="chips" id="tagChips"></div>
-  </div>
+  <button type="button" class="chip" id="tagToggle" aria-expanded="false">
+    <span id="tagLabel">Категории</span><span class="chev">▼</span>
+  </button>
+</div>
+<div class="chips" id="freqChips" hidden></div>
+<div class="chips" id="tagChips" hidden></div>
 
   <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
   <div class="meta"><span id="rowCount"></span><span id="updated"></span></div>
@@ -190,9 +184,10 @@
   const tagChipsEl = document.getElementById('tagChips');
   const progressEl = document.getElementById('progress');
   const progressBar = document.getElementById('progressBar');
-  const filtersToggle = document.getElementById('filtersToggle');
-  const filtersPanel  = document.getElementById('filtersPanel');
-  const filtersBadge  = document.getElementById('filtersBadge');
+  const freqToggle = document.getElementById('freqToggle');
+  const tagToggle  = document.getElementById('tagToggle');
+  const freqLabel  = document.getElementById('freqLabel');
+  const tagLabel   = document.getElementById('tagLabel');
 
   let items = [];          // {journal, freq, stat, status, note}
   let activeGroup = '';
@@ -522,20 +517,23 @@ async function loadAll(force){
 
 
   // ===== Сворачиваемые фильтры =====
-  filtersToggle.addEventListener('click', () => {
-    const open = filtersPanel.classList.toggle('open');
-    filtersToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
-  });
+function setPanel(which){ // 'freq' | 'tag' | null
+  const f = which === 'freq' && freqChipsEl.hidden;
+  const t = which === 'tag' && tagChipsEl.hidden;
+  freqChipsEl.hidden = !f;
+  tagChipsEl.hidden = !t;
+  freqToggle.setAttribute('aria-expanded', f ? 'true' : 'false');
+  tagToggle.setAttribute('aria-expanded', t ? 'true' : 'false');
+}
+freqToggle.addEventListener('click', () => setPanel('freq'));
+tagToggle.addEventListener('click', () => setPanel('tag'));
 
-  function updateFiltersBadge(){
-    const n = (activeFreq ? 1 : 0) + (activeTag ? 1 : 0);
-    if(n > 0){
-      filtersBadge.textContent = n;
-      filtersBadge.hidden = false;
-    } else {
-      filtersBadge.hidden = true;
-    }
-  }
+function updateFiltersBadge(){
+  freqLabel.textContent = activeFreq ? 'Периодичность: ' + activeFreq : 'Периодичность';
+  tagLabel.textContent  = activeTag  ? 'Категории: ' + activeTag  : 'Категории';
+  freqToggle.classList.toggle('has-value', !!activeFreq);
+  tagToggle.classList.toggle('has-value', !!activeTag);
+}
   
   // ===== События =====
   summaryEl.addEventListener('click', e => {
@@ -546,12 +544,12 @@ async function loadAll(force){
   freqChipsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-freq]'); if(!b) return;
     activeFreq = b.dataset.freq; renderFilters(); draw();
-    if(window.matchMedia('(max-width:700px)').matches) filtersPanel.classList.remove('open');
+    setPanel(null);
   });
   tagChipsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-tag]'); if(!b) return;
     activeTag = b.dataset.tag; renderFilters(); draw();
-    if(window.matchMedia('(max-width:700px)').matches) filtersPanel.classList.remove('open');
+    setPanel(null);
   });
   searchInput.addEventListener('input', draw);
   refreshBtn.addEventListener('click', () => loadAll(true));

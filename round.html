@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="auth-guard.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Обход оборудования — Hismar Check</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1; --surface:#fff; --border:#e4e2d9; --border-strong:#c9c6b8;
+    --text:#20201c; --text-secondary:#6b6a61; --text-muted:#98968a;
+    --accent:#3a5a52; --accent-soft:#e8efec; --danger:#9c3b34; --danger-soft:#fbebe9;
+    --ok:#2f7a3e; --ok-soft:#e8f5ea; --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope',Arial,sans-serif; -webkit-font-smoothing:antialiased;}
+  button,input{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 120px;}
+  .back-link{display:inline-flex; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:16px; padding:6px 0;}
+  h1{font-size:22px; font-weight:700; margin:0 0 4px;}
+  .sub{font-size:13px; color:var(--text-secondary); margin:0 0 16px;}
+  .state-box{text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
+  .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+
+  .sticky{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px;}
+  .search{width:100%; height:44px; padding:0 16px; border:1px solid var(--border-strong); border-radius:999px; font-size:16px; background:var(--surface);}
+  .bar{height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px;}
+  .bar>div{height:100%; width:0; background:var(--accent); transition:width .2s;}
+  .stat{display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:6px;}
+  .stat .bad{color:var(--danger); font-weight:600;}
+
+  details{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden;}
+  summary{list-style:none; cursor:pointer; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; font-weight:600; font-size:14px; min-height:48px;}
+  summary::-webkit-details-marker{display:none;}
+  summary .cnt{font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap;}
+  summary .cnt.done{color:var(--ok);}
+  .item{display:flex; align-items:center; gap:10px; padding:10px 16px; border-top:1px solid var(--border);}
+  .item .nm{flex:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere;}
+  .item .nm small{display:block; color:var(--text-muted); font-size:11px; margin-top:2px;}
+  .item.s-ok{background:#f3faf4;}
+  .item.s-bad{background:var(--danger-soft);}
+  .tg{display:flex; gap:6px; flex-shrink:0;}
+  .tg button{width:48px; height:44px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); font-size:18px; cursor:pointer; color:var(--text-muted);}
+  .tg button:active{transform:scale(.95);}
+  .tg .y.on{background:var(--ok); border-color:var(--ok); color:#fff;}
+  .tg .n.on{background:var(--danger); border-color:var(--danger); color:#fff;}
+  .allok{margin:0 16px 12px; height:40px; padding:0 14px; border-radius:10px; border:1px solid var(--border-strong); background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:13px; cursor:pointer;}
+
+  .foot{position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 16px calc(10px + env(safe-area-inset-bottom));}
+  .foot .in{max-width:760px; margin:0 auto; display:flex; gap:10px; align-items:center;}
+  .foot .hint{flex:1; font-size:12px; color:var(--text-secondary);}
+  .send{height:46px; padding:0 22px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer;}
+  .send:disabled{opacity:.5; cursor:default;}
+  .toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%); padding:11px 18px; border-radius:999px; font-size:13px; font-weight:600; color:#fff; background:var(--accent); display:none; z-index:20; max-width:90vw;}
+  .toast.err{background:var(--danger);}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+  <h1>Обход оборудования</h1>
+  <p class="sub" id="sub">Отмечайте каждую позицию: ✓ исправно, ✗ неисправно.</p>
+
+  <div class="sticky">
+    <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
+    <div class="bar"><div id="barFill"></div></div>
+    <div class="stat"><span id="statL"></span><span id="statR"></span></div>
+  </div>
+
+  <div id="list"><div class="state-box">Загрузка списка…</div></div>
+</div>
+
+<div class="foot"><div class="in">
+  <div class="hint" id="hint"></div>
+  <button class="send" id="send" type="button" disabled>Сохранить обход</button>
+</div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+  const SHEET_ID = '1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0';
+  const SHEET_GID = 1954643572;
+  // URL Apps Script, где добавлено действие saveRound (см. инструкцию)
+  const ROUND_SCRIPT_URL = 'ВСТАВЬТЕ_URL_/exec';
+
+  const listEl = document.getElementById('list');
+  const sendBtn = document.getElementById('send');
+  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow'}); // дд.мм.гггг
+  const DRAFT_KEY = 'gcheck_round_' + today;
+
+  let sections = [];       // {title, items:[{n,name}]}
+  let state = {};          // key -> {v:'ok'|'bad', c:'комментарий'}
+  try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
+
+  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const key = (si, ii) => si + ':' + sections[si].items[ii].n + ':' + ii;
+  const saveDraft = () => { try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); }catch(e){} };
+
+  function toast(t, err){
+    const el = document.getElementById('toast');
+    el.textContent = t; el.classList.toggle('err', !!err); el.style.display = 'block';
+    clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', err ? 6000 : 3000);
+  }
+
+  // Строки таблицы -> участки и позиции:
+  // строка без номера = название участка, строка с номером = оборудование
+  function parse(values){
+    const out = []; let cur = null;
+    values.slice(1).forEach(r => {
+      const n = String(r[0] || '').trim(), name = String(r[1] || '').trim();
+      if(!name || /^(Осмотр провел|Исправное оборудование|Неисправное оборудование)/i.test(name)) return;
+      if(/^\d+$/.test(n)){
+        if(!cur){ cur = {title:'Без участка', items:[]}; out.push(cur); }
+        cur.items.push({n:+n, name});
+      } else if(!n){
+        // "Ножницы (3 штук)" без номера внутри участка — тоже позиция, если участок уже есть и это не заголовок
+        cur = {title:name, items:[]}; out.push(cur);
+      }
+    });
+    return out.filter(s => s.items.length);
+  }
+
+  async function load(){
+    try{
+      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`)).json();
+      const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
+      if(!p) throw new Error('вкладка не найдена');
+      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}!A:B?key=${API_KEY}`);
+      if(!r.ok) throw new Error('http ' + r.status);
+      sections = parse((await r.json()).values || []);
+      if(!sections.length) throw new Error('список пуст');
+      document.getElementById('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно, ✗ неисправно.';
+      draw();
+    }catch(e){
+      listEl.innerHTML = '<div class="state-box error">Не удалось загрузить список: ' + esc(e.message) +
+        '. Проверьте доступ к таблице «по ссылке — Читатель».</div>';
+    }
+  }
+
+  function draw(){
+    const q = document.getElementById('q').value.trim().toLowerCase();
+    const open = new Set([...listEl.querySelectorAll('details[open]')].map(d => d.dataset.si));
+    listEl.innerHTML = sections.map((s, si) => {
+      const done = s.items.filter((_, ii) => state[key(si, ii)]).length;
+      const rows = s.items.map((it, ii) => {
+        if(q && !it.name.toLowerCase().includes(q) && !s.title.toLowerCase().includes(q)) return '';
+        const k = key(si, ii), v = state[k] && state[k].v;
+        const c = state[k] && state[k].c;
+        return `<div class="item ${v ? 's-' + v : ''}">
+          <div class="nm">${esc(it.name)}${c ? `<small>Причина: ${esc(c)}</small>` : ''}</div>
+          <div class="tg">
+            <button class="y${v === 'ok' ? ' on' : ''}" data-k="${k}" data-v="ok" aria-label="Исправно">✓</button>
+            <button class="n${v === 'bad' ? ' on' : ''}" data-k="${k}" data-v="bad" aria-label="Неисправно">✗</button>
+          </div></div>`;
+      }).join('');
+      if(!rows) return '';
+      const isOpen = q || open.has(String(si)) ? ' open' : '';
+      return `<details data-si="${si}"${isOpen}>
+        <summary><span>${esc(s.title)}</span><span class="cnt${done === s.items.length ? ' done' : ''}">${done}/${s.items.length}</span></summary>
+        <button class="allok" type="button" data-all="${si}">✓ Всё исправно на этом участке</button>${rows}</details>`;
+    }).join('') || '<div class="state-box">Ничего не найдено.</div>';
+    updateStats();
+  }
+
+  function updateStats(){
+    let total = 0, done = 0, bad = 0;
+    sections.forEach((s, si) => s.items.forEach((_, ii) => {
+      total++; const st = state[key(si, ii)];
+      if(st){ done++; if(st.v === 'bad') bad++; }
+    }));
+    document.getElementById('barFill').style.width = (total ? done / total * 100 : 0) + '%';
+    document.getElementById('statL').textContent = `Отмечено ${done} из ${total}`;
+    document.getElementById('statR').innerHTML = bad ? `<span class="bad">Неисправно: ${bad}</span>` : '';
+    document.getElementById('hint').textContent = done < total ? `Осталось: ${total - done}` : 'Всё отмечено';
+    sendBtn.disabled = done < total || !total;
+  }
+
+  listEl.addEventListener('click', e => {
+    const all = e.target.closest('[data-all]');
+    if(all){
+      const si = +all.dataset.all;
+      sections[si].items.forEach((_, ii) => { const k = key(si, ii); if(!state[k]) state[k] = {v:'ok', c:''}; });
+      saveDraft(); draw(); return;
+    }
+    const b = e.target.closest('[data-k]'); if(!b) return;
+    const k = b.dataset.k, v = b.dataset.v;
+    if(state[k] && state[k].v === v){ delete state[k]; }
+    else if(v === 'bad'){
+      const c = prompt('Что неисправно? (кратко)', (state[k] && state[k].c) || '');
+      if(c === null) return;
+      state[k] = {v:'bad', c:c.trim()};
+    } else state[k] = {v:'ok', c:''};
+    saveDraft(); draw();
+  });
+
+  document.getElementById('q').addEventListener('input', draw);
+
+  sendBtn.addEventListener('click', async () => {
+    if(!/^https:\/\//.test(ROUND_SCRIPT_URL)){ toast('Не указан ROUND_SCRIPT_URL', true); return; }
+    const results = [];
+    sections.forEach((s, si) => s.items.forEach((it, ii) => {
+      const st = state[key(si, ii)];
+      results.push({area:s.title, n:it.n, name:it.name, ok: st.v === 'ok', comment: st.c || ''});
+    }));
+    sendBtn.disabled = true; sendBtn.textContent = 'Сохраняем…';
+    try{
+      const r = await fetch(ROUND_SCRIPT_URL, {
+        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify({action:'saveRound', token: window.gcheckUser.token, date: today, results})
+      });
+      const d = await r.json();
+      if(!d.ok) throw new Error(d.error || 'ошибка сервера');
+      localStorage.removeItem(DRAFT_KEY); state = {};
+      toast('Обход сохранён ✓'); draw();
+    }catch(err){
+      toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
+      sendBtn.disabled = false;
+    }
+    sendBtn.textContent = 'Сохранить обход';
+  });
+
+  load();
+  if('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+</script>
+</body>
+</html>

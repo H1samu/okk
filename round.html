@@ -25,7 +25,10 @@
   .wrap{max-width:760px; margin:0 auto; padding:20px 16px 120px;}
   .back-link{display:inline-flex; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:16px; padding:6px 0;}
   h1{font-size:22px; font-weight:700; margin:0 0 4px;}
-  .sub{font-size:13px; color:var(--text-secondary); margin:0 0 16px;}
+  .sub{font-size:13px; color:var(--text-secondary); margin:0 0 12px;}
+  .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .ext-links a{display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:13px; font-weight:600; text-decoration:none; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); border-radius:999px; padding:0 16px;}
+  .ext-links a:hover{border-color:var(--border-strong);}
   .state-box{text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
   .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
 
@@ -33,7 +36,8 @@
   .search{width:100%; height:44px; padding:0 16px; border:1px solid var(--border-strong); border-radius:999px; font-size:16px; background:var(--surface);}
   .bar{height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px;}
   .bar>div{height:100%; width:0; background:var(--accent); transition:width .2s;}
-  .stat{display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-top:6px;}
+  .stat{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); margin-top:6px;}
+  .stat .good{color:var(--ok); font-weight:600;}
   .stat .bad{color:var(--danger); font-weight:600;}
 
   details{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden;}
@@ -43,7 +47,6 @@
   summary .cnt.done{color:var(--ok);}
   .item{display:flex; align-items:center; gap:10px; padding:10px 16px; border-top:1px solid var(--border);}
   .item .nm{flex:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere;}
-  .item .nm small{display:block; color:var(--text-muted); font-size:11px; margin-top:2px;}
   .item.s-ok{background:#f3faf4;}
   .item.s-bad{background:var(--danger-soft);}
   .tg{display:flex; gap:6px; flex-shrink:0;}
@@ -66,7 +69,11 @@
 <div class="wrap">
   <a class="back-link" href="index.html">← Все журналы</a>
   <h1>Обход оборудования</h1>
-  <p class="sub" id="sub">Отмечайте каждую позицию: ✓ исправно, ✗ неисправно.</p>
+  <p class="sub" id="sub">Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).</p>
+
+  <div class="ext-links">
+    <a href="https://docs.google.com/spreadsheets/d/1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0/edit?gid=1954643572#gid=1954643572" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+  </div>
 
   <div class="sticky">
     <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
@@ -87,20 +94,20 @@
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
   const SHEET_ID = '1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0';
   const SHEET_GID = 1954643572;
-  // URL Apps Script, где добавлено действие saveRound (см. инструкцию)
-  const ROUND_SCRIPT_URL = 'ВСТАВЬТЕ_URL_/exec';
+  // URL Apps Script, где добавлено действие saveRound (см. round-script.gs)
+  const ROUND_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
 
   const listEl = document.getElementById('list');
   const sendBtn = document.getElementById('send');
-  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow'}); // дд.мм.гггг
-  const DRAFT_KEY = 'gcheck_round_' + today;
+  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'}); // дд.мм.гггг
+  const DRAFT_KEY = 'gcheck_round2_' + today;
 
-  let sections = [];       // {title, items:[{n,name}]}
-  let state = {};          // key -> {v:'ok'|'bad', c:'комментарий'}
+  let sections = [];       // {title, items:[{row,name}]}
+  let state = {};          // row -> 'ok' | 'bad'
+  let updating = false;    // true, если обход за сегодня уже есть в таблице
   try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
 
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const key = (si, ii) => si + ':' + sections[si].items[ii].n + ':' + ii;
   const saveDraft = () => { try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); }catch(e){} };
 
   function toast(t, err){
@@ -109,22 +116,38 @@
     clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', err ? 6000 : 3000);
   }
 
-  // Строки таблицы -> участки и позиции:
-  // строка без номера = название участка, строка с номером = оборудование
+  // Строки таблицы -> участки и позиции (запоминаем номер строки листа)
   function parse(values){
     const out = []; let cur = null;
-    values.slice(1).forEach(r => {
+    values.forEach((r, i) => {
+      if(i === 0) return;
       const n = String(r[0] || '').trim(), name = String(r[1] || '').trim();
       if(!name || /^(Осмотр провел|Исправное оборудование|Неисправное оборудование)/i.test(name)) return;
       if(/^\d+$/.test(n)){
         if(!cur){ cur = {title:'Без участка', items:[]}; out.push(cur); }
-        cur.items.push({n:+n, name});
+        cur.items.push({row: i + 1, name});
       } else if(!n){
-        // "Ножницы (3 штук)" без номера внутри участка — тоже позиция, если участок уже есть и это не заголовок
         cur = {title:name, items:[]}; out.push(cur);
       }
     });
     return out.filter(s => s.items.length);
+  }
+
+  // Ищем столбец с сегодняшней датой и читаем + / -
+  function readExisting(values){
+    const head = values[0] || [];
+    let col = -1;
+    for(let c = 2; c < head.length; c++){
+      if(String(head[c] || '').trim().startsWith(today)){ col = c; break; }
+    }
+    if(col < 0) return null;
+    const res = {}; let any = false;
+    sections.forEach(s => s.items.forEach(it => {
+      const v = String((values[it.row - 1] || [])[col] || '').trim();
+      if(v === '+'){ res[it.row] = 'ok'; any = true; }
+      else if(v === '-' || v === '–' || v === '−'){ res[it.row] = 'bad'; any = true; }
+    }));
+    return any ? res : null;
   }
 
   async function load(){
@@ -132,11 +155,27 @@
       const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`)).json();
       const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
       if(!p) throw new Error('вкладка не найдена');
-      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}!A:B?key=${API_KEY}`);
+      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}`, {cache:'no-store'});
       if(!r.ok) throw new Error('http ' + r.status);
-      sections = parse((await r.json()).values || []);
+      const values = (await r.json()).values || [];
+      sections = parse(values);
       if(!sections.length) throw new Error('список пуст');
-      document.getElementById('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно, ✗ неисправно.';
+      document.getElementById('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).';
+
+      const existing = readExisting(values);
+      if(existing){
+        draw();
+        setTimeout(() => {
+          if(confirm('За сегодня обход уже был. Вы хотите обновить данные с обхода?')){
+            state = existing; updating = true; saveDraft();
+            sendBtn.textContent = 'Обновить обход';
+            draw();
+          } else {
+            location.href = 'index.html';
+          }
+        }, 50);
+        return;
+      }
       draw();
     }catch(e){
       listEl.innerHTML = '<div class="state-box error">Не удалось загрузить список: ' + esc(e.message) +
@@ -148,16 +187,15 @@
     const q = document.getElementById('q').value.trim().toLowerCase();
     const open = new Set([...listEl.querySelectorAll('details[open]')].map(d => d.dataset.si));
     listEl.innerHTML = sections.map((s, si) => {
-      const done = s.items.filter((_, ii) => state[key(si, ii)]).length;
-      const rows = s.items.map((it, ii) => {
+      const done = s.items.filter(it => state[it.row]).length;
+      const rows = s.items.map(it => {
         if(q && !it.name.toLowerCase().includes(q) && !s.title.toLowerCase().includes(q)) return '';
-        const k = key(si, ii), v = state[k] && state[k].v;
-        const c = state[k] && state[k].c;
+        const v = state[it.row];
         return `<div class="item ${v ? 's-' + v : ''}">
-          <div class="nm">${esc(it.name)}${c ? `<small>Причина: ${esc(c)}</small>` : ''}</div>
+          <div class="nm">${esc(it.name)}</div>
           <div class="tg">
-            <button class="y${v === 'ok' ? ' on' : ''}" data-k="${k}" data-v="ok" aria-label="Исправно">✓</button>
-            <button class="n${v === 'bad' ? ' on' : ''}" data-k="${k}" data-v="bad" aria-label="Неисправно">✗</button>
+            <button class="y${v === 'ok' ? ' on' : ''}" data-r="${it.row}" data-v="ok" aria-label="Исправно">✓</button>
+            <button class="n${v === 'bad' ? ' on' : ''}" data-r="${it.row}" data-v="bad" aria-label="Неисправно">✗</button>
           </div></div>`;
       }).join('');
       if(!rows) return '';
@@ -169,15 +207,18 @@
     updateStats();
   }
 
+  // Исправное = количество «+», неисправное = количество «−»
   function updateStats(){
-    let total = 0, done = 0, bad = 0;
-    sections.forEach((s, si) => s.items.forEach((_, ii) => {
-      total++; const st = state[key(si, ii)];
-      if(st){ done++; if(st.v === 'bad') bad++; }
+    let total = 0, good = 0, bad = 0;
+    sections.forEach(s => s.items.forEach(it => {
+      total++; const st = state[it.row];
+      if(st === 'ok') good++; else if(st === 'bad') bad++;
     }));
+    const done = good + bad;
     document.getElementById('barFill').style.width = (total ? done / total * 100 : 0) + '%';
     document.getElementById('statL').textContent = `Отмечено ${done} из ${total}`;
-    document.getElementById('statR').innerHTML = bad ? `<span class="bad">Неисправно: ${bad}</span>` : '';
+    document.getElementById('statR').innerHTML =
+      `<span class="good">Исправно (+): ${good}</span> · <span class="bad">Неисправно (−): ${bad}</span>`;
     document.getElementById('hint').textContent = done < total ? `Осталось: ${total - done}` : 'Всё отмечено';
     sendBtn.disabled = done < total || !total;
   }
@@ -186,17 +227,12 @@
     const all = e.target.closest('[data-all]');
     if(all){
       const si = +all.dataset.all;
-      sections[si].items.forEach((_, ii) => { const k = key(si, ii); if(!state[k]) state[k] = {v:'ok', c:''}; });
+      sections[si].items.forEach(it => { if(!state[it.row]) state[it.row] = 'ok'; });
       saveDraft(); draw(); return;
     }
-    const b = e.target.closest('[data-k]'); if(!b) return;
-    const k = b.dataset.k, v = b.dataset.v;
-    if(state[k] && state[k].v === v){ delete state[k]; }
-    else if(v === 'bad'){
-      const c = prompt('Что неисправно? (кратко)', (state[k] && state[k].c) || '');
-      if(c === null) return;
-      state[k] = {v:'bad', c:c.trim()};
-    } else state[k] = {v:'ok', c:''};
+    const b = e.target.closest('[data-r]'); if(!b) return;
+    const r = b.dataset.r, v = b.dataset.v;
+    if(state[r] === v) delete state[r]; else state[r] = v;
     saveDraft(); draw();
   });
 
@@ -205,9 +241,8 @@
   sendBtn.addEventListener('click', async () => {
     if(!/^https:\/\//.test(ROUND_SCRIPT_URL)){ toast('Не указан ROUND_SCRIPT_URL', true); return; }
     const results = [];
-    sections.forEach((s, si) => s.items.forEach((it, ii) => {
-      const st = state[key(si, ii)];
-      results.push({area:s.title, n:it.n, name:it.name, ok: st.v === 'ok', comment: st.c || ''});
+    sections.forEach(s => s.items.forEach(it => {
+      results.push({row: it.row, name: it.name, ok: state[it.row] === 'ok'});
     }));
     sendBtn.disabled = true; sendBtn.textContent = 'Сохраняем…';
     try{
@@ -217,13 +252,17 @@
       });
       const d = await r.json();
       if(!d.ok) throw new Error(d.error || 'ошибка сервера');
-      localStorage.removeItem(DRAFT_KEY); state = {};
-      toast('Обход сохранён ✓'); draw();
+      updating = true;
+      saveDraft();
+      toast((d.updated ? 'Обход обновлён ✓' : 'Обход сохранён ✓'));
+      sendBtn.textContent = 'Обновить обход';
+      sendBtn.disabled = false;
+      return;
     }catch(err){
       toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
       sendBtn.disabled = false;
     }
-    sendBtn.textContent = 'Сохранить обход';
+    sendBtn.textContent = updating ? 'Обновить обход' : 'Сохранить обход';
   });
 
   load();

@@ -2,6 +2,14 @@
 <html lang="ru">
 <head>
 <script src="auth-guard.js"></script>
+<script>
+  (function(){
+    var u = window.gcheckUser || {};
+    var ok = (u.type || '').trim().toLowerCase() === 'администратор' ||
+             (u.position || '').trim().toLowerCase() === 'сотрудник сги';
+    if(!ok) location.replace('index.html');
+  })();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Ежедневный обход СГИ — Hismar Check</title>

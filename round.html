@@ -194,15 +194,19 @@
         return `<div class="item ${v ? 's-' + v : ''}">
           <div class="nm">${esc(it.name)}</div>
           <div class="tg">
-            <button class="y${v === 'ok' ? ' on' : ''}" data-r="${it.row}" data-v="ok" aria-label="Исправно">✓</button>
             <button class="n${v === 'bad' ? ' on' : ''}" data-r="${it.row}" data-v="bad" aria-label="Неисправно">✗</button>
+            <button class="y${v === 'ok' ? ' on' : ''}" data-r="${it.row}" data-v="ok" aria-label="Исправно">✓</button>
           </div></div>`;
       }).join('');
       if(!rows) return '';
       const isOpen = q || open.has(String(si)) ? ' open' : '';
+      // Кнопка «Всё исправно» — только для участков, где больше 2 позиций
+      const allOkBtn = s.items.length > 2
+        ? `<button class="allok" type="button" data-all="${si}">${done === s.items.length ? '✕ Снять все отметки' : '✓ Всё исправно на этом участке'}</button>`
+        : '';
       return `<details data-si="${si}"${isOpen}>
         <summary><span>${esc(s.title)}</span><span class="cnt${done === s.items.length ? ' done' : ''}">${done}/${s.items.length}</span></summary>
-        <button class="allok" type="button" data-all="${si}">✓ Всё исправно на этом участке</button>${rows}</details>`;
+        ${allOkBtn}${rows}</details>`;
     }).join('') || '<div class="state-box">Ничего не найдено.</div>';
     updateStats();
   }
@@ -226,8 +230,15 @@
   listEl.addEventListener('click', e => {
     const all = e.target.closest('[data-all]');
     if(all){
-      const si = +all.dataset.all;
-      sections[si].items.forEach(it => { if(!state[it.row]) state[it.row] = 'ok'; });
+      const items = sections[+all.dataset.all].items;
+      const hasUnmarked = items.some(it => !state[it.row]);
+      if(hasUnmarked){
+        // первое нажатие: проставить ✓ там, где ещё ничего не отмечено
+        items.forEach(it => { if(!state[it.row]) state[it.row] = 'ok'; });
+      } else {
+        // повторное нажатие: снять все галочки (✗ остаются)
+        items.forEach(it => { if(state[it.row] === 'ok') delete state[it.row]; });
+      }
       saveDraft(); draw(); return;
     }
     const b = e.target.closest('[data-r]'); if(!b) return;

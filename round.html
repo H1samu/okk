@@ -221,8 +221,9 @@
     const head = values[0] || [];
     const out = [];
     for(let c = 2; c < head.length; c++){
-      const m = String(head[c] || '').trim().match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      const m = String(head[c] || '').trim().match(/(\d{1,2})\.(\d{1,2})\.(\d{2,4})/);
       if(!m) continue;
+      if(m[3].length === 2) m[3] = '20' + m[3];
       const res = {}; let g = 0, b = 0;
       sections.forEach(s => s.items.forEach(it => {
         const v = markOf((values[it.row - 1] || [])[c]);

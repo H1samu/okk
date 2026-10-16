@@ -44,6 +44,12 @@
   .card .row b.good{color:var(--ok);} .card .row b.bad{color:var(--danger);}
   .primary{width:100%; height:48px; margin-top:14px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer;}
   .primary:active{transform:scale(.98);}
+  .card.top{display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:14px 16px;}
+  .card.top .info{flex:1 1 220px; min-width:0;}
+  .card.top h3{margin:0 0 6px; font-size:15px;}
+  .mini{font-size:13px; color:var(--text-secondary); line-height:1.5;}
+  .mini b.good{color:var(--ok);} .mini b.bad{color:var(--danger);}
+  .primary.side{width:auto; flex:1 1 160px; max-width:240px; margin:0; padding:0 18px;}
 
   /* Фильтры истории */
   .filters{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
@@ -114,7 +120,7 @@
     <div class="state-box" id="homeLoad">Загрузка…</div>
     <div id="todayBox"></div>
     <div id="history" hidden>
-      <h2>История обходов</h2>
+      <h2>Статистика обходов</h2>
       <div class="filters">
         <select id="fDay" aria-label="День"></select>
         <select id="fEmp" aria-label="Сотрудник"></select>
@@ -192,8 +198,10 @@
   }
 
   const markOf = v => {
-    v = String(v || '').trim();
-    return v === '+' ? 'ok' : (v === '-' || v === '–' || v === '−') ? 'bad' : '';
+    v = String(v || '').trim().toLowerCase();
+    if(['+','✓','✔','да','ok','исправно'].includes(v)) return 'ok';
+    if(['-','–','−','—','✗','✘','✕','нет','неисправно'].includes(v)) return 'bad';
+    return '';
   };
 
   // Все столбцы-даты: кто провёл, сколько исправно/неисправно, отметки по позициям
@@ -206,7 +214,7 @@
     const head = values[0] || [];
     const out = [];
     for(let c = 2; c < head.length; c++){
-      const m = String(head[c] || '').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      const m = String(head[c] || '').trim().match(/(\d{1,2})\.(\d{1,2})\.(\d{4})/);
       if(!m) continue;
       const res = {}; let g = 0, b = 0;
       sections.forEach(s => s.items.forEach(it => {
@@ -232,10 +240,10 @@
   // ===== Загрузка =====
   async function load(final){
     try{
-      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}&_=${Date.now()}`, {cache:'no-store'})).json();
+      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`, {cache:'no-store'})).json();
       const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
       if(!p) throw new Error('вкладка не найдена');
-      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}&_=${Date.now()}`, {cache:'no-store'});
+      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}`, {cache:'no-store'});
       if(!r.ok) throw new Error('http ' + r.status);
       const values = (await r.json()).values || [];
       sections = parse(values);
@@ -248,9 +256,12 @@
         else days = [localToday, ...days.filter(d => d.date !== today)].sort((a, b) => b.key - a.key || b.col - a.col);
       }
       todayRound = days.find(d => d.date === today) || null;
+      window.__dbg = {head: (values[0] || []).slice(0, 8), rows: values.length, days: days.length};
+      console.log('round debug', window.__dbg);
       $('homeLoad').hidden = true;
       renderHome();
     }catch(e){
+      if(localToday){ console.warn('reload failed', e); return; }
       $('homeLoad').hidden = false;
       $('homeLoad').className = 'state-box error';
       $('homeLoad').textContent = 'Не удалось загрузить список: ' + e.message + '. Проверьте доступ к таблице «по ссылке — Читатель».';
@@ -262,18 +273,17 @@
     $('sub').textContent = 'Сегодня: ' + today;
     const box = $('todayBox');
     if(todayRound){
-      box.innerHTML = `<div class="card done">
-        <h3>✅ Сегодня обход уже выполнен</h3>
-        <div class="row"><span>Осмотр провёл</span><b>${esc(todayRound.inspector || '—')}</b></div>
-        <div class="row"><span>Исправное оборудование</span><b class="good">${todayRound.good}</b></div>
-        <div class="row"><span>Неисправное оборудование</span><b class="bad">${todayRound.bad}</b></div>
-        <button class="primary" type="button" id="btnUpdate">Обновить обход</button></div>`;
+      box.innerHTML = `<div class="card done top">
+        <div class="info"><h3>✅ Сегодня обход выполнен</h3>
+          <div class="mini">Осмотр провёл: <b>${esc(todayRound.inspector || '—')}</b></div>
+          <div class="mini"><b class="good">Исправно: ${todayRound.good}</b> · <b class="bad">Неисправно: ${todayRound.bad}</b></div></div>
+        <button class="primary side" type="button" id="btnUpdate">Обновить обход</button></div>`;
       $('btnUpdate').onclick = () => { state = Object.assign({}, todayRound.res); updating = true; saveDraft(); openFill(); };
     } else {
-      box.innerHTML = `<div class="card">
-        <h3>Обход за сегодня ещё не проведён</h3>
-        <div class="sub" style="margin:0">Нажмите кнопку, чтобы открыть чек-лист и отметить оборудование.</div>
-        <button class="primary" type="button" id="btnFill">✏️ Заполнить чек-лист</button></div>`;
+      box.innerHTML = `<div class="card top">
+        <div class="info"><h3>Обход за сегодня не проведён</h3>
+          <div class="mini">Откройте чек-лист и отметьте оборудование.</div></div>
+        <button class="primary side" type="button" id="btnFill">✏️ Заполнить чек-лист</button></div>`;
       $('btnFill').onclick = () => {
         updating = false;
         try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){ state = {}; }
@@ -282,6 +292,9 @@
     }
     buildFilters();
     renderHistory();
+    const d = window.__dbg;
+    if(d && !todayRound) $('todayBox').insertAdjacentHTML('beforeend',
+      `<div class="meta" style="margin-top:8px">Диагностика: строк ${d.rows}, найдено дней ${d.days}. Заголовки: ${esc(JSON.stringify(d.head))}</div>`);
   }
 
   // ===== История с фильтрами =====
@@ -329,7 +342,7 @@
     $('hMeta').textContent = `Обходов: ${rows.length}`;
     if(!rows.length){ $('hList').innerHTML = '<div class="state-box">Ничего не найдено.</div>'; return; }
     const part = rows.slice(0, shown);
-    $('hList').innerHTML = part.map(r => roundHtml(r, !!d)).join('') +
+    $('hList').innerHTML = part.map((r, i) => roundHtml(r, !!d || i === 0)).join('') +
       (rows.length > shown ? `<button class="more" type="button" id="btnMore">Показать ещё (${rows.length - shown})</button>` : '');
     const more = $('btnMore');
     if(more) more.onclick = () => { shown += PAGE; renderHistory(); };

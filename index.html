@@ -668,10 +668,10 @@
   <span class="tile-text">Мастер-таблица</span>
 </a>
 
- <a class="tile tile-sgi" href="round.html">
-     <span class="tile-icon">🔍</span>
-     <span class="tile-text">Обход СГИ</span>
-   </a>   
+<a class="tile sgi-only" href="round.html" hidden>
+  <span class="tile-icon">🔍</span>
+  <span class="tile-text">Ежедневный обход СГИ</span>
+</a>
     
     <a class="tile tile-sgi" href="sgi.html">
       <span class="tile-icon">🛠️</span>
@@ -728,11 +728,16 @@
     return false;
   }
 
-  function isAdmin(){
-    const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
-    return t === 'администратор';
-  }
+function isAdmin(){
+  const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
+  return t === 'администратор';
+}
 
+function isSgi(){
+  const p = (window.gcheckUser && window.gcheckUser.position || '').trim().toLowerCase();
+  return p === 'сотрудник сги';
+}
+  
 function renderUser(){
   const u = window.gcheckUser || {};
   const name = (u.name || '').trim();
@@ -741,12 +746,15 @@ function renderUser(){
   document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
 }
 
-  function applyRole(){
-    const admin = isAdmin();
-    document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !admin; });
-    document.querySelector('.quick-row').classList.toggle('no-master', !admin);
-    renderUser();
-  }
+function applyRole(){
+  const admin = isAdmin();
+  document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !admin; });
+  document.querySelectorAll('.sgi-only').forEach(el => { el.hidden = !(admin || isSgi()); });
+  const row = document.querySelector('.quick-row');
+  const visibleTiles = row.querySelectorAll('.tile:not([hidden])').length;
+  row.classList.toggle('no-master', visibleTiles <= 2);
+  renderUser();
+}
 
   let allJournals = [];
   let journals = [];

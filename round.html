@@ -20,18 +20,51 @@
   }
   *{box-sizing:border-box;}
   body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope',Arial,sans-serif; -webkit-font-smoothing:antialiased;}
-  button,input{font-family:inherit;}
+  button,input,select{font-family:inherit;}
   :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 120px;}
-  .back-link{display:inline-flex; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:16px; padding:6px 0;}
+  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 60px;}
+  .wrap.filling{padding-bottom:120px;}
+  .back-link{display:inline-flex; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:16px; padding:6px 0; background:none; border:none; cursor:pointer;}
   h1{font-size:22px; font-weight:700; margin:0 0 4px;}
+  h2{font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin:26px 0 10px;}
   .sub{font-size:13px; color:var(--text-secondary); margin:0 0 12px;}
-  .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
   .ext-links a{display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:13px; font-weight:600; text-decoration:none; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); border-radius:999px; padding:0 16px;}
   .ext-links a:hover{border-color:var(--border-strong);}
   .state-box{text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
   .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+  [hidden]{display:none !important;}
 
+  /* Стартовая карточка */
+  .card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 16px;}
+  .card.done{border-color:#c3e2cb; background:#f3faf4;}
+  .card h3{margin:0 0 10px; font-size:16px;}
+  .card .row{display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-top:1px solid var(--border); font-size:14px;}
+  .card .row span:first-child{color:var(--text-secondary);}
+  .card .row b.good{color:var(--ok);} .card .row b.bad{color:var(--danger);}
+  .primary{width:100%; height:48px; margin-top:14px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer;}
+  .primary:active{transform:scale(.98);}
+
+  /* Фильтры истории */
+  .filters{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
+  .filters select{flex:1 1 180px; height:44px; padding:0 12px; border:1px solid var(--border-strong); border-radius:10px; font-size:14px; background:var(--surface); color:var(--text);}
+  .meta{font-size:12px; color:var(--text-muted); margin-bottom:10px;}
+  .round summary .ttl{display:flex; flex-direction:column; gap:2px; min-width:0;}
+  .round summary .who{font-size:12px; font-weight:500; color:var(--text-secondary);}
+  .pill{font-size:12px; font-weight:700; white-space:nowrap;}
+  .pill .g{color:var(--ok);} .pill .b{color:var(--danger);}
+  .inner{border-top:1px solid var(--border); padding:6px 16px 12px;}
+  .grp{font-size:12px; font-weight:700; color:var(--text-secondary); margin:12px 0 4px;}
+  .grp.bad{color:var(--danger);} .grp.good{color:var(--ok);}
+  .sec{font-size:12px; font-weight:600; color:var(--text-muted); margin:8px 0 2px;}
+  .li{font-size:13px; line-height:1.35; padding:6px 10px; border-radius:8px; margin-bottom:3px; overflow-wrap:anywhere;}
+  .li.bad{background:var(--danger-soft);} .li.good{background:#f3faf4;}
+  .none{font-size:13px; color:var(--text-muted); padding:8px 0;}
+  .more{width:100%; height:44px; border:1px solid var(--border-strong); border-radius:10px; background:var(--surface); font-weight:600; cursor:pointer; color:var(--accent);}
+  details.nested{border:none; border-radius:0; margin:8px 0 0; background:none;}
+  details.nested>summary{padding:6px 0; min-height:0; font-size:13px; color:var(--ok);}
+
+  /* Режим заполнения */
   .sticky{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px;}
   .search{width:100%; height:44px; padding:0 16px; border:1px solid var(--border-strong); border-radius:999px; font-size:16px; background:var(--surface);}
   .bar{height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px;}
@@ -66,25 +99,43 @@
 </style>
 </head>
 <body>
-<div class="wrap">
-  <a class="back-link" href="index.html">← Все журналы</a>
+<div class="wrap" id="wrap">
+  <a class="back-link" id="backIndex" href="index.html">← Все журналы</a>
+  <button class="back-link" id="backHome" type="button" hidden>← К обходу</button>
   <h1>Обход оборудования</h1>
-  <p class="sub" id="sub">Отмечайте каждую позицию: ✓ исправно, ✗ неисправно.</p>
+  <p class="sub" id="sub"></p>
 
   <div class="ext-links">
     <a href="https://docs.google.com/spreadsheets/d/1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0/edit?gid=1954643572#gid=1954643572" target="_blank" rel="noopener">📊 Открыть таблицу</a>
   </div>
 
-  <div class="sticky">
-    <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
-    <div class="bar"><div id="barFill"></div></div>
-    <div class="stat"><span id="statL"></span><span id="statR"></span></div>
+  <!-- Главный экран -->
+  <div id="home">
+    <div class="state-box" id="homeLoad">Загрузка…</div>
+    <div id="todayBox"></div>
+    <div id="history" hidden>
+      <h2>История обходов</h2>
+      <div class="filters">
+        <select id="fDay" aria-label="День"></select>
+        <select id="fEmp" aria-label="Сотрудник"></select>
+      </div>
+      <div class="meta" id="hMeta"></div>
+      <div id="hList"></div>
+    </div>
   </div>
 
-  <div id="list"><div class="state-box">Загрузка списка…</div></div>
+  <!-- Чек-лист -->
+  <div id="fill" hidden>
+    <div class="sticky">
+      <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
+      <div class="bar"><div id="barFill"></div></div>
+      <div class="stat"><span id="statL"></span><span id="statR"></span></div>
+    </div>
+    <div id="list"></div>
+  </div>
 </div>
 
-<div class="foot"><div class="in">
+<div class="foot" id="foot" hidden><div class="in">
   <div class="hint" id="hint"></div>
   <button class="send" id="send" type="button" disabled>Сохранить обход</button>
 </div></div>
@@ -94,35 +145,41 @@
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
   const SHEET_ID = '1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0';
   const SHEET_GID = 1954643572;
-  // URL Apps Script, где добавлено действие saveRound (см. round-script.gs)
   const ROUND_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
 
-  const listEl = document.getElementById('list');
-  const sendBtn = document.getElementById('send');
-  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'}); // дд.мм.гггг
+  const $ = id => document.getElementById(id);
+  const listEl = $('list'), sendBtn = $('send');
+  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'});
   const DRAFT_KEY = 'gcheck_round2_' + today;
+  const PAGE = 20;
 
-  let sections = [];       // {title, items:[{row,name}]}
-  let state = {};          // row -> 'ok' | 'bad'
-  let updating = false;    // true, если обход за сегодня уже есть в таблице
+  let sections = [];   // {title, items:[{row,name}]}
+  let days = [];       // {date,key,col,inspector,good,bad,res}
+  let state = {};
+  let updating = false;
+  let shown = PAGE;
+  let todayRound = null;
   try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
 
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const saveDraft = () => { try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); }catch(e){} };
+  const pad = n => String(n).padStart(2, '0');
 
   function toast(t, err){
-    const el = document.getElementById('toast');
+    const el = $('toast');
     el.textContent = t; el.classList.toggle('err', !!err); el.style.display = 'block';
     clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', err ? 6000 : 3000);
   }
 
-  // Строки таблицы -> участки и позиции (запоминаем номер строки листа)
+  // ===== Разбор таблицы =====
+  const RX_SUM = /^(Осмотр провел|Исправное оборудование|Неисправное оборудование)/i;
+
   function parse(values){
     const out = []; let cur = null;
     values.forEach((r, i) => {
       if(i === 0) return;
       const n = String(r[0] || '').trim(), name = String(r[1] || '').trim();
-      if(!name || /^(Осмотр провел|Исправное оборудование|Неисправное оборудование)/i.test(name)) return;
+      if(!name || RX_SUM.test(name)) return;
       if(/^\d+$/.test(n)){
         if(!cur){ cur = {title:'Без участка', items:[]}; out.push(cur); }
         cur.items.push({row: i + 1, name});
@@ -133,26 +190,48 @@
     return out.filter(s => s.items.length);
   }
 
-  // Ищем столбец с сегодняшней датой и читаем + / -
-  function readExisting(values){
+  const markOf = v => {
+    v = String(v || '').trim();
+    return v === '+' ? 'ok' : (v === '-' || v === '–' || v === '−') ? 'bad' : '';
+  };
+
+  // Все столбцы-даты: кто провёл, сколько исправно/неисправно, отметки по позициям
+  function parseDays(values){
+    const rowOf = {};
+    values.forEach((r, i) => {
+      const m = String(r[1] || '').trim().match(RX_SUM);
+      if(m) rowOf[m[1].toLowerCase()] = i;
+    });
     const head = values[0] || [];
-    let col = -1;
+    const out = [];
     for(let c = 2; c < head.length; c++){
-      if(String(head[c] || '').trim().startsWith(today)){ col = c; break; }
+      const m = String(head[c] || '').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})/);
+      if(!m) continue;
+      const res = {}; let g = 0, b = 0;
+      sections.forEach(s => s.items.forEach(it => {
+        const v = markOf((values[it.row - 1] || [])[c]);
+        if(v){ res[it.row] = v; v === 'ok' ? g++ : b++; }
+      }));
+      if(g + b === 0) continue;
+      const cell = k => rowOf[k] === undefined ? '' : String((values[rowOf[k]] || [])[c] || '').trim();
+      const num = (k, fb) => { const n = parseInt(cell(k), 10); return isNaN(n) ? fb : n; };
+      out.push({
+        date: pad(+m[1]) + '.' + pad(+m[2]) + '.' + m[3],
+        key: +m[3] * 10000 + +m[2] * 100 + +m[1],
+        col: c,
+        inspector: cell('осмотр провел'),
+        good: num('исправное оборудование', g),
+        bad: num('неисправное оборудование', b),
+        res
+      });
     }
-    if(col < 0) return null;
-    const res = {}; let any = false;
-    sections.forEach(s => s.items.forEach(it => {
-      const v = String((values[it.row - 1] || [])[col] || '').trim();
-      if(v === '+'){ res[it.row] = 'ok'; any = true; }
-      else if(v === '-' || v === '–' || v === '−'){ res[it.row] = 'bad'; any = true; }
-    }));
-    return any ? res : null;
+    return out.sort((a, b) => b.key - a.key || b.col - a.col);
   }
 
+  // ===== Загрузка =====
   async function load(){
     try{
-      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`)).json();
+      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`, {cache:'no-store'})).json();
       const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
       if(!p) throw new Error('вкладка не найдена');
       const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}`, {cache:'no-store'});
@@ -160,31 +239,119 @@
       const values = (await r.json()).values || [];
       sections = parse(values);
       if(!sections.length) throw new Error('список пуст');
-      document.getElementById('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).';
-
-      const existing = readExisting(values);
-      if(existing){
-        draw();
-        setTimeout(() => {
-          if(confirm('За сегодня обход уже был. Вы хотите обновить данные с обхода?')){
-            state = existing; updating = true; saveDraft();
-            sendBtn.textContent = 'Обновить обход';
-            draw();
-          } else {
-            location.href = 'index.html';
-          }
-        }, 50);
-        return;
-      }
-      draw();
+      days = parseDays(values);
+      todayRound = days.find(d => d.date === today) || null;
+      $('homeLoad').hidden = true;
+      renderHome();
     }catch(e){
-      listEl.innerHTML = '<div class="state-box error">Не удалось загрузить список: ' + esc(e.message) +
-        '. Проверьте доступ к таблице «по ссылке — Читатель».</div>';
+      $('homeLoad').hidden = false;
+      $('homeLoad').className = 'state-box error';
+      $('homeLoad').textContent = 'Не удалось загрузить список: ' + e.message + '. Проверьте доступ к таблице «по ссылке — Читатель».';
     }
   }
 
+  // ===== Главный экран =====
+  function renderHome(){
+    $('sub').textContent = 'Сегодня: ' + today;
+    const box = $('todayBox');
+    if(todayRound){
+      box.innerHTML = `<div class="card done">
+        <h3>✅ Сегодня обход уже выполнен</h3>
+        <div class="row"><span>Осмотр провёл</span><b>${esc(todayRound.inspector || '—')}</b></div>
+        <div class="row"><span>Исправное оборудование</span><b class="good">${todayRound.good}</b></div>
+        <div class="row"><span>Неисправное оборудование</span><b class="bad">${todayRound.bad}</b></div>
+        <button class="primary" type="button" id="btnUpdate">Обновить обход</button></div>`;
+      $('btnUpdate').onclick = () => { state = Object.assign({}, todayRound.res); updating = true; saveDraft(); openFill(); };
+    } else {
+      box.innerHTML = `<div class="card">
+        <h3>Обход за сегодня ещё не проведён</h3>
+        <div class="sub" style="margin:0">Нажмите кнопку, чтобы открыть чек-лист и отметить оборудование.</div>
+        <button class="primary" type="button" id="btnFill">✏️ Заполнить чек-лист</button></div>`;
+      $('btnFill').onclick = () => {
+        updating = false;
+        try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){ state = {}; }
+        openFill();
+      };
+    }
+    buildFilters();
+    renderHistory();
+  }
+
+  // ===== История с фильтрами =====
+  function buildFilters(){
+    const dSel = $('fDay'), eSel = $('fEmp');
+    const curD = dSel.value, curE = eSel.value;
+    const dates = [...new Set(days.map(d => d.date))];
+    dSel.innerHTML = '<option value="">Все дни</option>' +
+      dates.map(d => `<option value="${d}">${d}${d === today ? ' (сегодня)' : ''}</option>`).join('');
+    const emps = [...new Set(days.map(d => d.inspector).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
+    eSel.innerHTML = '<option value="">Все сотрудники</option>' +
+      emps.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
+    dSel.value = dates.includes(curD) ? curD : '';
+    eSel.value = emps.includes(curE) ? curE : '';
+    $('history').hidden = !days.length;
+  }
+
+  function groupBy(round, kind){
+    const out = [];
+    sections.forEach(s => {
+      const items = s.items.filter(it => round.res[it.row] === kind);
+      if(items.length) out.push({title: s.title, items});
+    });
+    return out;
+  }
+  const groupHtml = (groups, cls) => groups.map(g =>
+    `<div class="sec">${esc(g.title)}</div>` + g.items.map(it => `<div class="li ${cls}">${esc(it.name)}</div>`).join('')
+  ).join('');
+
+  function roundHtml(r, open){
+    const bad = groupBy(r, 'bad'), good = groupBy(r, 'ok');
+    return `<details class="round"${open ? ' open' : ''}>
+      <summary><span class="ttl"><span>${r.date}</span><span class="who">${esc(r.inspector || 'Сотрудник не указан')}</span></span>
+        <span class="pill"><span class="g">✓ ${r.good}</span> · <span class="b">✗ ${r.bad}</span></span></summary>
+      <div class="inner">
+        <div class="grp bad">Неисправное оборудование (${r.bad})</div>
+        ${bad.length ? groupHtml(bad, 'bad') : '<div class="none">Неисправного оборудования нет</div>'}
+        <details class="nested"><summary>Исправное оборудование (${r.good})</summary>${groupHtml(good, 'good')}</details>
+      </div></details>`;
+  }
+
+  function renderHistory(){
+    const d = $('fDay').value, e = $('fEmp').value;
+    const rows = days.filter(r => (!d || r.date === d) && (!e || r.inspector === e));
+    $('hMeta').textContent = `Обходов: ${rows.length}`;
+    if(!rows.length){ $('hList').innerHTML = '<div class="state-box">Ничего не найдено.</div>'; return; }
+    const part = rows.slice(0, shown);
+    $('hList').innerHTML = part.map(r => roundHtml(r, !!d)).join('') +
+      (rows.length > shown ? `<button class="more" type="button" id="btnMore">Показать ещё (${rows.length - shown})</button>` : '');
+    const more = $('btnMore');
+    if(more) more.onclick = () => { shown += PAGE; renderHistory(); };
+  }
+  $('fDay').addEventListener('change', () => { shown = PAGE; renderHistory(); });
+  $('fEmp').addEventListener('change', () => { shown = PAGE; renderHistory(); });
+
+  // ===== Переключение экранов =====
+  function openFill(){
+    $('home').hidden = true; $('fill').hidden = false; $('foot').hidden = false;
+    $('backIndex').hidden = true; $('backHome').hidden = false;
+    $('wrap').classList.add('filling');
+    $('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).';
+    sendBtn.textContent = updating ? 'Обновить обход' : 'Сохранить обход';
+    draw();
+    window.scrollTo(0, 0);
+  }
+  function openHome(){
+    $('home').hidden = false; $('fill').hidden = true; $('foot').hidden = true;
+    $('backIndex').hidden = false; $('backHome').hidden = true;
+    $('wrap').classList.remove('filling');
+    $('sub').textContent = 'Сегодня: ' + today;
+    window.scrollTo(0, 0);
+  }
+  $('backHome').addEventListener('click', openHome);
+
+  // ===== Чек-лист =====
   function draw(){
-    const q = document.getElementById('q').value.trim().toLowerCase();
+    const q = $('q').value.trim().toLowerCase();
     const open = new Set([...listEl.querySelectorAll('details[open]')].map(d => d.dataset.si));
     listEl.innerHTML = sections.map((s, si) => {
       const done = s.items.filter(it => state[it.row]).length;
@@ -200,7 +367,6 @@
       }).join('');
       if(!rows) return '';
       const isOpen = q || open.has(String(si)) ? ' open' : '';
-      // Кнопка «Всё исправно» — только для участков, где больше 2 позиций
       const allOkBtn = s.items.length > 2
         ? `<button class="allok" type="button" data-all="${si}">${done === s.items.length ? '✕ Снять все отметки' : '✓ Всё исправно на этом участке'}</button>`
         : '';
@@ -211,7 +377,6 @@
     updateStats();
   }
 
-  // Исправное = количество «+», неисправное = количество «−»
   function updateStats(){
     let total = 0, good = 0, bad = 0;
     sections.forEach(s => s.items.forEach(it => {
@@ -219,11 +384,10 @@
       if(st === 'ok') good++; else if(st === 'bad') bad++;
     }));
     const done = good + bad;
-    document.getElementById('barFill').style.width = (total ? done / total * 100 : 0) + '%';
-    document.getElementById('statL').textContent = `Отмечено ${done} из ${total}`;
-    document.getElementById('statR').innerHTML =
-      `<span class="good">Исправно (+): ${good}</span> · <span class="bad">Неисправно (−): ${bad}</span>`;
-    document.getElementById('hint').textContent = done < total ? `Осталось: ${total - done}` : 'Всё отмечено';
+    $('barFill').style.width = (total ? done / total * 100 : 0) + '%';
+    $('statL').textContent = `Отмечено ${done} из ${total}`;
+    $('statR').innerHTML = `<span class="good">Исправно (+): ${good}</span> · <span class="bad">Неисправно (−): ${bad}</span>`;
+    $('hint').textContent = done < total ? `Осталось: ${total - done}` : 'Всё отмечено';
     sendBtn.disabled = done < total || !total;
   }
 
@@ -231,12 +395,9 @@
     const all = e.target.closest('[data-all]');
     if(all){
       const items = sections[+all.dataset.all].items;
-      const hasUnmarked = items.some(it => !state[it.row]);
-      if(hasUnmarked){
-        // первое нажатие: проставить ✓ там, где ещё ничего не отмечено
+      if(items.some(it => !state[it.row])){
         items.forEach(it => { if(!state[it.row]) state[it.row] = 'ok'; });
       } else {
-        // повторное нажатие: снять все галочки (✗ остаются)
         items.forEach(it => { if(state[it.row] === 'ok') delete state[it.row]; });
       }
       saveDraft(); draw(); return;
@@ -246,9 +407,9 @@
     if(state[r] === v) delete state[r]; else state[r] = v;
     saveDraft(); draw();
   });
+  $('q').addEventListener('input', draw);
 
-  document.getElementById('q').addEventListener('input', draw);
-
+  // ===== Сохранение =====
   sendBtn.addEventListener('click', async () => {
     if(!/^https:\/\//.test(ROUND_SCRIPT_URL)){ toast('Не указан ROUND_SCRIPT_URL', true); return; }
     const results = [];
@@ -263,17 +424,16 @@
       });
       const d = await r.json();
       if(!d.ok) throw new Error(d.error || 'ошибка сервера');
-      updating = true;
-      saveDraft();
-      toast((d.updated ? 'Обход обновлён ✓' : 'Обход сохранён ✓'));
-      sendBtn.textContent = 'Обновить обход';
-      sendBtn.disabled = false;
-      return;
+      toast(d.updated ? 'Обход обновлён ✓' : 'Обход сохранён ✓');
+      try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+      state = {};
+      await load();     // перечитать таблицу: покажет «обход выполнен» и обновит историю
+      openHome();
     }catch(err){
       toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
       sendBtn.disabled = false;
+      sendBtn.textContent = updating ? 'Обновить обход' : 'Сохранить обход';
     }
-    sendBtn.textContent = updating ? 'Обновить обход' : 'Сохранить обход';
   });
 
   load();

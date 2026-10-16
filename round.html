@@ -159,6 +159,7 @@
   let updating = false;
   let shown = PAGE;
   let todayRound = null;
+  let localToday = null;   // обход, только что сохранённый с этого устройства (пока таблица не отдала его через API)
   try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
 
   const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
@@ -229,17 +230,23 @@
   }
 
   // ===== Загрузка =====
-  async function load(){
+  async function load(final){
     try{
-      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`, {cache:'no-store'})).json();
+      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}&_=${Date.now()}`, {cache:'no-store'})).json();
       const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
       if(!p) throw new Error('вкладка не найдена');
-      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}`, {cache:'no-store'});
+      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}&_=${Date.now()}`, {cache:'no-store'});
       if(!r.ok) throw new Error('http ' + r.status);
       const values = (await r.json()).values || [];
       sections = parse(values);
       if(!sections.length) throw new Error('список пуст');
       days = parseDays(values);
+      if(localToday){
+        const f = days.find(d => d.date === today);
+        if(f && JSON.stringify(f.res) === JSON.stringify(localToday.res)) localToday = null;   // таблица догнала
+        else if(final) localToday = null;                                                       // сдаёмся, верим таблице
+        else days = [localToday, ...days.filter(d => d.date !== today)].sort((a, b) => b.key - a.key || b.col - a.col);
+      }
       todayRound = days.find(d => d.date === today) || null;
       $('homeLoad').hidden = true;
       renderHome();
@@ -426,9 +433,23 @@
       if(!d.ok) throw new Error(d.error || 'ошибка сервера');
       toast(d.updated ? 'Обход обновлён ✓' : 'Обход сохранён ✓');
       try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+      // Сразу показываем «обход выполнен» по своим данным: API таблиц может отдавать старые значения несколько секунд
+      const res = Object.assign({}, state);
+      const vals = Object.values(res);
+      const t = new Date(), parts = today.split('.');
+      localToday = {
+        date: today, key: +parts[2] * 10000 + +parts[1] * 100 + +parts[0], col: -1,
+        inspector: ((window.gcheckUser && window.gcheckUser.name) || '').trim(),
+        good: vals.filter(v => v === 'ok').length, bad: vals.filter(v => v === 'bad').length, res
+      };
+      days = [localToday, ...days.filter(d => d.date !== today)];
+      todayRound = localToday;
       state = {};
-      await load();     // перечитать таблицу: покажет «обход выполнен» и обновит историю
+      $('homeLoad').hidden = true;
+      renderHome();
       openHome();
+      setTimeout(() => { if(localToday) load(false); }, 3000);
+      setTimeout(() => { if(localToday) load(true); }, 10000);
     }catch(err){
       toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
       sendBtn.disabled = false;

@@ -2,9 +2,14 @@
 <html lang="ru">
 <head>
 <script src="auth-guard.js"></script>
+<script>
+  if(!window.gcheckUser || (window.gcheckUser.type || '').trim().toLowerCase() !== 'администратор'){
+    location.replace('index.html');
+  }
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Обход оборудования — Hismar Check</title>
+<title>Контроль заполнения — Hismar Check</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -13,271 +18,553 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#f6f5f1; --surface:#fff; --border:#e4e2d9; --border-strong:#c9c6b8;
+    --bg:#f6f5f1; --surface:#ffffff; --border:#e4e2d9; --border-strong:#c9c6b8;
     --text:#20201c; --text-secondary:#6b6a61; --text-muted:#98968a;
     --accent:#3a5a52; --accent-soft:#e8efec; --danger:#9c3b34; --danger-soft:#fbebe9;
-    --ok:#2f7a3e; --ok-soft:#e8f5ea; --radius:12px;
+    --warn:#8a6416; --warn-soft:#fdf3d8; --ok:#2f7a3e; --ok-soft:#e8f5ea;
+    --radius:12px;
   }
   *{box-sizing:border-box;}
-  body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope',Arial,sans-serif; -webkit-font-smoothing:antialiased;}
-  button,input{font-family:inherit;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope', Arial, sans-serif; -webkit-font-smoothing:antialiased;}
+  button, input{font-family:inherit;}
   :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-  .wrap{max-width:760px; margin:0 auto; padding:20px 16px 120px;}
-  .back-link{display:inline-flex; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:16px; padding:6px 0;}
-  h1{font-size:22px; font-weight:700; margin:0 0 4px;}
-  .sub{font-size:13px; color:var(--text-secondary); margin:0 0 12px;}
-  .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:12px;}
-  .ext-links a{display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:13px; font-weight:600; text-decoration:none; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); border-radius:999px; padding:0 16px;}
-  .ext-links a:hover{border-color:var(--border-strong);}
+  .wrap{max-width:1200px; margin:0 auto; padding:24px 20px 60px;}
+  .back-link{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:20px; padding:6px 0;}
+  .back-link:hover{color:var(--accent);}
+  h1{font-size:22px; font-weight:700; margin:0 0 6px;}
+  header p{font-size:13px; color:var(--text-secondary); margin:0 0 18px;}
+
+  .summary{display:grid; grid-template-columns:repeat(4, 1fr); gap:10px; margin-bottom:14px;}
+  .sum{
+    text-align:left; padding:12px 14px; border-radius:var(--radius);
+    border:1px solid var(--border); background:var(--surface); cursor:pointer;
+    min-height:64px; transition:border-color .15s ease, transform .1s ease;
+  }
+  .sum:hover{border-color:var(--border-strong);}
+  .sum:active{transform:scale(0.98);}
+  .sum .n{font-size:22px; font-weight:700; line-height:1.1;}
+  .sum .l{font-size:12px; color:var(--text-secondary); margin-top:2px;}
+  .sum.s-overdue .n{color:var(--danger);}
+  .sum.s-pending .n{color:var(--warn);}
+  .sum.s-ok .n{color:var(--ok);}
+  .sum.active{border-width:2px; padding:11px 13px;}
+  .sum.s-overdue.active{border-color:var(--danger); background:var(--danger-soft);}
+  .sum.s-pending.active{border-color:#e3c06a; background:var(--warn-soft);}
+  .sum.s-ok.active{border-color:#8fc79b; background:var(--ok-soft);}
+  .sum.s-other.active{border-color:var(--accent); background:var(--accent-soft);}
+
+  .toolbar{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:12px;}
+  .search-box{position:relative; flex:1 1 260px;}
+  .search-box input{width:100%; height:46px; padding:0 16px 0 40px; border:1px solid var(--border-strong); border-radius:999px; font-size:14px; background:var(--surface); color:var(--text);}
+  .search-box svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; stroke:var(--text-muted);}
+  .btn{height:44px; padding:0 16px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); font-size:13px; font-weight:600; cursor:pointer;}
+  .btn:hover:not(:disabled){border-color:var(--accent);}
+  .btn:disabled{opacity:0.6; cursor:wait;}
+
+  .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;}
+  .chip{height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--text); cursor:pointer; white-space:nowrap;}
+  .chip:hover{border-color:var(--border-strong);}
+  .chip.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+
+  .meta{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); margin-bottom:12px;}
   .state-box{text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
   .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+  .progress{height:4px; background:var(--border); border-radius:2px; overflow:hidden; margin-bottom:12px;}
+  .progress > div{height:100%; width:0; background:var(--accent); transition:width .2s ease;}
 
-  .sticky{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px;}
-  .search{width:100%; height:44px; padding:0 16px; border:1px solid var(--border-strong); border-radius:999px; font-size:16px; background:var(--surface);}
-  .bar{height:6px; background:var(--border); border-radius:3px; overflow:hidden; margin-top:10px;}
-  .bar>div{height:100%; width:0; background:var(--accent); transition:width .2s;}
-  .stat{display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; font-size:12px; color:var(--text-muted); margin-top:6px;}
-  .stat .good{color:var(--ok); font-weight:600;}
-  .stat .bad{color:var(--danger); font-weight:600;}
+  .table-scroll{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:auto; max-width:100%; max-height:70vh;}
+  table{border-collapse:separate; border-spacing:0; width:100%; font-size:13px;}
+  thead th{position:sticky; top:0; z-index:2; background:var(--accent-soft); text-align:left; padding:10px 14px; font-weight:600; border-bottom:1px solid var(--border-strong); white-space:nowrap;}
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{background:#dfe9e5;}
+  th .sort-arrow{margin-left:4px; color:var(--text-muted); font-size:11px;}
+  th.sort-active .sort-arrow{color:var(--accent);}
+  tbody td{padding:9px 14px; border-bottom:1px solid var(--border); color:var(--text-secondary); vertical-align:middle;}
+  tbody tr:last-child td{border-bottom:none;}
+  tbody tr:hover td{background:#fbfaf7;}
+  td.code{white-space:nowrap; font-size:12px; font-weight:600; color:var(--text-muted);}
+  td.jname{color:var(--text); font-weight:500; min-width:240px;}
+  td.nowrap{white-space:nowrap;}
+  .badge{display:inline-block; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600; white-space:nowrap;}
+  .b-overdue{background:var(--danger-soft); color:var(--danger);}
+  .b-pending{background:var(--warn-soft); color:var(--warn);}
+  .b-ok{background:var(--ok-soft); color:var(--ok);}
+  .b-other{background:var(--bg); color:var(--text-secondary); border:1px solid var(--border);}
+  tr.r-overdue td:first-child{box-shadow:inset 3px 0 0 #e0928b;}
+  tr.r-pending td:first-child{box-shadow:inset 3px 0 0 #e3c06a;}
+  tr.r-ok td:first-child{box-shadow:inset 3px 0 0 #8fc79b;}
+  .open{display:inline-flex; align-items:center; height:36px; padding:0 12px; border-radius:8px; border:1px solid var(--border-strong); color:var(--accent); font-weight:600; text-decoration:none; font-size:12px; white-space:nowrap;}
+  .open:hover{border-color:var(--accent);}
+  mark{background:#fde68a; color:inherit; border-radius:3px;}
+  @media (max-width:700px){ .summary{grid-template-columns:repeat(2, 1fr);} }
 
-  details{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:10px; overflow:hidden;}
-  summary{list-style:none; cursor:pointer; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; font-weight:600; font-size:14px; min-height:48px;}
-  summary::-webkit-details-marker{display:none;}
-  summary .cnt{font-size:12px; font-weight:600; color:var(--text-muted); white-space:nowrap;}
-  summary .cnt.done{color:var(--ok);}
-  .item{display:flex; align-items:center; gap:10px; padding:10px 16px; border-top:1px solid var(--border);}
-  .item .nm{flex:1; min-width:0; font-size:13px; line-height:1.35; overflow-wrap:anywhere;}
-  .item.s-ok{background:#f3faf4;}
-  .item.s-bad{background:var(--danger-soft);}
-  .tg{display:flex; gap:6px; flex-shrink:0;}
-  .tg button{width:48px; height:44px; border-radius:10px; border:1px solid var(--border-strong); background:var(--surface); font-size:18px; cursor:pointer; color:var(--text-muted);}
-  .tg button:active{transform:scale(.95);}
-  .tg .y.on{background:var(--ok); border-color:var(--ok); color:#fff;}
-  .tg .n.on{background:var(--danger); border-color:var(--danger); color:#fff;}
-  .allok{margin:0 16px 12px; height:40px; padding:0 14px; border-radius:10px; border:1px solid var(--border-strong); background:var(--accent-soft); color:var(--accent); font-weight:600; font-size:13px; cursor:pointer;}
-
-  .foot{position:fixed; left:0; right:0; bottom:0; background:var(--surface); border-top:1px solid var(--border); padding:10px 16px calc(10px + env(safe-area-inset-bottom));}
-  .foot .in{max-width:760px; margin:0 auto; display:flex; gap:10px; align-items:center;}
-  .foot .hint{flex:1; font-size:12px; color:var(--text-secondary);}
-  .send{height:46px; padding:0 22px; border:none; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer;}
-  .send:disabled{opacity:.5; cursor:default;}
-  .toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%); padding:11px 18px; border-radius:999px; font-size:13px; font-weight:600; color:#fff; background:var(--accent); display:none; z-index:20; max-width:90vw;}
-  .toast.err{background:var(--danger);}
+/* фильтры: два чипа + раскрывающиеся списки */
+.fbar{display:flex; gap:8px; margin-bottom:10px;}
+.fbar .chip{height:40px; display:inline-flex; align-items:center; gap:6px;}
+.fbar .chip.has-value{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+.fbar .chip .chev{font-size:10px; opacity:.6; transition:transform .15s ease;}
+.fbar .chip[aria-expanded="true"] .chev{transform:rotate(180deg);}
+.chips[hidden]{display:none;}
+  
 </style>
 </head>
 <body>
+
 <div class="wrap">
   <a class="back-link" href="index.html">← Все журналы</a>
-  <h1>Обход оборудования</h1>
-  <p class="sub" id="sub">Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).</p>
 
-  <div class="ext-links">
-    <a href="https://docs.google.com/spreadsheets/d/1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0/edit?gid=1954643572#gid=1954643572" target="_blank" rel="noopener">📊 Открыть таблицу</a>
+  <header>
+    <h1>Контроль заполнения</h1>
+    <p>Проверка по журналам: заполнены ли они в срок согласно периодичности.</p>
+  </header>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="toolbar">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Поиск по коду или названию" autocomplete="off">
+    </div>
+    <button class="btn" id="refreshBtn" type="button">🔄 Обновить</button>
   </div>
 
-  <div class="sticky">
-    <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
-    <div class="bar"><div id="barFill"></div></div>
-    <div class="stat"><span id="statL"></span><span id="statR"></span></div>
-  </div>
+<div class="fbar">
+  <button type="button" class="chip" id="freqToggle" aria-expanded="false">
+    <span id="freqLabel">Периодичность</span><span class="chev">▼</span>
+  </button>
+  <button type="button" class="chip" id="tagToggle" aria-expanded="false">
+    <span id="tagLabel">Категории</span><span class="chev">▼</span>
+  </button>
+</div>
+<div class="chips" id="freqChips" hidden></div>
+<div class="chips" id="tagChips" hidden></div>
 
-  <div id="list"><div class="state-box">Загрузка списка…</div></div>
+  <div class="progress" id="progress" hidden><div id="progressBar"></div></div>
+  <div class="meta"><span id="rowCount"></span><span id="updated"></span></div>
+
+  <div id="content"><div class="state-box">Загрузка…</div></div>
 </div>
 
-<div class="foot"><div class="in">
-  <div class="hint" id="hint"></div>
-  <button class="send" id="send" type="button" disabled>Сохранить обход</button>
-</div></div>
-<div class="toast" id="toast"></div>
-
 <script>
+
+
+  // Часовой пояс предприятия: по нему определяется "сегодня" и граница суток (24:00)
   const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
-  const SHEET_ID = '1C_UmSyIp7lyqewuISKvYIuknes0TPXINtyvibLgAwh0';
-  const SHEET_GID = 1954643572;
-  // URL Apps Script, где добавлено действие saveRound (см. round-script.gs)
-  const ROUND_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZIvCHbIKEoj-AhrEa7hNJn5bChBNt8bxPoyoNcX5dEpT1ACRodRkMvfIzYfzMLVAr/exec';
+  const TIMEZONE = 'Europe/Moscow';
+  const SNAP_SHEET_ID = '1VnRbQos4ZOViJy2arblfIOOdjHbUtk2rnnhfPIEVz4o';
+  const CONTROL_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyPDJMU64rTBfZ1bK_Di1Guo_SJ7VAaT7r4xqGhN_W-RZsD1BE5YSlMvtKjEs7uUEG_/exec';
 
-  const listEl = document.getElementById('list');
-  const sendBtn = document.getElementById('send');
-  const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'}); // дд.мм.гггг
-  const DRAFT_KEY = 'gcheck_round2_' + today;
+  const FREQS = ['Ежедневно', '2 раза в день', '3 раза в день', '1 раз в три дня', '1 раз в неделю', '1 раз в месяц', 'Произвольно'];
+  const TAG_ORDER = ['Санитария','АХО','Оборудование','Продукт','Включения','Температурные','Вредители','Учёт','Прочее'];
 
-  let sections = [];       // {title, items:[{row,name}]}
-  let state = {};          // row -> 'ok' | 'bad'
-  let updating = false;    // true, если обход за сегодня уже есть в таблице
-  try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
+  // Группы статусов
+  const GROUPS = [
+    { key:'overdue', label:'Просрочено', cls:'s-overdue' },
+    { key:'pending', label:'Ожидается', cls:'s-pending' },
+    { key:'ok',      label:'Выполнено', cls:'s-ok' },
+    { key:'other',   label:'Нет данных / без контроля', cls:'s-other' }
+  ];
+  const STATUS_META = {
+    overdue:{ group:'overdue', label:'🔴 Просрочено', badge:'b-overdue', order:0 },
+    pending:{ group:'pending', label:'🕒 Ожидается',  badge:'b-pending', order:1 },
+    nodata: { group:'other',   label:'⚪ Нет записей', badge:'b-other',   order:2 },
+    error:  { group:'other',   label:'⚠ Ошибка чтения', badge:'b-other', order:3 },
+    nofreq: { group:'other',   label:'⚪ Периодичность не задана', badge:'b-other', order:4 },
+    ok:     { group:'ok',      label:'✅ Выполнено',  badge:'b-ok',      order:5 },
+    free:   { group:'other',   label:'ℹ Произвольно', badge:'b-other',   order:6 }
+  };
 
-  const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  const saveDraft = () => { try{ localStorage.setItem(DRAFT_KEY, JSON.stringify(state)); }catch(e){} };
+  const contentEl = document.getElementById('content');
+  const summaryEl = document.getElementById('summary');
+  const rowCountEl = document.getElementById('rowCount');
+  const updatedEl = document.getElementById('updated');
+  const searchInput = document.getElementById('searchInput');
+  const refreshBtn = document.getElementById('refreshBtn');
+  const freqChipsEl = document.getElementById('freqChips');
+  const tagChipsEl = document.getElementById('tagChips');
+  const progressEl = document.getElementById('progress');
+  const progressBar = document.getElementById('progressBar');
+  const freqToggle = document.getElementById('freqToggle');
+  const tagToggle  = document.getElementById('tagToggle');
+  const freqLabel  = document.getElementById('freqLabel');
+  const tagLabel   = document.getElementById('tagLabel');
 
-  function toast(t, err){
-    const el = document.getElementById('toast');
-    el.textContent = t; el.classList.toggle('err', !!err); el.style.display = 'block';
-    clearTimeout(toast._t); toast._t = setTimeout(() => el.style.display = 'none', err ? 6000 : 3000);
+  let items = [];          // {journal, freq, stat, status, note}
+  let activeGroup = '';
+  let activeFreq = '';
+  let activeTag = '';
+  let sortCol = 'status';
+  let sortDir = 1;
+  let loading = false;
+  let cacheDay = '';       // день (в TIMEZONE), за который сделан последний полный сбор
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function highlight(text, q){
+    if(!q) return escapeHtml(text);
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if(i === -1) return escapeHtml(text);
+    return escapeHtml(text.slice(0,i)) + '<mark>' + escapeHtml(text.slice(i, i+q.length)) + '</mark>' + escapeHtml(text.slice(i+q.length));
+  }
+  function splitName(j){
+    const full = j.name || '';
+    if(j.id && full.startsWith(j.id)) return { code:j.id, title: full.slice(j.id.length).trim() || full };
+    return { code:j.id || '', title: full };
+  }
+  function normFreq(v){
+    const t = String(v || '').replace(/\s+/g,' ').trim().toLowerCase();
+    return FREQS.find(f => f.toLowerCase() === t) || '';
   }
 
-  // Строки таблицы -> участки и позиции (запоминаем номер строки листа)
-  function parse(values){
-    const out = []; let cur = null;
-    values.forEach((r, i) => {
-      if(i === 0) return;
-      const n = String(r[0] || '').trim(), name = String(r[1] || '').trim();
-      if(!name || /^(Осмотр провел|Исправное оборудование|Неисправное оборудование)/i.test(name)) return;
-      if(/^\d+$/.test(n)){
-        if(!cur){ cur = {title:'Без участка', items:[]}; out.push(cur); }
-        cur.items.push({row: i + 1, name});
-      } else if(!n){
-        cur = {title:name, items:[]}; out.push(cur);
-      }
-    });
-    return out.filter(s => s.items.length);
+  // ===== Время =====
+  const dayNumOf = (y, m, d) => Math.floor(Date.UTC(y, m - 1, d) / 86400000); // m: 1..12
+  const monthKeyOf = (y, m) => y * 12 + (m - 1);
+
+  function nowInTz(){
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: TIMEZONE, year:'numeric', month:'2-digit', day:'2-digit'
+    }).format(new Date()).split('-').map(Number);
+    return { y:parts[0], m:parts[1], d:parts[2] };
+  }
+  function todayKey(t){
+    const p = n => String(n).padStart(2, '0');
+    return t.y + '-' + p(t.m) + '-' + p(t.d);
   }
 
-  // Ищем столбец с сегодняшней датой и читаем + / -
-  function readExisting(values){
-    const head = values[0] || [];
-    let col = -1;
-    for(let c = 2; c < head.length; c++){
-      if(String(head[c] || '').trim().startsWith(today)){ col = c; break; }
+  function parseRu(str){
+    const m = String(str || '').trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
+    if(!m) return null;
+    const d = +m[1], mo = +m[2], y = +m[3];
+    const t = Date.UTC(y, mo - 1, d, +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    return { y, mo, d, day: dayNumOf(y, mo, d), month: monthKeyOf(y, mo), t };
+  }
+  // Обратное преобразование: из хранимого t (мс) в объект записи
+  function fromT(t){
+    const dt = new Date(t);
+    const y = dt.getUTCFullYear(), mo = dt.getUTCMonth() + 1, d = dt.getUTCDate();
+    return { y, mo, d, day: dayNumOf(y, mo, d), month: monthKeyOf(y, mo), t };
+  }
+
+
+
+
+
+  // ===== Статистика и правила =====
+function buildStat(compact, today){
+  const todayDay = dayNumOf(today.y, today.m, today.d);
+  const weekStart = todayDay - ((todayDay + 3) % 7);
+  const curMonth = monthKeyOf(today.y, today.m);
+  const c = compact || { total:0, lastT:null, days:{} };
+  const s = { total:c.total, last:c.lastT !== null ? fromT(c.lastT) : null, lastT:c.lastT,
+              today:0, yest:0, wk:0, pwk:0, mo:0, pmo:0, todayDay };
+  Object.keys(c.days || {}).forEach(k => {
+    const day = +k, n = c.days[k];
+    const dt = new Date(day * 86400000);
+    const month = monthKeyOf(dt.getUTCFullYear(), dt.getUTCMonth() + 1);
+    if(day === todayDay) s.today += n;
+    if(day === todayDay - 1) s.yest += n;
+    if(day >= weekStart && day <= weekStart + 6) s.wk += n;
+    if(day >= weekStart - 7 && day < weekStart) s.pwk += n;
+    if(month === curMonth) s.mo += n;
+    if(month === curMonth - 1) s.pmo += n;
+  });
+  return s;
+}
+
+  function evaluate(freq, s){
+    if(!freq) return { status:'nofreq', note:'Укажите fillFrequency в journals.json' };
+    if(s.total === 0){
+      return { status: freq === 'Произвольно' ? 'free' : 'nodata', note:'В таблице нет записей' };
     }
-    if(col < 0) return null;
-    const res = {}; let any = false;
-    sections.forEach(s => s.items.forEach(it => {
-      const v = String((values[it.row - 1] || [])[col] || '').trim();
-      if(v === '+'){ res[it.row] = 'ok'; any = true; }
-      else if(v === '-' || v === '–' || v === '−'){ res[it.row] = 'bad'; any = true; }
-    }));
-    return any ? res : null;
+    const age = s.todayDay - s.last.day; // дней с последней записи
+    switch(freq){
+      case 'Ежедневно':
+        if(s.today >= 1) return { status:'ok', note:'Есть запись сегодня' };
+        if(s.yest >= 1) return { status:'pending', note:'Сегодня записи ещё нет (до 24:00)' };
+        return { status:'overdue', note:`Нет записей уже ${age} дн.` };
+      case '2 раза в день':
+        if(s.today >= 2) return { status:'ok', note:`Сегодня ${s.today} из 2` };
+        if(s.yest < 2) return { status:'overdue', note:`Вчера было ${s.yest} из 2` };
+        return { status:'pending', note:`Сегодня ${s.today} из 2 (до 24:00)` };
+      case '3 раза в день':
+        if(s.today >= 3) return { status:'ok', note:`Сегодня ${s.today} из 3` };
+        if(s.yest < 3) return { status:'overdue', note:`Вчера было ${s.yest} из 3` };
+        return { status:'pending', note:`Сегодня ${s.today} из 3 (до 24:00)` };
+      case '1 раз в три дня':
+        if(age <= 2) return { status:'ok', note: age === 0 ? 'Запись сегодня' : `Последняя ${age} дн. назад` };
+        if(age === 3) return { status:'pending', note:'Сегодня последний день' };
+        return { status:'overdue', note:`Нет записей ${age} дн.` };
+      case '1 раз в неделю':
+        if(s.wk >= 1) return { status:'ok', note:'Есть запись на этой неделе' };
+        if(s.pwk >= 1) return { status:'pending', note:'На этой неделе записи ещё нет' };
+        return { status:'overdue', note:'Нет записей за прошлую неделю' };
+      case '1 раз в месяц':
+        if(s.mo >= 1) return { status:'ok', note:'Есть запись в этом месяце' };
+        if(s.pmo >= 1) return { status:'pending', note:'В этом месяце записи ещё нет' };
+        return { status:'overdue', note:'Нет записей за прошлый месяц' };
+      default: // Произвольно
+        return { status:'free', note:'Без контроля срока' };
+    }
   }
 
-  async function load(){
-    try{
-      const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`)).json();
-      const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
-      if(!p) throw new Error('вкладка не найдена');
-      const r = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(p.title)}?key=${API_KEY}`, {cache:'no-store'});
-      if(!r.ok) throw new Error('http ' + r.status);
-      const values = (await r.json()).values || [];
-      sections = parse(values);
-      if(!sections.length) throw new Error('список пуст');
-      document.getElementById('sub').textContent = 'Обход за ' + today + '. Отмечайте каждую позицию: ✓ исправно (+), ✗ неисправно (−).';
+  function fmtLast(p){
+    if(!p) return '—';
+    const pad = n => String(n).padStart(2,'0');
+    const dt = new Date(p.t);
+    return `${pad(p.d)}.${pad(p.mo)}.${p.y} ${pad(dt.getUTCHours())}:${pad(dt.getUTCMinutes())}`;
+  }
 
-      const existing = readExisting(values);
-      if(existing){
-        draw();
-        setTimeout(() => {
-          if(confirm('За сегодня обход уже был. Вы хотите обновить данные с обхода?')){
-            state = existing; updating = true; saveDraft();
-            sendBtn.textContent = 'Обновить обход';
-            draw();
-          } else {
-            location.href = 'index.html';
-          }
-        }, 50);
-        return;
+  // Применить к элементу данные (из кэша или свежие) и пересчитать статус
+  function applyCompact(it, compact, today){
+    it.stat = buildStat(compact, today);
+    Object.assign(it, evaluate(it.freq, it.stat));
+  }
+
+  // ===== Загрузка =====
+  // force = true — полный пересбор по кнопке «Обновить».
+  // Иначе: если кэш за сегодня есть — показываем его мгновенно без запросов;
+  // если кэш за прошлый день (наступила полночь) — показываем и сразу обновляем в фоне.
+
+async function readSnapshot(){
+  const url = `https://sheets.googleapis.com/v4/spreadsheets/${SNAP_SHEET_ID}/values/snapshot?key=${API_KEY}`;
+  const r = await fetch(url, { cache:'no-store' });
+  if(!r.ok) throw new Error('http ' + r.status);
+  const v = (await r.json()).values || [];
+  const data = {};
+  v.slice(1).forEach(row => {
+    if(!row[0]) return;
+    if(row[4] && !row[1]){ data[row[0]] = { error: row[4] }; return; }
+    const days = {};
+    String(row[3] || '').split(';').forEach(p => {
+      const [d, n] = p.split('x');
+      if(d && n) days[d] = +n;
+    });
+    data[row[0]] = { total:+row[1] || 0, lastT: row[2] ? +row[2] : null, days, stale: row[4] || '' };
+  });
+  const meta = (v[1] || []);
+  return { day: meta[5] || '', savedAt: +meta[6] || 0, data };
+}
+
+async function callRefresh(){
+  const r = await fetch(CONTROL_SCRIPT_URL, {
+    method:'POST', headers:{ 'Content-Type':'text/plain;charset=utf-8' },
+    body: JSON.stringify({ action:'refresh', token: window.gcheckUser.token })
+  });
+  const d = await r.json();
+  if(!d.ok){
+    if(['invalid','expired','inactive'].includes(d.error)) window.gcheckLogout();
+    throw new Error(d.error || 'server');
+  }
+}
+  
+async function loadAll(force){
+  if(loading) return;
+  loading = true;
+  refreshBtn.disabled = true;
+
+  let journals;
+  try{
+    const r = await fetch('journals.json', { cache:'no-cache' });
+    if(!r.ok) throw new Error('http ' + r.status);
+    journals = await r.json();
+  } catch(e){
+    contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить journals.json</div>';
+    loading = false; refreshBtn.disabled = false; return;
+  }
+
+  const today = nowInTz();
+  items = journals.map(j => ({
+    journal: Object.assign({}, j, { tags:(j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t) }),
+    freq: normFreq(j.fillFrequency), stat:null, status:'nodata', note:''
+  }));
+
+  const render = snap => {
+    items.forEach(it => {
+      const j = it.journal;
+      it.note = '';
+      if(!it.freq){ applyCompact(it, null, today); return; }
+      const c = snap.data[j.id];
+      if(!c){ it.status = 'nodata'; it.note = 'Нет данных в снапшоте'; return; }
+      if(c.error){ it.status = 'error'; it.note = 'Не удалось прочитать таблицу (' + c.error + ')'; return; }
+      applyCompact(it, c, today);
+      if(c.stale) it.note += ' · ' + c.stale;
+    });
+    cacheDay = snap.day;
+    updatedEl.textContent = 'Снапшот от: ' + new Date(snap.savedAt).toLocaleString('ru-RU',
+      { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' });
+    renderFilters();
+    draw();
+  };
+
+  try{
+    // 1) сразу показываем то, что уже есть
+    render(await readSnapshot());
+
+    // 2) по кнопке — пересбор в фоне, затем перерисовка
+    if(force){
+      refreshBtn.textContent = '⏳ Обновляем…';
+      updatedEl.textContent += ' · обновляем…';
+      try{
+        await callRefresh();
+        render(await readSnapshot());
+      } catch(e){
+        updatedEl.textContent += ' · не удалось обновить (' + e.message + ')';
       }
-      draw();
-    }catch(e){
-      listEl.innerHTML = '<div class="state-box error">Не удалось загрузить список: ' + esc(e.message) +
-        '. Проверьте доступ к таблице «по ссылке — Читатель».</div>';
+    }
+  } catch(e){
+    contentEl.innerHTML = '<div class="state-box error">Не удалось получить снапшот: ' + escapeHtml(e.message) + '</div>';
+  }
+
+  refreshBtn.textContent = '🔄 Обновить';
+  loading = false;
+  refreshBtn.disabled = false;
+}
+
+  // ===== Отрисовка =====
+  function baseFiltered(ignoreGroup){
+    const q = searchInput.value.trim().toLowerCase();
+    return items.filter(it => {
+      if(activeFreq && it.freq !== activeFreq) return false;
+      if(activeTag && !it.journal.tags.includes(activeTag)) return false;
+      if(q && !it.journal.name.toLowerCase().includes(q)) return false;
+      if(!ignoreGroup && activeGroup && STATUS_META[it.status].group !== activeGroup) return false;
+      return true;
+    });
+  }
+
+  function renderFilters(){
+    freqChipsEl.innerHTML = '<button type="button" class="chip' + (!activeFreq ? ' active' : '') + '" data-freq="">Любая периодичность</button>' +
+      FREQS.map(f => `<button type="button" class="chip${activeFreq === f ? ' active' : ''}" data-freq="${escapeHtml(f)}">${escapeHtml(f)}</button>`).join('');
+    const tags = TAG_ORDER.filter(t => items.some(it => it.journal.tags.includes(t)));
+    tagChipsEl.innerHTML = '<button type="button" class="chip' + (!activeTag ? ' active' : '') + '" data-tag="">Все категории</button>' +
+      tags.map(t => `<button type="button" class="chip${activeTag === t ? ' active' : ''}" data-tag="${escapeHtml(t)}">${escapeHtml(t)}</button>`).join('');
+      updateFiltersBadge();
+  }
+
+  function renderSummary(){
+    const base = baseFiltered(true);
+    const counts = { overdue:0, pending:0, ok:0, other:0 };
+    base.forEach(it => counts[STATUS_META[it.status].group]++);
+    summaryEl.innerHTML = GROUPS.map(g => `
+      <button type="button" class="sum ${g.cls}${activeGroup === g.key ? ' active' : ''}" data-group="${g.key}">
+        <div class="n">${counts[g.key]}</div><div class="l">${g.label}</div>
+      </button>`).join('');
+  }
+
+  function sortValue(it, col){
+    switch(col){
+      case 'code': return it.journal.id;
+      case 'name': return splitName(it.journal).title;
+      case 'freq': return FREQS.indexOf(it.freq);
+      case 'last': return it.stat && it.stat.lastT ? it.stat.lastT : -1;
+      default:     return STATUS_META[it.status].order;
     }
   }
 
   function draw(){
-    const q = document.getElementById('q').value.trim().toLowerCase();
-    const open = new Set([...listEl.querySelectorAll('details[open]')].map(d => d.dataset.si));
-    listEl.innerHTML = sections.map((s, si) => {
-      const done = s.items.filter(it => state[it.row]).length;
-      const rows = s.items.map(it => {
-        if(q && !it.name.toLowerCase().includes(q) && !s.title.toLowerCase().includes(q)) return '';
-        const v = state[it.row];
-        return `<div class="item ${v ? 's-' + v : ''}">
-          <div class="nm">${esc(it.name)}</div>
-          <div class="tg">
-            <button class="n${v === 'bad' ? ' on' : ''}" data-r="${it.row}" data-v="bad" aria-label="Неисправно">✗</button>
-            <button class="y${v === 'ok' ? ' on' : ''}" data-r="${it.row}" data-v="ok" aria-label="Исправно">✓</button>
-          </div></div>`;
-      }).join('');
-      if(!rows) return '';
-      const isOpen = q || open.has(String(si)) ? ' open' : '';
-      // Кнопка «Всё исправно» — только для участков, где больше 2 позиций
-      const allOkBtn = s.items.length > 2
-        ? `<button class="allok" type="button" data-all="${si}">${done === s.items.length ? '✕ Снять все отметки' : '✓ Всё исправно на этом участке'}</button>`
-        : '';
-      return `<details data-si="${si}"${isOpen}>
-        <summary><span>${esc(s.title)}</span><span class="cnt${done === s.items.length ? ' done' : ''}">${done}/${s.items.length}</span></summary>
-        ${allOkBtn}${rows}</details>`;
-    }).join('') || '<div class="state-box">Ничего не найдено.</div>';
-    updateStats();
-  }
+    renderSummary();
+    const q = searchInput.value.trim();
+    let rows = baseFiltered(false).slice().sort((a, b) => {
+      const av = sortValue(a, sortCol), bv = sortValue(b, sortCol);
+      let c = typeof av === 'string' ? av.localeCompare(bv, 'ru', { numeric:true }) : av - bv;
+      if(c === 0) c = a.journal.id.localeCompare(b.journal.id, 'ru', { numeric:true });
+      return c * sortDir;
+    });
 
-  // Исправное = количество «+», неисправное = количество «−»
-  function updateStats(){
-    let total = 0, good = 0, bad = 0;
-    sections.forEach(s => s.items.forEach(it => {
-      total++; const st = state[it.row];
-      if(st === 'ok') good++; else if(st === 'bad') bad++;
-    }));
-    const done = good + bad;
-    document.getElementById('barFill').style.width = (total ? done / total * 100 : 0) + '%';
-    document.getElementById('statL').textContent = `Отмечено ${done} из ${total}`;
-    document.getElementById('statR').innerHTML =
-      `<span class="good">Исправно (+): ${good}</span> · <span class="bad">Неисправно (−): ${bad}</span>`;
-    document.getElementById('hint').textContent = done < total ? `Осталось: ${total - done}` : 'Всё отмечено';
-    sendBtn.disabled = done < total || !total;
-  }
-
-  listEl.addEventListener('click', e => {
-    const all = e.target.closest('[data-all]');
-    if(all){
-      const items = sections[+all.dataset.all].items;
-      const hasUnmarked = items.some(it => !state[it.row]);
-      if(hasUnmarked){
-        // первое нажатие: проставить ✓ там, где ещё ничего не отмечено
-        items.forEach(it => { if(!state[it.row]) state[it.row] = 'ok'; });
-      } else {
-        // повторное нажатие: снять все галочки (✗ остаются)
-        items.forEach(it => { if(state[it.row] === 'ok') delete state[it.row]; });
-      }
-      saveDraft(); draw(); return;
-    }
-    const b = e.target.closest('[data-r]'); if(!b) return;
-    const r = b.dataset.r, v = b.dataset.v;
-    if(state[r] === v) delete state[r]; else state[r] = v;
-    saveDraft(); draw();
-  });
-
-  document.getElementById('q').addEventListener('input', draw);
-
-  sendBtn.addEventListener('click', async () => {
-    if(!/^https:\/\//.test(ROUND_SCRIPT_URL)){ toast('Не указан ROUND_SCRIPT_URL', true); return; }
-    const results = [];
-    sections.forEach(s => s.items.forEach(it => {
-      results.push({row: it.row, name: it.name, ok: state[it.row] === 'ok'});
-    }));
-    sendBtn.disabled = true; sendBtn.textContent = 'Сохраняем…';
-    try{
-      const r = await fetch(ROUND_SCRIPT_URL, {
-        method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'saveRound', token: window.gcheckUser.token, date: today, results})
-      });
-      const d = await r.json();
-      if(!d.ok) throw new Error(d.error || 'ошибка сервера');
-      updating = true;
-      saveDraft();
-      toast((d.updated ? 'Обход обновлён ✓' : 'Обход сохранён ✓'));
-      sendBtn.textContent = 'Обновить обход';
-      sendBtn.disabled = false;
+    rowCountEl.textContent = `Журналов: ${rows.length} из ${items.length}`;
+    if(rows.length === 0){
+      contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
       return;
-    }catch(err){
-      toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
-      sendBtn.disabled = false;
     }
-    sendBtn.textContent = updating ? 'Обновить обход' : 'Сохранить обход';
+
+    // сохраняем прокрутку таблицы при постепенной перерисовке
+    const oldScroll = contentEl.querySelector('.table-scroll');
+    const prevTop = oldScroll ? oldScroll.scrollTop : 0;
+
+    const heads = [['code','Код'],['name','Журнал'],['freq','Периодичность'],['last','Последняя запись'],['status','Статус'],[null,'Комментарий'],[null,'']];
+    const thead = '<thead><tr>' + heads.map(([k, h]) => {
+      if(!k) return `<th>${h}</th>`;
+      const act = sortCol === k;
+      return `<th class="sortable${act ? ' sort-active' : ''}" data-col="${k}">${h}<span class="sort-arrow">${act ? (sortDir === 1 ? '▲' : '▼') : '↕'}</span></th>`;
+    }).join('') + '</tr></thead>';
+
+    const tbody = '<tbody>' + rows.map(it => {
+      const { code, title } = splitName(it.journal);
+      const m = STATUS_META[it.status];
+      return `<tr class="r-${m.group}">
+        <td class="code">${highlight(code, q)}</td>
+        <td class="jname">${highlight(title, q)}</td>
+        <td class="nowrap">${escapeHtml(it.freq || '—')}</td>
+        <td class="nowrap">${escapeHtml(fmtLast(it.stat && it.stat.last))}</td>
+        <td><span class="badge ${m.badge}">${m.label}</span></td>
+        <td>${escapeHtml(it.note)}</td>
+        <td><a class="open" href="journal.html?id=${encodeURIComponent(it.journal.id)}">Открыть</a></td>
+      </tr>`;
+    }).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll"><table>${thead}${tbody}</table></div>`;
+    const sc = contentEl.querySelector('.table-scroll');
+    if(sc) sc.scrollTop = prevTop;
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const c = th.dataset.col;
+        if(sortCol === c) sortDir = -sortDir; else { sortCol = c; sortDir = 1; }
+        draw();
+      });
+    });
+  }
+
+
+  // ===== Сворачиваемые фильтры =====
+function setPanel(which){ // 'freq' | 'tag' | null
+  const f = which === 'freq' && freqChipsEl.hidden;
+  const t = which === 'tag' && tagChipsEl.hidden;
+  freqChipsEl.hidden = !f;
+  tagChipsEl.hidden = !t;
+  freqToggle.setAttribute('aria-expanded', f ? 'true' : 'false');
+  tagToggle.setAttribute('aria-expanded', t ? 'true' : 'false');
+}
+freqToggle.addEventListener('click', () => setPanel('freq'));
+tagToggle.addEventListener('click', () => setPanel('tag'));
+
+function updateFiltersBadge(){
+  freqLabel.textContent = activeFreq ? 'Периодичность: ' + activeFreq : 'Периодичность';
+  tagLabel.textContent  = activeTag  ? 'Категории: ' + activeTag  : 'Категории';
+  freqToggle.classList.toggle('has-value', !!activeFreq);
+  tagToggle.classList.toggle('has-value', !!activeTag);
+}
+  
+  // ===== События =====
+  summaryEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-group]'); if(!b) return;
+    activeGroup = activeGroup === b.dataset.group ? '' : b.dataset.group;
+    draw();
+  });
+  freqChipsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-freq]'); if(!b) return;
+    activeFreq = b.dataset.freq; renderFilters(); draw();
+    setPanel(null);
+  });
+  tagChipsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-tag]'); if(!b) return;
+    activeTag = b.dataset.tag; renderFilters(); draw();
+    setPanel(null);
+  });
+  searchInput.addEventListener('input', draw);
+  refreshBtn.addEventListener('click', () => loadAll(true));
+
+  // Вкладка была открыта через полночь: при возврате на неё — обновляем автоматически
+  document.addEventListener('visibilitychange', () => {
+    if(!document.hidden && !loading && cacheDay && cacheDay !== todayKey(nowInTz())) loadAll(false);
   });
 
-  load();
-  if('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  loadAll(false);
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
 </script>
+
 </body>
 </html>

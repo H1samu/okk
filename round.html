@@ -142,6 +142,7 @@
   <div id="fill" hidden>
     <div class="sticky">
       <input class="search" id="q" type="search" placeholder="Поиск оборудования" autocomplete="off">
+      <button type="button" class="allok" id="testAll" style="margin:8px 0 0">🧪 Тест: отметить всё ✓</button>
       <div class="bar"><div id="barFill"></div></div>
       <div class="stat"><span id="statL"></span><span id="statR"></span></div>
     </div>
@@ -243,7 +244,8 @@
   }
 
   // ===== Загрузка =====
-  async function load(final){
+  const sameRes = (a, b) => { const ka = Object.keys(a), kb = Object.keys(b); return ka.length === kb.length && ka.every(k => a[k] === b[k]); };
+  async function load(){
     try{
       const meta = await (await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties&key=${API_KEY}`, {cache:'no-store'})).json();
       const p = (meta.sheets || []).map(s => s.properties).find(p => p.sheetId === SHEET_GID);
@@ -256,8 +258,8 @@
       days = parseDays(values);
       if(localToday){
         const f = days.find(d => d.date === today);
-        if(f && JSON.stringify(f.res) === JSON.stringify(localToday.res)) localToday = null;
-        else if(final) localToday = null;
+        if(f && sameRes(f.res, localToday.res)) localToday = null;
+        else if(Date.now() - localToday.at > 300000) localToday = null;
         else days = [localToday, ...days.filter(d => d.date !== today)].sort((a, b) => b.key - a.key || b.col - a.col);
       }
       todayRound = days.find(d => d.date === today) || null;
@@ -468,6 +470,10 @@
     saveDraft(); draw();
   });
   $('q').addEventListener('input', draw);
+  $('testAll').addEventListener('click', () => {
+    sections.forEach(s => s.items.forEach(it => { state[it.row] = 'ok'; }));
+    saveDraft(); draw();
+  });
 
   // ===== Сохранение =====
   sendBtn.addEventListener('click', async () => {
@@ -491,7 +497,7 @@
       localToday = {
         date: today, key: todayKey, col: -1,
         inspector: ((window.gcheckUser && window.gcheckUser.name) || '').trim(),
-        good: vals.filter(v => v === 'ok').length, bad: vals.filter(v => v === 'bad').length, res
+        good: vals.filter(v => v === 'ok').length, bad: vals.filter(v => v === 'bad').length, res, at: Date.now()
       };
       days = [localToday, ...days.filter(d => d.date !== today)];
       todayRound = localToday;
@@ -499,8 +505,8 @@
       $('homeLoad').hidden = true;
       renderHome();
       openHome();
-      setTimeout(() => { if(localToday) load(false); }, 3000);
-      setTimeout(() => { if(localToday) load(true); }, 10000);
+      let tries = 0;
+      const poll = setInterval(() => { if(!localToday || ++tries > 30){ clearInterval(poll); return; } load(); }, 5000);
     }catch(err){
       toast('Не удалось сохранить: ' + err.message + '. Отметки сохранены на устройстве.', true);
       sendBtn.disabled = false;

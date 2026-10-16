@@ -46,7 +46,7 @@
   .primary:active{transform:scale(.98);}
 
   /* Дашборд */
-  .sums{display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px;}
+  .sums{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;}
   .sum{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px;}
   .sum .n{font-size:20px; font-weight:700; line-height:1.1;}
   .sum .l{font-size:12px; color:var(--text-secondary); margin-top:2px;}
@@ -61,7 +61,8 @@
   details{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; overflow:hidden;}
   details.r-ok{box-shadow:inset 3px 0 0 #8fc79b;}
   details.r-bad{box-shadow:inset 3px 0 0 #e0928b;}
-  details.r-miss{box-shadow:inset 3px 0 0 var(--border-strong); background:transparent;}
+  details.r-miss{box-shadow:inset 3px 0 0 #e0928b; background:#fdf4f3; border-color:#ebc4c0;}
+  details.r-miss summary{cursor:default;}
   summary{list-style:none; cursor:pointer; padding:12px 16px; display:flex; justify-content:space-between; align-items:center; gap:10px; font-weight:600; font-size:14px; min-height:52px;}
   summary::-webkit-details-marker{display:none;}
   .ttl{display:flex; flex-direction:column; gap:2px; min-width:0;}
@@ -69,7 +70,7 @@
   .badge{display:inline-flex; align-items:center; gap:5px; padding:5px 11px; border-radius:999px; font-size:12px; font-weight:700; white-space:nowrap;}
   .b-ok{background:var(--ok-soft); color:var(--ok);}
   .b-bad{background:var(--danger-soft); color:var(--danger);}
-  .b-miss{background:var(--bg); color:var(--text-muted); border:1px solid var(--border);}
+  .b-miss{background:var(--danger-soft); color:var(--danger);}
   .inner{border-top:1px solid var(--border); padding:6px 16px 12px;}
   .grp{font-size:12px; font-weight:700; color:var(--text-secondary); margin:12px 0 4px;}
   .grp.bad{color:var(--danger);}
@@ -133,6 +134,7 @@
         <button type="button" class="chip" data-p="30">30 дней</button>
         <button type="button" class="chip" data-p="0">Все</button>
         <button type="button" class="chip" data-p="bad">Только с отклонениями</button>
+        <button type="button" class="chip" data-p="miss">Только пропуски</button>
       </div>
       <div class="meta" id="hMeta"></div>
       <div id="hList"></div>
@@ -167,6 +169,7 @@
   const today = new Date().toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'});
   const DRAFT_KEY = 'gcheck_round2_' + today;
   const PAGE = 20;
+  const START_KEY = 20261015;   // показываем только с 15.10.26
 
   let sections = [], days = [], state = {};
   let updating = false, shown = PAGE, period = '14';
@@ -336,7 +339,7 @@
   }
 
   function missHtml(k){
-    return `<details class="r-miss"><summary><span class="ttl"><span>${dateOf(k)}</span><span class="who">Чек-лист не заполнен</span></span><span class="badge b-miss">— нет данных</span></summary></details>`;
+    return `<details class="r-miss"><summary><span class="ttl"><span>${dateOf(k)}</span><span class="who">Никто не заполнил чек-лист</span></span><span class="badge b-miss">⚠ Пропуск</span></summary></details>`;
   }
 
   // Прошедшие N дней (включая сегодня) в формате ключей
@@ -352,28 +355,33 @@
 
   function renderDash(){
     const e = $('fEmp').value, nm = $('fName').value.trim().toLowerCase();
-    const onlyBad = period === 'bad', n = onlyBad || period === '0' ? 0 : +period;
-    const minKey = n ? lastDayKeys(n)[n - 1] : 0;
-    const filtering = !!(e || nm || onlyBad);
+    const onlyBad = period === 'bad', onlyMiss = period === 'miss';
+    const n = (onlyBad || onlyMiss || period === '0') ? 0 : +period;
+    const minKey = Math.max(START_KEY, n ? lastDayKeys(n)[n - 1] : 0);
+    const personFilter = !!(e || nm);
 
-    let rows = days.filter(r =>
-      (!minKey || r.key >= minKey) &&
+    let rows = onlyMiss ? [] : days.filter(r =>
+      r.key >= minKey &&
       (!e || r.inspector === e) &&
       (!nm || r.inspector.toLowerCase().includes(nm)) &&
       (!onlyBad || r.bad > 0));
 
+    // Пропуски: дни с 15.10.26 до вчера, в которые чек-лист не заполняли
+    let misses = [];
+    if(!onlyBad && !personFilter){
+      const have = new Set(days.map(r => r.key));
+      misses = lastDayKeys(400).filter(k => k >= minKey && k < todayKey && !have.has(k));
+    }
+
     $('sums').innerHTML = `
       <div class="sum"><div class="n">${rows.length}</div><div class="l">Чек-листов</div></div>
       <div class="sum g"><div class="n">${rows.filter(r => !r.bad).length}</div><div class="l">Без отклонений</div></div>
-      <div class="sum r"><div class="n">${rows.filter(r => r.bad).length}</div><div class="l">С отклонениями</div></div>`;
-    $('hMeta').textContent = filtering ? `Найдено: ${rows.length}` : '';
+      <div class="sum r"><div class="n">${rows.filter(r => r.bad).length}</div><div class="l">С отклонениями</div></div>
+      <div class="sum r"><div class="n">${misses.length}</div><div class="l">Пропусков</div></div>`;
+    $('hMeta').textContent = '';
 
-    // Дни без чек-листа показываем только без фильтров по людям/отклонениям
-    let items = rows.map(r => ({k: r.key, c: r.col, html: r}));
-    if(n && !filtering){
-      const have = new Set(rows.map(r => r.key));
-      lastDayKeys(n).forEach(k => { if(!have.has(k) && !(k === todayKey)) items.push({k, c: 0, miss: true}); });
-    }
+    let items = rows.map(r => ({k: r.key, c: r.col, html: r}))
+      .concat(misses.map(k => ({k, c: 0, miss: true})));
     items.sort((a, b) => b.k - a.k || b.c - a.c);
 
     if(!items.length){ $('hList').innerHTML = '<div class="state-box">Ничего не найдено.</div>'; return; }

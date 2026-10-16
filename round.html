@@ -4,7 +4,7 @@
 <script src="auth-guard.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Обход оборудования — Hismar Check</title>
+<title>Ежедневный обход СГИ — Hismar Check</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -29,6 +29,7 @@
   h1{font-size:22px; font-weight:700; margin:0 0 4px;}
   h2{font-size:13px; font-weight:600; text-transform:uppercase; letter-spacing:.05em; color:var(--text-muted); margin:26px 0 10px;}
   .sub{font-size:13px; color:var(--text-secondary); margin:0 0 12px;}
+  .sub:empty{display:none;}
   .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;}
   .ext-links a{display:inline-flex; align-items:center; gap:7px; min-height:44px; font-size:13px; font-weight:600; text-decoration:none; color:var(--accent); background:var(--accent-soft); border:1px solid var(--border); border-radius:999px; padding:0 16px;}
   .state-box{text-align:center; padding:40px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
@@ -47,15 +48,19 @@
 
   /* Дашборд */
   .sums{display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-bottom:12px;}
-  .sum{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px;}
+  .sum{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:10px 12px; text-align:left; cursor:pointer; width:100%; color:var(--text);}
+  .sum:hover{border-color:var(--border-strong);}
+  .sum:active{transform:scale(.98);}
+  .sum.active{border:2px solid var(--accent); padding:9px 11px; background:var(--accent-soft);}
   .sum .n{font-size:20px; font-weight:700; line-height:1.1;}
   .sum .l{font-size:12px; color:var(--text-secondary); margin-top:2px;}
   .sum.g .n{color:var(--ok);} .sum.r .n{color:var(--danger);}
-  .filters{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px;}
-  .filters select,.filters input{flex:1 1 180px; height:44px; padding:0 12px; border:1px solid var(--border-strong); border-radius:10px; font-size:14px; background:var(--surface); color:var(--text);}
   .chips{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
   .chip{height:36px; padding:0 14px; border-radius:999px; border:1px solid var(--border); background:var(--surface); font-size:13px; font-weight:600; color:var(--text); cursor:pointer;}
   .chip.active{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  .range-wrap{display:flex; align-items:center; gap:8px; margin-bottom:10px;}
+  .range-wrap input{flex:1 1 0; min-width:0; height:44px; padding:0 10px; border:1px solid var(--border-strong); border-radius:10px; font-size:14px; background:var(--surface); color:var(--text);}
+  .range-wrap .dash{color:var(--text-muted);}
   .meta{font-size:12px; color:var(--text-muted); margin-bottom:10px;}
 
   details{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); margin-bottom:8px; overflow:hidden;}
@@ -72,8 +77,6 @@
   .b-bad{background:var(--danger-soft); color:var(--danger);}
   .b-miss{background:var(--danger-soft); color:var(--danger);}
   .inner{border-top:1px solid var(--border); padding:6px 16px 12px;}
-  .grp{font-size:12px; font-weight:700; color:var(--text-secondary); margin:12px 0 4px;}
-  .grp.bad{color:var(--danger);}
   .sec{font-size:12px; font-weight:600; color:var(--text-muted); margin:8px 0 2px;}
   .li{font-size:13px; line-height:1.35; padding:6px 10px; border-radius:8px; margin-bottom:3px; overflow-wrap:anywhere;}
   .li.bad{background:var(--danger-soft);} .li.good{background:#f3faf4;}
@@ -81,6 +84,7 @@
   .more{width:100%; height:44px; border:1px solid var(--border-strong); border-radius:10px; background:var(--surface); font-weight:600; cursor:pointer; color:var(--accent);}
   details.nested{border:none; border-radius:0; margin:8px 0 0; background:none; box-shadow:none;}
   details.nested>summary{padding:6px 0; min-height:0; font-size:13px; color:var(--ok);}
+  details.nested.nested-bad>summary{color:var(--danger);}
 
   /* Режим заполнения */
   .sticky{position:sticky; top:0; z-index:5; background:var(--bg); padding:8px 0 10px;}
@@ -112,7 +116,7 @@
 <div class="wrap" id="wrap">
   <a class="back-link" id="backIndex" href="index.html">← Все журналы</a>
   <button class="back-link" id="backHome" type="button" hidden>← К обходам</button>
-  <h1>Обход оборудования</h1>
+  <h1>Ежедневный обход СГИ</h1>
   <p class="sub" id="sub"></p>
 
   <div class="ext-links">
@@ -124,18 +128,17 @@
     <div id="todayBox"></div>
     <div id="dash" hidden>
       <h2>Обходы по дням</h2>
-      <div class="sums" id="sums"></div>
-      <div class="filters">
-        <select id="fEmp" aria-label="Сотрудник"></select>
-        <input id="fName" type="search" placeholder="Поиск по фамилии" autocomplete="off">
-      </div>
       <div class="chips" id="fPeriod" role="group" aria-label="Период">
-        <button type="button" class="chip active" data-p="14">14 дней</button>
-        <button type="button" class="chip" data-p="30">30 дней</button>
-        <button type="button" class="chip" data-p="0">Все</button>
-        <button type="button" class="chip" data-p="bad">Только с отклонениями</button>
-        <button type="button" class="chip" data-p="miss">Только пропуски</button>
+        <button type="button" class="chip active" data-p="week">Текущая неделя</button>
+        <button type="button" class="chip" data-p="month">Текущий месяц</button>
+        <button type="button" class="chip" data-p="range">📅 Период</button>
       </div>
+      <div class="range-wrap" id="rangeWrap" hidden>
+        <input type="date" id="dateFrom" aria-label="С даты">
+        <span class="dash">—</span>
+        <input type="date" id="dateTo" aria-label="По дату">
+      </div>
+      <div class="sums" id="sums"></div>
       <div class="meta" id="hMeta"></div>
       <div id="hList"></div>
     </div>
@@ -172,7 +175,7 @@
   const START_KEY = 20261015;   // показываем только с 15.10.26
 
   let sections = [], days = [], state = {};
-  let updating = false, shown = PAGE, period = '14';
+  let updating = false, shown = PAGE, period = 'week', sumFilter = '';
   let todayRound = null, localToday = null;
   try{ state = JSON.parse(localStorage.getItem(DRAFT_KEY) || '{}'); }catch(e){}
 
@@ -279,7 +282,7 @@
 
   // ===== Главный экран =====
   function renderHome(){
-    $('sub').textContent = 'Сегодня: ' + today;
+    $('sub').textContent = '';
     const box = $('todayBox');
     if(todayRound){
       box.innerHTML = `<div class="card done${todayRound.bad ? ' hasbad' : ''}">
@@ -299,19 +302,11 @@
         openFill();
       };
     }
-    buildFilters();
+    $('dash').hidden = !days.length;
     renderDash();
   }
 
   // ===== Дашборд =====
-  function buildFilters(){
-    const eSel = $('fEmp'), cur = eSel.value;
-    const emps = [...new Set(days.map(d => d.inspector).filter(Boolean))].sort((a, b) => a.localeCompare(b, 'ru'));
-    eSel.innerHTML = '<option value="">Все сотрудники</option>' + emps.map(e => `<option value="${esc(e)}">${esc(e)}</option>`).join('');
-    eSel.value = emps.includes(cur) ? cur : '';
-    $('dash').hidden = !days.length;
-  }
-
   function groupBy(round, kind){
     const out = [];
     sections.forEach(s => {
@@ -332,8 +327,7 @@
     return `<details class="${r.bad ? 'r-bad' : 'r-ok'}"${open ? ' open' : ''}>
       <summary><span class="ttl"><span>${r.date}${r.key === todayKey ? ' · сегодня' : ''}</span><span class="who">${esc(r.inspector || 'Сотрудник не указан')}</span></span>${badge}</summary>
       <div class="inner">
-        <div class="grp bad">Неисправное оборудование (${r.bad})</div>
-        ${bad.length ? groupHtml(bad, 'bad') : '<div class="none">Неисправного оборудования нет</div>'}
+        <details class="nested nested-bad"><summary>Неисправное оборудование (${r.bad})</summary>${bad.length ? groupHtml(bad, 'bad') : '<div class="none">Неисправного оборудования нет</div>'}</details>
         <details class="nested"><summary>Исправное оборудование (${r.good})</summary>${groupHtml(good, 'good')}</details>
       </div></details>`;
   }
@@ -342,45 +336,60 @@
     return `<details class="r-miss"><summary><span class="ttl"><span>${dateOf(k)}</span><span class="who">Никто не заполнил чек-лист</span></span><span class="badge b-miss">⚠ Пропуск</span></summary></details>`;
   }
 
-  // Прошедшие N дней (включая сегодня) в формате ключей
-  function lastDayKeys(n){
-    const out = [], base = new Date();
-    for(let i = 0; i < n; i++){
-      const d = new Date(base.getTime() - i * 86400000);
-      const s = d.toLocaleDateString('ru-RU', {timeZone:'Europe/Moscow', day:'2-digit', month:'2-digit', year:'numeric'}).split('.');
-      out.push(keyOf(s[2], s[1], s[0]));
+  // ===== Период =====
+  const keyOfDate = d => keyOf(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate());
+  const keyToMs = k => Date.UTC(Math.floor(k / 10000), Math.floor(k / 100) % 100 - 1, k % 100);
+  const inputKey = v => v ? +v.replace(/-/g, '') : 0;
+
+  function keysBetween(a, b){
+    const out = [];
+    for(let t = keyToMs(a), e = keyToMs(b), i = 0; t <= e && i < 400; t += 86400000, i++){
+      out.push(keyOfDate(new Date(t)));
     }
     return out;
   }
 
-  function renderDash(){
-    const e = $('fEmp').value, nm = $('fName').value.trim().toLowerCase();
-    const onlyBad = period === 'bad', onlyMiss = period === 'miss';
-    const n = (onlyBad || onlyMiss || period === '0') ? 0 : +period;
-    const minKey = Math.max(START_KEY, n ? lastDayKeys(n)[n - 1] : 0);
-    const personFilter = !!(e || nm);
-
-    let rows = onlyMiss ? [] : days.filter(r =>
-      r.key >= minKey &&
-      (!e || r.inspector === e) &&
-      (!nm || r.inspector.toLowerCase().includes(nm)) &&
-      (!onlyBad || r.bad > 0));
-
-    // Пропуски: дни с 15.10.26 до вчера, в которые чек-лист не заполняли
-    let misses = [];
-    if(!onlyBad && !personFilter){
-      const have = new Set(days.map(r => r.key));
-      misses = lastDayKeys(400).filter(k => k >= minKey && k < todayKey && !have.has(k));
+  // Границы выбранного периода [от, до] в виде ключей yyyymmdd
+  function periodBounds(){
+    let lo = 0, hi = todayKey;
+    if(period === 'week'){
+      const dow = (new Date(keyToMs(todayKey)).getUTCDay() + 6) % 7;   // понедельник = 0
+      lo = keyOfDate(new Date(keyToMs(todayKey) - dow * 86400000));
+    } else if(period === 'month'){
+      lo = Math.floor(todayKey / 100) * 100 + 1;
+    } else {
+      lo = inputKey($('dateFrom').value);
+      hi = inputKey($('dateTo').value) || todayKey;
     }
+    return [Math.max(START_KEY, lo), hi];
+  }
 
-    $('sums').innerHTML = `
-      <div class="sum"><div class="n">${rows.length}</div><div class="l">Чек-листов</div></div>
-      <div class="sum g"><div class="n">${rows.filter(r => !r.bad).length}</div><div class="l">Без отклонений</div></div>
-      <div class="sum r"><div class="n">${rows.filter(r => r.bad).length}</div><div class="l">С отклонениями</div></div>
-      <div class="sum r"><div class="n">${misses.length}</div><div class="l">Пропусков</div></div>`;
+  function renderDash(){
+    const [lo, hi] = periodBounds();
+    const have = new Set(days.map(r => r.key));
+    const inRange = days.filter(r => r.key >= lo && r.key <= hi);
+    // Пропуски: дни с 15.10.26 до вчера, в которые чек-лист не заполняли
+    const allMisses = keysBetween(lo, Math.min(hi, todayKey - 1)).filter(k => !have.has(k));
+
+    const nOk = inRange.filter(r => !r.bad).length;
+    const nBad = inRange.filter(r => r.bad).length;
+
+    let rows = inRange, misses = allMisses;
+    if(sumFilter === 'all'){ misses = []; }
+    else if(sumFilter === 'ok'){ rows = inRange.filter(r => !r.bad); misses = []; }
+    else if(sumFilter === 'bad'){ rows = inRange.filter(r => r.bad); misses = []; }
+    else if(sumFilter === 'miss'){ rows = []; }
+
+    const sc = (key, cls, n, label) =>
+      `<button type="button" class="sum ${cls}${sumFilter === key ? ' active' : ''}" data-s="${key}" aria-pressed="${sumFilter === key}"><div class="n">${n}</div><div class="l">${label}</div></button>`;
+    $('sums').innerHTML =
+      sc('all', '', inRange.length, 'Чек-листов') +
+      sc('ok', 'g', nOk, 'Без отклонений') +
+      sc('bad', 'r', nBad, 'С отклонениями') +
+      sc('miss', 'r', allMisses.length, 'Пропусков');
     $('hMeta').textContent = '';
 
-    let items = rows.map(r => ({k: r.key, c: r.col, html: r}))
+    const items = rows.map(r => ({k: r.key, c: r.col, html: r}))
       .concat(misses.map(k => ({k, c: 0, miss: true})));
     items.sort((a, b) => b.k - a.k || b.c - a.c);
 
@@ -392,14 +401,27 @@
     if(more) more.onclick = () => { shown += PAGE; renderDash(); };
   }
 
-  $('fEmp').addEventListener('change', () => { shown = PAGE; renderDash(); });
-  $('fName').addEventListener('input', () => { shown = PAGE; renderDash(); });
+  $('sums').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-s]'); if(!b) return;
+    sumFilter = sumFilter === b.dataset.s ? '' : b.dataset.s;
+    shown = PAGE;
+    renderDash();
+  });
   $('fPeriod').addEventListener('click', ev => {
     const b = ev.target.closest('[data-p]'); if(!b) return;
     period = b.dataset.p; shown = PAGE;
     $('fPeriod').querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === b));
+    $('rangeWrap').hidden = period !== 'range';
     renderDash();
+    if(period === 'range' && !$('dateFrom').value && !$('dateTo').value) $('dateFrom').focus();
   });
+  ['dateFrom', 'dateTo'].forEach(id => $(id).addEventListener('change', () => {
+    const f = $('dateFrom'), t = $('dateTo');
+    // Если «с» позже «по» — меняем местами
+    if(f.value && t.value && f.value > t.value){ const x = f.value; f.value = t.value; t.value = x; }
+    shown = PAGE;
+    renderDash();
+  }));
 
   // ===== Переключение экранов =====
   function openFill(){
@@ -415,7 +437,7 @@
     $('home').hidden = false; $('fill').hidden = true; $('foot').hidden = true;
     $('backIndex').hidden = false; $('backHome').hidden = true;
     $('wrap').classList.remove('filling');
-    $('sub').textContent = 'Сегодня: ' + today;
+    $('sub').textContent = '';
     window.scrollTo(0, 0);
   }
   $('backHome').addEventListener('click', openHome);

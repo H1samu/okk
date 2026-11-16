@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="auth-guard.js"></script>
+<script>
+  (function(){
+    var u = window.gcheckUser || {};
+    var ok = (u.type || '').trim().toLowerCase() === 'администратор' ||
+             (u.position || '').trim().toLowerCase() === 'сотрудник кулинарии';
+    if(!ok) location.replace('index.html');
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Кулинария — Hismar Check</title>
+<script src="favorites.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1; --surface:#ffffff; --border:#e4e2d9; --border-strong:#c9c6b8;
+    --text:#20201c; --text-secondary:#6b6a61; --text-muted:#98968a;
+    --accent:#3a5a52; --accent-soft:#e8efec; --danger:#9c3b34; --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope', Arial, sans-serif; -webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .wrap{max-width:900px; margin:0 auto; padding:24px 20px 60px;}
+  .back-link{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:20px; padding:6px 0;}
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  h1{font-size:22px; font-weight:700; margin:0 0 6px;}
+  header p{font-size:13px; color:var(--text-secondary); margin:0;}
+
+  .search-box{position:relative; margin:18px 0 14px;}
+  .search-box input{width:100%; height:46px; padding:0 16px 0 40px; border:1px solid var(--border-strong); border-radius:999px; font-size:16px; font-family:inherit; background:var(--surface); color:var(--text);}
+  .search-box input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .search-box svg{position:absolute; left:14px; top:50%; transform:translateY(-50%); width:16px; height:16px; stroke:var(--text-muted);}
+  .row-count{font-size:12px; color:var(--text-muted); margin-bottom:12px;}
+
+  .journal-list{display:flex; flex-direction:column; gap:10px;}
+  .journal-card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;}
+  .jc-head{display:flex; align-items:flex-start; justify-content:space-between; gap:12px;}
+  .jc-titles{min-width:0;}
+  .jc-code{font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:3px;}
+  .jc-name{font-size:15px; font-weight:500; line-height:1.35;}
+  .jc-code mark, .jc-name mark{background:#fde68a; color:inherit; border-radius:3px;}
+  .jc-tags{display:flex; gap:6px; flex-wrap:wrap; margin-top:8px;}
+  .jc-tags span{font-size:12px; color:var(--text-secondary); background:var(--bg); border-radius:999px; padding:2px 9px;}
+  .jc-actions{display:flex; flex-wrap:wrap; gap:8px; margin-top:12px;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; height:44px; padding:0 16px; border-radius:10px; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); transition:border-color .15s ease, opacity .15s ease, transform .1s ease;}
+  .btn:hover{border-color:var(--accent);}
+  .btn:active{transform:scale(0.97);}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff; flex:1 1 0;}
+  .btn-primary:hover{opacity:0.92;}
+  .btn-icon{width:44px; padding:0; flex-shrink:0; font-size:18px;}
+  .btn-icon.active{background:#fdf7e3; border-color:#ecdca0;}
+  .fav-star{flex-shrink:0; display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; margin:-6px -6px 0 0; border-radius:10px; border:1px solid var(--border); background:var(--bg); font-size:18px; cursor:pointer;}
+  .fav-star:hover{border-color:var(--border-strong);}
+  .fav-star.active{background:#fdf7e3; border-color:#ecdca0;}
+  .empty-state{text-align:center; padding:40px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
+  .empty-state.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="index.html">← Все журналы</a>
+
+  <header>
+    <h1>Кулинария</h1>
+    <p>Журналы и чек-листы кулинарии</p>
+  </header>
+
+  <div class="search-box">
+    <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Поиск по названию или коду" autocomplete="off">
+  </div>
+
+  <div class="row-count" id="rowCount"></div>
+  <div class="journal-list" id="journalList">
+    <div class="empty-state">Загрузка...</div>
+  </div>
+</div>
+
+<script>
+  let journals = [];
+  const listEl = document.getElementById('journalList');
+  const rowCount = document.getElementById('rowCount');
+  const searchInput = document.getElementById('searchInput');
+
+  function escapeHtml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function highlight(text, q){
+    const safe = escapeHtml(text);
+    if(!q) return safe;
+    const i = text.toLowerCase().indexOf(q.toLowerCase());
+    if(i === -1) return safe;
+    return escapeHtml(text.slice(0,i)) + '<mark>' + escapeHtml(text.slice(i, i+q.length)) + '</mark>' + escapeHtml(text.slice(i+q.length));
+  }
+  function splitName(j){
+    const full = j.name || '';
+    if(j.id && full.startsWith(j.id)) return { code:j.id, title: full.slice(j.id.length).trim() || full };
+    return { code:j.id || '', title: full };
+  }
+
+  // Учитываем права доступа к журналам (как на главной)
+  function visible(data){
+    const a = window.gcheckUser && window.gcheckUser.allowed;
+    if(a === '*') return data;
+    const set = new Set(Array.isArray(a) ? a : []);
+    return data.filter(j => set.has(j.id));
+  }
+
+  function load(){
+    fetch('culinary_journals.json')
+      .then(r => { if(!r.ok) throw new Error('http ' + r.status); return r.json(); })
+      .then(data => { journals = visible(data); draw(); })
+      .catch(() => {
+        listEl.innerHTML = '<div class="empty-state error">Не удалось загрузить culinary_journals.json.</div>';
+      });
+  }
+
+  function cardHtml(j, q){
+    const { code, title } = splitName(j);
+    const fav = isFavorite(j.id);
+    const fillUrl = j.formUrlPrefill || j.formUrl || '';
+    const fillBtn = fillUrl
+      ? `<a class="btn btn-primary" href="${escapeHtml(fillUrl)}" target="_blank" rel="noopener">✏️ Заполнить</a>`
+      : '';
+    return `
+      <div class="journal-card">
+        <div class="jc-head">
+          <div class="jc-titles">
+            <div class="jc-code">${highlight(code, q)}</div>
+            <div class="jc-name">${highlight(title, q)}</div>
+          </div>
+          <button class="fav-star${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
+                  aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
+                  aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>
+        </div>
+        <div class="jc-actions">
+          ${fillBtn}
+          <a class="btn btn-primary" href="culinary_journal.html?id=${encodeURIComponent(j.id)}">📖 Просмотр</a>
+        </div>
+      </div>`;
+  }
+
+  function draw(){
+    const q = searchInput.value.trim();
+    const filtered = q ? journals.filter(j => j.name.toLowerCase().includes(q.toLowerCase())) : journals;
+    rowCount.textContent = `Журналов: ${filtered.length} из ${journals.length}`;
+    if(filtered.length === 0){
+      listEl.innerHTML = '<div class="empty-state">Ничего не найдено.</div>';
+      return;
+    }
+    listEl.innerHTML = filtered.map(j => cardHtml(j, q)).join('');
+  }
+
+  listEl.addEventListener('click', e => {
+    const star = e.target.closest('.fav-star');
+    if(!star) return;
+    const on = toggleFavorite(star.dataset.favId);
+    star.classList.toggle('active', on);
+    star.textContent = on ? '⭐' : '☆';
+    star.setAttribute('aria-pressed', on ? 'true' : 'false');
+    star.setAttribute('aria-label', on ? 'Убрать из избранного' : 'Добавить в избранное');
+  });
+
+  searchInput.addEventListener('input', draw);
+  document.addEventListener('gcheck:user', () => { if(journals.length) load(); });
+  load();
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+</script>
+
+</body>
+</html>

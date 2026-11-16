@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<script src="auth-guard.js"></script>
+<script>
+  (function(){
+    var u = window.gcheckUser || {};
+    var ok = (u.type || '').trim().toLowerCase() === 'администратор' ||
+             (u.position || '').trim().toLowerCase() === 'сотрудник кулинарии';
+    if(!ok) location.replace('index.html');
+  })();
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Журнал — Hismar Check</title>
+<script src="favorites.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f6f5f1; --surface:#ffffff; --border:#e4e2d9; --border-strong:#c9c6b8;
+    --text:#20201c; --text-secondary:#6b6a61; --text-muted:#98968a;
+    --accent:#3a5a52; --accent-soft:#e8efec; --danger:#9c3b34; --danger-soft:#fbebe9;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0; background:var(--bg); color:var(--text); font-family:'Manrope', Arial, sans-serif; -webkit-font-smoothing:antialiased;}
+  button{font-family:inherit;}
+  :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .wrap{max-width:1200px; margin:0 auto; padding:24px 20px 60px;}
+  .back-link{display:inline-flex; align-items:center; gap:6px; font-size:13px; color:var(--text-secondary); text-decoration:none; margin-bottom:20px; padding:6px 0;}
+  .back-link:hover{color:var(--accent);}
+  header{margin-bottom:20px;}
+  .j-code{font-size:12px; font-weight:600; color:var(--text-muted); margin-bottom:4px;}
+  h1{font-size:22px; font-weight:700; line-height:1.3; margin:0 0 10px;}
+  .tag-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .tag-row span{font-size:12px; color:var(--text-secondary); background:var(--accent-soft); border-radius:999px; padding:3px 10px;}
+  .head-actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:16px;}
+  .btn{display:inline-flex; align-items:center; justify-content:center; gap:6px; height:44px; padding:0 18px; border-radius:10px; font-size:14px; font-weight:600; text-decoration:none; cursor:pointer; border:1px solid var(--border-strong); background:var(--surface); color:var(--text); transition:border-color .15s ease, opacity .15s ease, transform .1s ease;}
+  .btn:hover:not(:disabled){border-color:var(--accent);}
+  .btn:active:not(:disabled){transform:scale(0.97);}
+  .btn:disabled{opacity:0.5; cursor:default;}
+  .btn-primary{background:var(--accent); border-color:var(--accent); color:#fff;}
+  .btn-primary:hover:not(:disabled){opacity:0.92;}
+  .btn-icon{width:44px; padding:0; flex-shrink:0; font-size:18px;}
+  .btn-icon.active{background:#fdf7e3; border-color:#ecdca0;}
+
+  .state-box{text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);}
+  .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
+
+  .toolbar{display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap;}
+  .toolbar input{flex:1; min-width:200px; height:44px; padding:0 14px; border:1px solid var(--border-strong); border-radius:10px; font-size:14px; font-family:inherit; background:var(--surface); color:var(--text);}
+  .toolbar input:focus{outline:2px solid var(--accent); outline-offset:1px;}
+  .row-count{font-size:12px; color:var(--text-muted); white-space:nowrap;}
+
+  .table-scroll{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); overflow:auto; max-width:100%; max-height:70vh;}
+  table{border-collapse:separate; border-spacing:0; font-size:13px; min-width:100%;}
+  thead th{position:sticky; top:0; z-index:3; background:var(--accent-soft); color:var(--text); text-align:left; padding:10px 14px; font-weight:600; border-bottom:1px solid var(--border-strong);}
+  /* режим «таблица» */
+  table.t-table{width:100%; white-space:nowrap;}
+  table.t-table thead th{border-right:none;}
+  table.t-table tbody td{padding:9px 14px; border-bottom:1px solid var(--border); color:var(--text-secondary); max-width:320px; overflow:hidden; text-overflow:ellipsis;}
+  table.t-table tbody tr:last-child td{border-bottom:none;}
+  table.t-table tbody tr:hover td{background:#fbfaf7;}
+  th.sortable{cursor:pointer; user-select:none;}
+  th.sortable:hover{background:#dfe9e5;}
+  th .sort-arrow{display:inline-block; margin-left:4px; color:var(--text-muted); font-size:11px;}
+  th.sort-active .sort-arrow{color:var(--accent);}
+  /* режим «как есть» */
+  table.t-grid thead th{text-align:center; border-right:1px solid var(--border); white-space:pre-line;}
+  table.t-grid tbody td{padding:7px 10px; border-bottom:1px solid var(--border); border-right:1px solid var(--border); color:var(--text-secondary); white-space:pre-line; vertical-align:middle; min-width:44px;}
+  table.t-grid tbody td.fz{background:var(--surface); color:var(--text); font-weight:500;}
+  table.t-grid thead th.fz{z-index:4;}
+  table.t-grid tbody td.fz{position:sticky; z-index:2;}
+  table.t-grid thead th.fz{position:sticky;}
+
+  .pager{display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap; margin-top:12px;}
+  .size-switch{display:inline-flex; align-items:center; gap:8px; font-size:12px; color:var(--text-muted);}
+  .seg{display:inline-flex; border:1px solid var(--border-strong); border-radius:999px; overflow:hidden; background:var(--surface);}
+  .seg button{height:36px; min-width:48px; padding:0 12px; border:none; background:none; font-size:13px; font-weight:600; color:var(--text-secondary); cursor:pointer;}
+  .seg button + button{border-left:1px solid var(--border);}
+  .seg button:hover{background:var(--bg);}
+  .seg button.active{background:var(--accent-soft); color:var(--accent);}
+  .range{font-size:12px; color:var(--text-muted);}
+  .nav{display:inline-flex; align-items:center; gap:8px;}
+  .nav .page-num{font-size:13px; font-weight:600; color:var(--text-secondary); min-width:56px; text-align:center;}
+  .nav .btn-icon{font-size:20px; line-height:1;}
+  @media (max-width:600px){
+    .pager{flex-direction:column; align-items:stretch;}
+    .pager .lower{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+    .toolbar .row-count{width:100%;}
+  }
+  @media (min-width:601px){
+    .pager .lower{display:flex; align-items:center; gap:16px; flex:1; justify-content:space-between;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <a class="back-link" href="culinary.html">← Кулинария</a>
+
+  <header>
+    <div class="j-code" id="journalCode"></div>
+    <h1 id="journalTitle">Загрузка…</h1>
+    <div class="tag-row" id="journalTags"></div>
+    <div class="head-actions" id="headActions" style="display:none;"></div>
+  </header>
+
+  <div class="toolbar" id="toolbar" style="display:none;">
+    <input type="text" id="tableSearch" placeholder="Поиск по всем столбцам..." autocomplete="off">
+    <span class="row-count" id="rowCount"></span>
+  </div>
+
+  <div id="content"><div class="state-box" id="stateBox">Загрузка данных таблицы…</div></div>
+  <div id="pager"></div>
+</div>
+
+<script>
+  const API_KEY = 'AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+  const PAGE_SIZE_KEY = 'gcheck_culinary_page_size';
+  const PAGE_SIZES = [25, 50, 100];
+
+  const $ = id => document.getElementById(id);
+  const contentEl = $('content'), pagerEl = $('pager'), toolbarEl = $('toolbar');
+  const tableSearch = $('tableSearch'), rowCountEl = $('rowCount');
+
+  const journalId = new URLSearchParams(location.search).get('id');
+
+  function escapeHtml(s){
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+  function showError(msg){
+    contentEl.innerHTML = '<div class="state-box error">' + escapeHtml(msg) + '</div>';
+    pagerEl.innerHTML = '';
+  }
+  function splitName(j){
+    const full = j.name || '';
+    if(j.id && full.startsWith(j.id)) return { code:j.id, title: full.slice(j.id.length).trim() || full };
+    return { code:j.id || '', title: full };
+  }
+
+  // ===== Состояние =====
+  let journal = null;
+  let mode = 'table';        // table | grid
+  let grid = [];             // двумерный массив строк (с развёрнутыми объединениями — только для table)
+  let rawGrid = [];          // исходные значения
+  let merges = [];           // [{r1,r2,c1,c2}] r2/c2 — не включительно, обрезаны по размеру
+  let headerRows = 1, frozenCols = 0;
+  let tableHeader = [], tableRows = [];
+  let sortCol = null, sortDir = 1, page = 1;
+  let pageSize = (() => { try{ const v = parseInt(localStorage.getItem(PAGE_SIZE_KEY), 10); return PAGE_SIZES.includes(v) ? v : 50; }catch(e){ return 50; } })();
+  let firstColIsDate = false;
+
+  // ===== Старт =====
+  if(!journalId){
+    $('journalTitle').textContent = 'Журнал не указан';
+    showError('В адресе нет параметра ?id=… — вернитесь в «Кулинарию» и откройте журнал через карточку.');
+  } else {
+    start();
+  }
+
+  async function start(){
+    try{
+      const r = await fetch('culinary_journals.json');
+      if(!r.ok) throw new Error('http ' + r.status);
+      const all = await r.json();
+      journal = all.find(j => j.id === journalId);
+      if(!journal){
+        $('journalTitle').textContent = 'Журнал не найден';
+        showError('Не найдена запись с id «' + journalId + '» в culinary_journals.json.');
+        return;
+      }
+      const a = window.gcheckUser.allowed;
+      if(a !== '*' && !(Array.isArray(a) && a.includes(journal.id))){ location.replace('culinary.html'); return; }
+    } catch(e){
+      $('journalTitle').textContent = 'Ошибка';
+      showError('Не удалось загрузить culinary_journals.json.');
+      return;
+    }
+
+    renderHeader();
+    if(!journal.sheetId){ showError('Для этого журнала не указан sheetId.'); return; }
+
+    try{
+      await loadSheet();
+    } catch(err){
+      showError('Не удалось загрузить данные таблицы. Проверьте доступ «по ссылке — Читатель», sheetId и ограничения API-ключа. (' + err.message + ')');
+    }
+  }
+
+  function renderHeader(){
+    const { code, title } = splitName(journal);
+    $('journalCode').textContent = code;
+    $('journalTitle').textContent = title;
+    document.title = title + ' — Hismar Check';
+    $('journalTags').innerHTML = (journal.tags || []).map(t => `<span>${escapeHtml(t)}</span>`).join('');
+
+    const fillUrl = journal.formUrlPrefill || journal.formUrl || '';
+    const fav = isFavorite(journal.id);
+    $('headActions').innerHTML =
+      (fillUrl ? `<a class="btn btn-primary" href="${escapeHtml(fillUrl)}" target="_blank" rel="noopener">✏️ Заполнить</a>` : '') +
+      (journal.sheetUrl ? `<a class="btn" href="${escapeHtml(journal.sheetUrl)}" target="_blank" rel="noopener">📊 Открыть таблицу</a>` : '') +
+      `<button class="btn btn-icon${fav ? ' active' : ''}" id="favBtn" type="button" aria-pressed="${fav}" aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}">${fav ? '⭐' : '☆'}</button>`;
+    $('headActions').style.display = '';
+    $('favBtn').addEventListener('click', e => {
+      const b = e.currentTarget, on = toggleFavorite(journal.id);
+      b.classList.toggle('active', on);
+      b.textContent = on ? '⭐' : '☆';
+      b.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+  }
+
+  // ===== Загрузка: метаданные (лист, шапка, объединения) + значения =====
+  async function loadSheet(){
+    const base = 'https://sheets.googleapis.com/v4/spreadsheets/' + journal.sheetId;
+
+    // 1) метаданные. Лист ищем: явный gid → название → gid из sheetUrl → первый лист
+    let meta = null;
+    try{
+      const fields = 'sheets(properties(sheetId,title,gridProperties(frozenRowCount,frozenColumnCount)),merges)';
+      const mr = await fetch(`${base}?fields=${encodeURIComponent(fields)}&key=${API_KEY}`);
+      if(mr.ok) meta = await mr.json();
+    } catch(e){}
+
+    let sheet = null, title = journal.sheetName || '';
+    if(meta && meta.sheets && meta.sheets.length){
+      const list = meta.sheets;
+      const urlGid = ((journal.sheetUrl || '').match(/[#&?]gid=(\d+)/) || [])[1];
+      if(journal.gid !== undefined && journal.gid !== '') sheet = list.find(s => String(s.properties.sheetId) === String(journal.gid));
+      if(!sheet && journal.sheetName) sheet = list.find(s => s.properties.title === journal.sheetName);
+      if(!sheet && urlGid !== undefined) sheet = list.find(s => String(s.properties.sheetId) === urlGid);
+      if(!sheet) sheet = list[0];
+      title = sheet.properties.title;
+    }
+    if(!title) throw new Error('не удалось определить лист');
+
+    const q = "'" + title.replace(/'/g, "''") + "'";
+    const vr = await fetch(`${base}/values/${encodeURIComponent(q)}?key=${API_KEY}`);
+    if(!vr.ok) throw new Error('http ' + vr.status);
+    const values = (await vr.json()).values || [];
+    if(values.length === 0){ contentEl.innerHTML = '<div class="state-box">В этом журнале пока нет записей.</div>'; return; }
+
+    // 2) сетка
+    const rawMerges = (sheet && sheet.merges) || [];
+    const nRows = values.length;
+    let nCols = values.reduce((m, r) => Math.max(m, r.length), 0);
+    merges = rawMerges.map(m => ({
+      r1: m.startRowIndex || 0, r2: m.endRowIndex, c1: m.startColumnIndex || 0, c2: m.endColumnIndex
+    })).filter(m => m.r1 < nRows).map(m => ({ r1:m.r1, r2:Math.min(m.r2, nRows), c1:m.c1, c2:m.c2 }));
+    merges.forEach(m => { nCols = Math.max(nCols, m.c2); });
+
+    rawGrid = values.map(r => Array.from({length:nCols}, (_, i) => r[i] == null ? '' : String(r[i])));
+
+    const gp = (sheet && sheet.properties.gridProperties) || {};
+    headerRows = Math.min(nRows, Math.max(1, +journal.headerRows || gp.frozenRowCount || 1));
+    frozenCols = journal.frozenCols !== undefined ? +journal.frozenCols : (gp.frozenColumnCount || 0);
+
+    // 3) режим: из JSON, иначе авто (многострочная шапка или объединения → grid)
+    mode = journal.view === 'table' || journal.view === 'grid'
+      ? journal.view
+      : ((headerRows > 1 || merges.length) ? 'grid' : 'table');
+
+    if(mode === 'table') initTable(); else initGrid();
+  }
+
+  // ===== Режим «как есть» =====
+  function initGrid(){
+    toolbarEl.style.display = 'none';
+    pagerEl.innerHTML = '';
+    const nCols = rawGrid[0].length, nRows = rawGrid.length;
+
+    // карта объединений: origin → span, остальные — пропуск
+    const origin = {}, skip = new Set();
+    merges.forEach(m => {
+      origin[m.r1 + ':' + m.c1] = { rs: m.r2 - m.r1, cs: m.c2 - m.c1 };
+      for(let r = m.r1; r < m.r2; r++) for(let c = m.c1; c < m.c2; c++){
+        if(r !== m.r1 || c !== m.c1) skip.add(r + ':' + c);
+      }
+    });
+
+    const rowHtml = (r, tag) => {
+      let h = '<tr>';
+      for(let c = 0; c < nCols; c++){
+        const k = r + ':' + c;
+        if(skip.has(k)) continue;
+        const o = origin[k] || { rs:1, cs:1 };
+        const fz = c < frozenCols && o.cs === 1 ? ' fz' : '';
+        h += `<${tag} class="${fz.trim()}" data-c="${c}" data-cs="${o.cs}"` +
+             (o.rs > 1 ? ` rowspan="${o.rs}"` : '') + (o.cs > 1 ? ` colspan="${o.cs}"` : '') +
+             `>${escapeHtml(rawGrid[r][c])}</${tag}>`;
+      }
+      return h + '</tr>';
+    };
+
+    let thead = '<thead>', tbody = '<tbody>';
+    for(let r = 0; r < nRows; r++){
+      if(r < headerRows) thead += rowHtml(r, 'th'); else tbody += rowHtml(r, 'td');
+    }
+    thead += '</thead>'; tbody += '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll" id="tableScroll"><table class="t-grid">${thead}${tbody}</table></div>`;
+    $('rowCount').textContent = '';
+    stickyOffsets();
+  }
+
+  // Закрепление: top для строк шапки, left для первых столбцов (по измеренным размерам)
+  function stickyOffsets(){
+    const table = contentEl.querySelector('table');
+    if(!table) return;
+    let top = 0;
+    table.querySelectorAll('thead tr').forEach(tr => {
+      tr.querySelectorAll('th').forEach(th => { th.style.top = top + 'px'; });
+      top += tr.offsetHeight;
+    });
+    if(!frozenCols) return;
+    const w = [];
+    for(let c = 0; c < frozenCols; c++){
+      const cell = table.querySelector(`td[data-c="${c}"][data-cs="1"]`) || table.querySelector(`th[data-c="${c}"][data-cs="1"]`);
+      w[c] = cell ? cell.offsetWidth : 0;
+    }
+    const left = [0];
+    for(let c = 1; c < frozenCols; c++) left[c] = left[c-1] + w[c-1];
+    table.querySelectorAll('.fz').forEach(el => { el.style.left = left[+el.dataset.c] + 'px'; });
+  }
+  window.addEventListener('resize', () => { if(mode === 'grid') stickyOffsets(); });
+
+  // ===== Режим «таблица» (плоская шапка, сортировка, поиск, страницы) =====
+  function initTable(){
+    // развернуть объединения: значение из верхней левой ячейки во все ячейки диапазона
+    grid = rawGrid.map(r => r.slice());
+    merges.forEach(m => {
+      const v = rawGrid[m.r1][m.c1];
+      for(let r = m.r1; r < m.r2; r++) for(let c = m.c1; c < m.c2; c++) grid[r][c] = v;
+    });
+
+    const nCols = grid[0].length;
+    tableHeader = Array.from({length:nCols}, (_, c) => {
+      const parts = [];
+      for(let r = 0; r < headerRows; r++){
+        const v = (grid[r][c] || '').replace(/\s+/g, ' ').trim();
+        if(v && parts[parts.length - 1] !== v) parts.push(v);
+      }
+      return parts.join(' / ') || ('Столбец ' + (c + 1));
+    });
+
+    tableRows = grid.slice(headerRows)
+      .map((cells, idx) => ({ cells, idx }))
+      .filter(r => r.cells.some(c => c.trim() !== ''));
+
+    if(tableRows.length === 0){ contentEl.innerHTML = '<div class="state-box">В этом журнале пока нет записей.</div>'; return; }
+
+    const nonEmpty = tableRows.map(r => r.cells[0]).filter(v => v.trim() !== '');
+    const dated = nonEmpty.filter(v => parseRuDate(v) !== null).length;
+    firstColIsDate = nonEmpty.length > 0 && dated / nonEmpty.length >= 0.8;
+    if(firstColIsDate){ sortCol = 0; sortDir = -1; }
+
+    toolbarEl.style.display = '';
+    tableSearch.addEventListener('input', () => { page = 1; drawTable(); });
+    drawTable();
+  }
+
+  function parseRuDate(str){
+    if(!str) return null;
+    const m = String(str).trim().match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+    if(!m) return null;
+    const dt = new Date(+m[3], +m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0), +(m[6] || 0));
+    return isNaN(dt.getTime()) ? null : dt.getTime();
+  }
+  function compareCells(av, bv){
+    const ad = parseRuDate(av), bd = parseRuDate(bv);
+    if(ad !== null && bd !== null) return ad - bd;
+    const numRe = /^-?[\d.,]+$/;
+    if(numRe.test(av.trim()) && numRe.test(bv.trim())){
+      const an = parseFloat(av.replace(',', '.')), bn = parseFloat(bv.replace(',', '.'));
+      if(!isNaN(an) && !isNaN(bn)) return an - bn;
+    }
+    return av.localeCompare(bv, 'ru');
+  }
+  function getViewRows(){
+    const query = tableSearch.value.trim().toLowerCase();
+    let rows = tableRows;
+    if(query) rows = rows.filter(r => r.cells.some(c => c.toLowerCase().includes(query)));
+    if(sortCol !== null){
+      rows = rows.slice().sort((a, b) => {
+        const cmp = compareCells(a.cells[sortCol], b.cells[sortCol]);
+        return (cmp * sortDir) || ((a.idx - b.idx) * sortDir);
+      });
+    } else {
+      rows = rows.slice().sort((a, b) => b.idx - a.idx);   // последние записи — сверху
+    }
+    return rows;
+  }
+
+  function drawTable(){
+    const rows = getViewRows();
+    const total = rows.length;
+    const pages = Math.max(1, Math.ceil(total / pageSize));
+    if(page > pages) page = pages;
+    const start = (page - 1) * pageSize;
+    const slice = rows.slice(start, start + pageSize);
+
+    const query = tableSearch.value.trim();
+    rowCountEl.textContent = query ? `Найдено: ${total} из ${tableRows.length}` : `Записей: ${tableRows.length}`;
+
+    if(total === 0){ contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>'; pagerEl.innerHTML = ''; return; }
+
+    const thead = '<thead><tr>' + tableHeader.map((h, i) => {
+      const active = sortCol === i;
+      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
+      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${escapeHtml(h)}<span class="sort-arrow">${arrow}</span></th>`;
+    }).join('') + '</tr></thead>';
+    const tbody = '<tbody>' + slice.map(r =>
+      '<tr>' + r.cells.map(c => `<td title="${escapeHtml(c)}">${escapeHtml(c)}</td>`).join('') + '</tr>'
+    ).join('') + '</tbody>';
+
+    contentEl.innerHTML = `<div class="table-scroll" id="tableScroll"><table class="t-table">${thead}${tbody}</table></div>`;
+    contentEl.querySelectorAll('th.sortable').forEach(th => {
+      th.addEventListener('click', () => {
+        const col = +th.dataset.col;
+        if(sortCol === col) sortDir = -sortDir; else { sortCol = col; sortDir = 1; }
+        page = 1; drawTable();
+      });
+    });
+    renderPager(total, pages, start, slice.length);
+  }
+
+  function renderPager(total, pages, start, shown){
+    pagerEl.innerHTML = `
+      <div class="pager">
+        <div class="size-switch"><span>Показывать:</span>
+          <div class="seg" role="group" aria-label="Записей на странице">
+            ${PAGE_SIZES.map(n => `<button type="button" data-size="${n}" class="${n === pageSize ? 'active' : ''}" aria-pressed="${n === pageSize}">${n}</button>`).join('')}
+          </div></div>
+        <div class="lower">
+          <span class="range">${start + 1}–${start + shown} из ${total}</span>
+          <div class="nav">
+            <button class="btn btn-icon" type="button" data-nav="prev" aria-label="Предыдущая страница"${page <= 1 ? ' disabled' : ''}>‹</button>
+            <span class="page-num">${page} / ${pages}</span>
+            <button class="btn btn-icon" type="button" data-nav="next" aria-label="Следующая страница"${page >= pages ? ' disabled' : ''}>›</button>
+          </div></div></div>`;
+    pagerEl.querySelectorAll('[data-size]').forEach(b => b.addEventListener('click', () => {
+      const n = +b.dataset.size; if(n === pageSize) return;
+      pageSize = n; try{ localStorage.setItem(PAGE_SIZE_KEY, String(n)); }catch(e){}
+      page = 1; drawTable();
+    }));
+    pagerEl.querySelectorAll('[data-nav]').forEach(b => b.addEventListener('click', () => {
+      page += b.dataset.nav === 'next' ? 1 : -1;
+      drawTable();
+      const sc = $('tableScroll'); if(sc) sc.scrollTop = 0;
+    }));
+  }
+
+  if('serviceWorker' in navigator){
+    window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); });
+  }
+</script>
+
+</body>
+</html>

@@ -964,6 +964,22 @@
     "qrPrefillDriveId": "",
     "fillFrequency": "Ежедневно"
   },
+    {
+    "id": "НАССР-Ж-66",
+    "name": "НАССР-Ж-66 Журнал входного контроля",
+    "tags": [
+      "Продукт"
+    ],
+    "sheetId": "1BYcCM_1xfGPW0RfSFTMhEa-eyJLBFIXiphr-c8Ty48Y",
+    "sheetName": "Ответы на форму (1)",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1BYcCM_1xfGPW0RfSFTMhEa-eyJLBFIXiphr-c8Ty48Y/edit?resourcekey=&gid=2142474457#gid=2142474457",
+    "formUrl": "https://docs.google.com/forms/d/e/1FAIpQLSfRr2ESxhsJFA0pXRfnVg9puKJfaHhGtk-qOV7-y8YQEN9Ymw/viewform",
+    "formUrlEdit": "https://docs.google.com/forms/d/14FPMGEdlgEtHLJq3I7mm8TXKWKqOydTDFL84ifCSpNI/edit",
+    "qrDriveId": "1kgjeAE1qwdmaxMcxOFSXSzyMNfA8EHDG",
+    "formUrlPrefill": "https://docs.google.com/forms/d/e/1FAIpQLSfRr2ESxhsJFA0pXRfnVg9puKJfaHhGtk-qOV7-y8YQEN9Ymw/viewform?usp=pp_url&entry.1722153079=%D0%94%D0%B0&entry.2096015883=%D0%94%D0%B0&entry.961856068=%D0%94%D0%B0",
+    "qrPrefillDriveId": "15WL4ujeGcTwFwLUEA3JiGCWXXjDmKBE9",
+    "fillFrequency": "Произвольно"
+  },
   {
     "id": "НАССР-Ч-02",
     "name": "НАССР-Ч-02 Чек лист обхода Склада готовой продукции",

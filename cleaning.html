@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Чек-лист уборки и проветривания — Hismar Check</title>
+<script src="auth-guard.js"></script>
+<script>
+(function(){
+  var u=window.gcheckUser||{};
+  var ok=(u.type||'').trim().toLowerCase()==='администратор' ||
+         (u.position||'').trim().toLowerCase()==='сотрудник кулинарии';
+  if(!ok) location.replace('culinary.html');
+})();
+</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--surface:#fff;--border:#e4e2d9;--border-strong:#c9c6b8;--text:#20201c;--secondary:#6b6a61;--muted:#98968a;--accent:#3a5a52;--soft:#e8efec;--danger:#9c3b34;--danger-soft:#fbebe9;--radius:12px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 50px}.back{display:inline-flex;margin-bottom:20px;color:var(--secondary);text-decoration:none;font-size:13px}.back:hover{color:var(--accent)}
+header{margin-bottom:20px}h1{font-size:22px;line-height:1.3;margin:0 0 6px;font-weight:700}.subtitle{font-size:13px;color:var(--secondary);margin:0}
+.toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:150px}.field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+select,input[type=date]{height:40px;padding:0 12px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text);font:500 13px Manrope,Arial,sans-serif}
+select{min-width:190px}.field.period{min-width:140px}.reset{height:40px;padding:0 14px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--accent);font:600 13px Manrope,Arial,sans-serif;cursor:pointer}.reset:hover{border-color:var(--accent)}
+.meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 2px;font-size:12px;color:var(--muted)}
+.state{padding:42px 20px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--muted)}.state.error{color:var(--danger);background:var(--danger-soft);border-color:transparent}
+.table-wrap{overflow:auto;max-height:70vh;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;min-width:850px;border-collapse:separate;border-spacing:0;font-size:13px}
+thead th{position:sticky;background:var(--soft);color:var(--text);text-align:left;padding:11px 13px;font-weight:700;border-bottom:1px solid var(--border-strong);border-right:1px solid var(--border);white-space:nowrap}
+thead th:last-child{border-right:0}
+thead tr:first-child th{top:0;z-index:4}
+thead tr:first-child th.group{text-align:center;border-bottom:0;border-left:1px solid var(--border-strong);border-right:1px solid var(--border-strong);padding-bottom:4px;height:38px}
+thead tr:first-child th[rowspan="2"]{vertical-align:middle}
+thead tr:last-child th{top:38px;z-index:3;padding-top:5px;border-top:1px solid var(--border-strong)}
+thead tr:last-child th:first-child{border-left:1px solid var(--border-strong)}
+thead tr:last-child th:last-child{border-right:1px solid var(--border-strong)}
+tbody td{padding:10px 13px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);color:var(--secondary);white-space:nowrap}
+tbody td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfaf7}td.date,td.kind,td.person{color:var(--text)}td.date,td.kind{font-weight:600}
+@media(max-width:600px){.wrap{padding:18px 12px 36px}h1{font-size:20px}.toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}.toolbar .field:first-child{grid-column:1/-1}.toolbar .field,.toolbar .field.period{min-width:0;width:100%}.field select,.field input{width:100%;min-width:0}.reset{grid-column:1/-1;width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="culinary.html">← Кулинария</a>
+<header><h1>НАССР-К-02 Чек-лист уборки и проветривания помещений</h1><p class="subtitle">Отметки по видам уборки и времени выполнения</p></header>
+<section class="toolbar" aria-label="Фильтры">
+  <div class="field"><label for="monthFilter">Месяц</label><select id="monthFilter"><option value="">Все месяцы</option></select></div>
+  <div class="field period"><label for="dateFrom">Период с</label><input id="dateFrom" type="date"></div>
+  <div class="field period"><label for="dateTo">Период по</label><input id="dateTo" type="date"></div>
+  <button class="reset" id="resetFilters" type="button">Сбросить фильтры</button>
+</section>
+<div class="meta"><span id="rowCount">Загрузка записей…</span><span id="updated"></span></div>
+<div id="content"><div class="state">Загрузка данных таблицы…</div></div>
+</div>
+<script>
+const SPREADSHEET_ID='1jydKAjIdJh5ilupdT2FNHSHlEizT70rCXbUHzNEgBpE';
+const SHEET_RANGE="'Текущий месяц'!A1:F";
+const API_KEY='AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+const monthFilter=document.getElementById('monthFilter'),dateFrom=document.getElementById('dateFrom'),dateTo=document.getElementById('dateTo');
+const content=document.getElementById('content'),rowCount=document.getElementById('rowCount'),updated=document.getElementById('updated');
+let records=[];
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function parseDate(v){
+ const s=String(v??'').trim();let m=s.match(/^(\d{1,2})[-.](\d{1,2})[-.](\d{4})$/);
+ if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+ m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+ return null;
+}
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function fmt(d){return d.toLocaleDateString('ru-RU')}
+function init(values){
+ let currentDate=null,currentPerson='';
+ records=[];
+ values.slice(1).forEach(r=>{
+   const parsed=parseDate(r[0]);
+   if(parsed)currentDate=parsed;
+   if(r[5])currentPerson=r[5];
+   if(!currentDate||!r[1])return;
+   records.push({date:currentDate,dateText:fmt(currentDate),kind:r[1],t0800:r[2]||'',t1300:r[3]||'',t1800:r[4]||'',person:currentPerson});
+ });
+ records.sort((a,b)=>b.date-a.date || a.kind.localeCompare(b.kind,'ru'));
+ const months=[...new Set(records.map(r=>key(r.date)))].sort().reverse();
+ monthFilter.innerHTML='<option value="">Все месяцы</option>'+months.map(m=>{const [y,mo]=m.split('-');const label=new Date(+y,+mo-1,1).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});return '<option value="'+m+'">'+esc(label.charAt(0).toUpperCase()+label.slice(1))+'</option>'}).join('');
+ rowCount.textContent='Всего записей: '+records.length;
+ updated.textContent=records.length?'Последняя дата: '+fmt(records[0].date):'';
+ draw();
+}
+function draw(){
+ const from=dateFrom.value?new Date(dateFrom.value+'T00:00:00'):null;
+ const to=dateTo.value?new Date(dateTo.value+'T23:59:59'):null;
+ const rows=records.filter(r=>(!monthFilter.value||key(r.date)===monthFilter.value)&&(!from||r.date>=from)&&(!to||r.date<=to));
+ rowCount.textContent='Показано: '+rows.length+' из '+records.length;
+ if(!rows.length){content.innerHTML='<div class="state">За выбранный период записей нет.</div>';return}
+ content.innerHTML='<div class="table-wrap"><table><thead><tr><th rowspan="2">Дата</th><th rowspan="2">Тип уборки</th><th class="group" colspan="3">Время</th><th rowspan="2">ФИО ответственного лица</th></tr><tr><th>08:00</th><th>13:00</th><th>18:00</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="date">'+esc(r.dateText)+'</td><td class="kind">'+esc(r.kind)+'</td><td>'+esc(r.t0800)+'</td><td>'+esc(r.t1300)+'</td><td>'+esc(r.t1800)+'</td><td class="person">'+esc(r.person)+'</td></tr>').join('')+'</tbody></table></div>';
+}
+[monthFilter,dateFrom,dateTo].forEach(el=>el.addEventListener('change',draw));
+document.getElementById('resetFilters').addEventListener('click',()=>{monthFilter.value='';dateFrom.value='';dateTo.value='';draw()});
+fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(SHEET_RANGE)+'?key='+API_KEY)
+.then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+.then(d=>init(d.values||[]))
+.catch(e=>{content.innerHTML='<div class="state error">Не удалось загрузить данные журнала. Проверьте, что Google-таблица доступна для чтения по ссылке, а вкладка называется «Текущий месяц». ('+esc(e.message)+')</div>';rowCount.textContent='Ошибка загрузки'});
+</script>
+</body>
+</html>

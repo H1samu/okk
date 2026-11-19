@@ -1,11 +1,12 @@
 // Меняйте номер версии (v1 → v2 → v3...) при каждом значимом деплое —
 // это заставит service worker сам обновить кэш у всех пользователей,
 // без их участия. Старые версии кэша удаляются автоматически (см. ниже).
-const CACHE_NAME = 'nassr-journals-v111926_1';
+const CACHE_NAME = 'nassr-journals-v111926_2';
 const CORE_ASSETS = [
   './',
   './index.html',
   './temperature.html',
+  './cleaning.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png'

@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Контроль температуры и влажности — Hismar Check</title>
 <script src="auth-guard.js"></script>
+<script>
+(function(){
+  var u=window.gcheckUser||{};
+  var ok=(u.type||'').trim().toLowerCase()==='администратор' ||
+         (u.position||'').trim().toLowerCase()==='сотрудник кулинарии';
+  if(!ok) location.replace('culinary.html');
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -34,7 +42,7 @@ tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfaf7}td.d
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="index.html">← Все журналы</a>
+<a class="back" href="culinary.html">← Кулинария</a>
 <header><h1>НАССР-К-01 Журнал контроля температуры и влажности</h1><p class="subtitle">Контрольные замеры кухни и зала · время замера — 12:00</p></header>
 <section class="toolbar" aria-label="Фильтры">
   <div class="field"><label for="monthFilter">Месяц</label><select id="monthFilter"><option value="">Все месяцы</option></select></div>

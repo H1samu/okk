@@ -42,6 +42,7 @@ thead tr:last-child th:first-child{border-left:1px solid var(--border-strong)}
 thead tr:last-child th:last-child{border-right:1px solid var(--border-strong)}
 tbody td{padding:10px 13px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);color:var(--secondary);white-space:nowrap}
 tbody td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfaf7}td.date,td.kind,td.person{color:var(--text)}td.date,td.kind{font-weight:600}
+td.date,td.person{vertical-align:middle}td.time-merged{text-align:center;vertical-align:middle;font-weight:600;color:var(--text);border-right:1px solid var(--border-strong)}
 @media(max-width:600px){.wrap{padding:18px 12px 36px}h1{font-size:20px}.toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}.toolbar .field:first-child{grid-column:1/-1}.toolbar .field,.toolbar .field.period{min-width:0;width:100%}.field select,.field input{width:100%;min-width:0}.reset{grid-column:1/-1;width:100%}}
 </style>
 </head>
@@ -84,20 +85,42 @@ function init(values){
    if(!currentDate||!r[1])return;
    records.push({date:currentDate,dateText:fmt(currentDate),kind:r[1],t0800:r[2]||'',t1300:r[3]||'',t1800:r[4]||'',person:currentPerson});
  });
- records.sort((a,b)=>b.date-a.date || a.kind.localeCompare(b.kind,'ru'));
- const months=[...new Set(records.map(r=>key(r.date)))].sort().reverse();
+ // Сохраняем порядок типов уборки внутри дня, но показываем более новые даты первыми.
+ const grouped=new Map();
+ records.forEach(r=>{
+   const k=key(r.date)+'-'+r.date.getDate();
+   if(!grouped.has(k))grouped.set(k,{date:r.date,dateText:r.dateText,person:r.person,items:[]});
+   grouped.get(k).items.push(r);
+ });
+ records=[...grouped.values()].sort((a,b)=>b.date-a.date);
+ const months=[...new Set(records.map(g=>key(g.date)))].sort().reverse();
  monthFilter.innerHTML='<option value="">Все месяцы</option>'+months.map(m=>{const [y,mo]=m.split('-');const label=new Date(+y,+mo-1,1).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});return '<option value="'+m+'">'+esc(label.charAt(0).toUpperCase()+label.slice(1))+'</option>'}).join('');
- rowCount.textContent='Всего записей: '+records.length;
+ const total=records.reduce((n,g)=>n+g.items.length,0);
+ rowCount.textContent='Всего записей: '+total;
  updated.textContent=records.length?'Последняя дата: '+fmt(records[0].date):'';
  draw();
 }
 function draw(){
  const from=dateFrom.value?new Date(dateFrom.value+'T00:00:00'):null;
  const to=dateTo.value?new Date(dateTo.value+'T23:59:59'):null;
- const rows=records.filter(r=>(!monthFilter.value||key(r.date)===monthFilter.value)&&(!from||r.date>=from)&&(!to||r.date<=to));
- rowCount.textContent='Показано: '+rows.length+' из '+records.length;
- if(!rows.length){content.innerHTML='<div class="state">За выбранный период записей нет.</div>';return}
- content.innerHTML='<div class="table-wrap"><table><thead><tr><th rowspan="2">Дата</th><th rowspan="2">Тип уборки</th><th class="group" colspan="3">Время</th><th rowspan="2">ФИО ответственного лица</th></tr><tr><th>08:00</th><th>13:00</th><th>18:00</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="date">'+esc(r.dateText)+'</td><td class="kind">'+esc(r.kind)+'</td><td>'+esc(r.t0800)+'</td><td>'+esc(r.t1300)+'</td><td>'+esc(r.t1800)+'</td><td class="person">'+esc(r.person)+'</td></tr>').join('')+'</tbody></table></div>';
+ const groups=records.filter(g=>(!monthFilter.value||key(g.date)===monthFilter.value)&&(!from||g.date>=from)&&(!to||g.date<=to));
+ const count=groups.reduce((n,g)=>n+g.items.length,0);
+ const total=records.reduce((n,g)=>n+g.items.length,0);
+ rowCount.textContent='Показано: '+count+' из '+total;
+ if(!groups.length){content.innerHTML='<div class="state">За выбранный период записей нет.</div>';return}
+ const body=groups.map(g=>g.items.map((r,i)=>{
+   const cells=[];
+   if(i===0)cells.push('<td class="date" rowspan="'+g.items.length+'">'+esc(g.dateText)+'</td>');
+   cells.push('<td class="kind">'+esc(r.kind)+'</td>');
+   if(r.kind.trim().toLowerCase()==='влажная уборка'){
+     cells.push('<td class="time-merged" colspan="3">'+esc(r.t0800||'08:00')+'</td>');
+   }else{
+     cells.push('<td>'+esc(r.t0800)+'</td><td>'+esc(r.t1300)+'</td><td>'+esc(r.t1800)+'</td>');
+   }
+   if(i===0)cells.push('<td class="person" rowspan="'+g.items.length+'">'+esc(g.person)+'</td>');
+   return '<tr>'+cells.join('')+'</tr>';
+ }).join('')).join('');
+ content.innerHTML='<div class="table-wrap"><table><thead><tr><th rowspan="2">Дата</th><th rowspan="2">Тип уборки</th><th class="group" colspan="3">Время</th><th rowspan="2">ФИО ответственного лица</th></tr><tr><th>08:00</th><th>13:00</th><th>18:00</th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 [monthFilter,dateFrom,dateTo].forEach(el=>el.addEventListener('change',draw));
 document.getElementById('resetFilters').addEventListener('click',()=>{monthFilter.value='';dateFrom.value='';dateTo.value='';draw()});

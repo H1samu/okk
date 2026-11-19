@@ -137,7 +137,9 @@
       : '';
     const viewUrl = j.id === 'НАССР-К-01'
       ? 'temperature.html'
-      : 'culinary_journal.html?id=' + encodeURIComponent(j.id);
+      : j.id === 'НАССР-К-02'
+        ? 'cleaning.html'
+        : 'culinary_journal.html?id=' + encodeURIComponent(j.id);
     return `
       <div class="journal-card">
         <div class="jc-head">

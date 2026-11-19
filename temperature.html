@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Контроль температуры и влажности — Hismar Check</title>
+<script src="auth-guard.js"></script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f6f5f1;--surface:#fff;--border:#e4e2d9;--border-strong:#c9c6b8;--text:#20201c;--secondary:#6b6a61;--muted:#98968a;--accent:#3a5a52;--soft:#e8efec;--danger:#9c3b34;--danger-soft:#fbebe9;--radius:12px}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1200px;margin:0 auto;padding:24px 20px 50px}.back{display:inline-flex;margin-bottom:20px;color:var(--secondary);text-decoration:none;font-size:13px}.back:hover{color:var(--accent)}
+header{margin-bottom:20px}h1{font-size:22px;line-height:1.3;margin:0 0 6px;font-weight:700}.subtitle{font-size:13px;color:var(--secondary);margin:0}
+.toolbar{display:flex;gap:10px;align-items:end;flex-wrap:wrap;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:150px}.field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+select,input[type=date]{height:40px;padding:0 12px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text);font:500 13px Manrope,Arial,sans-serif}
+select{min-width:190px}.field.period{min-width:140px}.reset{height:40px;padding:0 14px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--accent);font:600 13px Manrope,Arial,sans-serif;cursor:pointer}.reset:hover{border-color:var(--accent)}
+.meta{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:12px 2px;font-size:12px;color:var(--muted)}
+.state{padding:42px 20px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--muted)}.state.error{color:var(--danger);background:var(--danger-soft);border-color:transparent}
+.table-wrap{overflow:auto;max-height:70vh;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+table{width:100%;min-width:760px;border-collapse:separate;border-spacing:0;font-size:13px}
+thead th{position:sticky;top:0;z-index:2;background:var(--soft);color:var(--text);text-align:left;padding:11px 13px;font-weight:700;border-bottom:1px solid var(--border-strong);white-space:nowrap}
+thead tr:first-child th.group{text-align:center;border-bottom:0;padding-bottom:4px}
+thead tr:last-child th{padding-top:5px}
+tbody td{padding:10px 13px;border-bottom:1px solid var(--border);color:var(--secondary);white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfaf7}td.date{font-weight:700;color:var(--text)}td.person{color:var(--text)}
+@media(max-width:600px){.wrap{padding:18px 12px 36px}h1{font-size:20px}.toolbar{align-items:stretch}.field,.field.period{flex:1 1 42%;min-width:130px}.field select,.field input{width:100%}.reset{width:100%}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<a class="back" href="index.html">← Все журналы</a>
+<header><h1>НАССР-К-01 Журнал контроля температуры и влажности</h1><p class="subtitle">Контрольные замеры кухни и зала · время замера — 12:00</p></header>
+<section class="toolbar" aria-label="Фильтры">
+  <div class="field"><label for="monthFilter">Месяц</label><select id="monthFilter"><option value="">Все месяцы</option></select></div>
+  <div class="field period"><label for="dateFrom">Период с</label><input id="dateFrom" type="date"></div>
+  <div class="field period"><label for="dateTo">Период по</label><input id="dateTo" type="date"></div>
+  <button class="reset" id="resetFilters" type="button">Сбросить фильтры</button>
+</section>
+<div class="meta"><span id="rowCount">Загрузка записей…</span><span id="updated"></span></div>
+<div id="content"><div class="state">Загрузка данных таблицы…</div></div>
+</div>
+<script>
+const SPREADSHEET_ID='1w3YhOEKriG-yYGEul1Y4nVJ38DMOUq1sCCpam1-fMp8';
+const SHEET_RANGE="'Лист1'!A5:F";
+const API_KEY='AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
+const monthFilter=document.getElementById('monthFilter'),dateFrom=document.getElementById('dateFrom'),dateTo=document.getElementById('dateTo');
+const content=document.getElementById('content'),rowCount=document.getElementById('rowCount'),updated=document.getElementById('updated');
+let records=[];
+function esc(v){return String(v??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function parseDate(v){
+ const s=String(v??'').trim();let m=s.match(/^(\d{1,2})[-.](\d{1,2})[-.](\d{4})$/);
+ if(m)return new Date(+m[3],+m[2]-1,+m[1]);
+ m=s.match(/^(\d{4})-(\d{2})-(\d{2})$/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+ return null;
+}
+function key(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')}
+function iso(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function fmt(d){return d.toLocaleDateString('ru-RU')}
+function init(values){
+ records=values.map(r=>({dateText:r[0]||'',date:parseDate(r[0]),kitchenT:r[1]||'',kitchenH:r[2]||'',hallT:r[3]||'',hallH:r[4]||'',person:r[5]||''})).filter(r=>r.date);
+ records.sort((a,b)=>b.date-a.date);
+ const months=[...new Set(records.map(r=>key(r.date)))].sort().reverse();
+ monthFilter.innerHTML='<option value="">Все месяцы</option>'+months.map(m=>{const [y,mo]=m.split('-');const label=new Date(+y,+mo-1,1).toLocaleDateString('ru-RU',{month:'long',year:'numeric'});return '<option value="'+m+'">'+esc(label.charAt(0).toUpperCase()+label.slice(1))+'</option>'}).join('');
+ rowCount.textContent='Всего записей: '+records.length;
+ updated.textContent=records.length?'Последняя запись: '+fmt(records[0].date):'';
+ draw();
+}
+function draw(){
+ const from=dateFrom.value?new Date(dateFrom.value+'T00:00:00'):null;
+ const to=dateTo.value?new Date(dateTo.value+'T23:59:59'):null;
+ const rows=records.filter(r=>(!monthFilter.value||key(r.date)===monthFilter.value)&&(!from||r.date>=from)&&(!to||r.date<=to));
+ rowCount.textContent='Показано: '+rows.length+' из '+records.length;
+ if(!rows.length){content.innerHTML='<div class="state">За выбранный период записей нет.</div>';return}
+ content.innerHTML='<div class="table-wrap"><table><thead><tr><th rowspan="2">Дата</th><th class="group" colspan="2">Кухня</th><th class="group" colspan="2">Зал</th><th rowspan="2">Фамилия ответственного лица</th></tr><tr><th>Т, °С</th><th>ВВ, %</th><th>Т, °С</th><th>ВВ, %</th></tr></thead><tbody>'+rows.map(r=>'<tr><td class="date">'+esc(r.dateText)+'</td><td>'+esc(r.kitchenT)+'</td><td>'+esc(r.kitchenH)+'</td><td>'+esc(r.hallT)+'</td><td>'+esc(r.hallH)+'</td><td class="person">'+esc(r.person)+'</td></tr>').join('')+'</tbody></table></div>';
+}
+[monthFilter,dateFrom,dateTo].forEach(el=>el.addEventListener('change',draw));
+document.getElementById('resetFilters').addEventListener('click',()=>{monthFilter.value='';dateFrom.value='';dateTo.value='';draw()});
+fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(SHEET_RANGE)+'?key='+API_KEY)
+.then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
+.then(d=>init(d.values||[]))
+.catch(e=>{content.innerHTML='<div class="state error">Не удалось загрузить данные журнала. Проверьте, что Google-таблица доступна для чтения по ссылке, а вкладка называется «Лист1». ('+esc(e.message)+')</div>';rowCount.textContent='Ошибка загрузки'});
+</script>
+</body>
+</html>

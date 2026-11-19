@@ -42,7 +42,7 @@ thead tr:last-child th:first-child{border-left:1px solid var(--border-strong)}
 thead tr:last-child th:last-child{border-right:1px solid var(--border-strong)}
 tbody td{padding:10px 13px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);color:var(--secondary);white-space:nowrap}
 tbody td:last-child{border-right:0}tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfaf7}td.date,td.kind,td.person{color:var(--text)}td.date,td.kind{font-weight:600}
-td.date,td.person{vertical-align:middle}td.time-merged{text-align:center;vertical-align:middle;font-weight:600;color:var(--text);border-right:1px solid var(--border-strong)}
+td.date,td.person{vertical-align:middle}td.time-merged{text-align:center;vertical-align:middle;font-weight:400;color:var(--secondary);border-right:1px solid var(--border-strong)}
 @media(max-width:600px){.wrap{padding:18px 12px 36px}h1{font-size:20px}.toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}.toolbar .field:first-child{grid-column:1/-1}.toolbar .field,.toolbar .field.period{min-width:0;width:100%}.field select,.field input{width:100%;min-width:0}.reset{grid-column:1/-1;width:100%}}
 </style>
 </head>
@@ -120,7 +120,7 @@ function draw(){
    if(i===0)cells.push('<td class="person" rowspan="'+g.items.length+'">'+esc(g.person)+'</td>');
    return '<tr>'+cells.join('')+'</tr>';
  }).join('')).join('');
- content.innerHTML='<div class="table-wrap"><table><thead><tr><th rowspan="2">Дата</th><th rowspan="2">Тип уборки</th><th class="group" colspan="3">Время</th><th rowspan="2">ФИО ответственного лица</th></tr><tr><th>08:00</th><th>13:00</th><th>18:00</th></tr></thead><tbody>'+body+'</tbody></table></div>';
+ content.innerHTML='<div class="table-wrap"><table><thead><tr><th>Дата</th><th>Тип уборки</th><th class="group" colspan="3">Время</th><th>ФИО ответственного лица</th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 [monthFilter,dateFrom,dateTo].forEach(el=>el.addEventListener('change',draw));
 document.getElementById('resetFilters').addEventListener('click',()=>{monthFilter.value='';dateFrom.value='';dateTo.value='';draw()});

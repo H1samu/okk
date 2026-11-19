@@ -135,6 +135,9 @@
     const fillBtn = fillUrl
       ? `<a class="btn btn-primary" href="${escapeHtml(fillUrl)}" target="_blank" rel="noopener">✏️ Заполнить</a>`
       : '';
+    const viewUrl = j.id === 'НАССР-К-01'
+      ? 'temperature.html'
+      : 'culinary_journal.html?id=' + encodeURIComponent(j.id);
     return `
       <div class="journal-card">
         <div class="jc-head">
@@ -148,7 +151,7 @@
         </div>
         <div class="jc-actions">
           ${fillBtn}
-          <a class="btn btn-primary" href="culinary_journal.html?id=${encodeURIComponent(j.id)}">📖 Просмотр</a>
+          <a class="btn btn-primary" href="${viewUrl}">📖 Просмотр</a>
         </div>
       </div>`;
   }

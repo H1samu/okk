@@ -32,13 +32,12 @@ select{min-width:190px}.field.period{min-width:140px}.reset{height:40px;padding:
 .state{padding:42px 20px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);font-size:14px;color:var(--muted)}.state.error{color:var(--danger);background:var(--danger-soft);border-color:transparent}
 .table-wrap{overflow:auto;max-height:70vh;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
 table{width:100%;min-width:850px;border-collapse:separate;border-spacing:0;font-size:13px}
-thead th{position:sticky;top:0;z-index:4;background:var(--soft);color:var(--text);text-align:left;padding:11px 13px;font-weight:700;border-bottom:1px solid var(--border-strong);border-right:1px solid var(--border-strong);white-space:nowrap}
-thead th:last-child{border-right:1px solid var(--border-strong)}
-thead th.group{text-align:center;border-left:1px solid var(--border-strong);border-right:1px solid var(--border-strong)}
+thead th{position:sticky;top:0;z-index:4;background:var(--soft);color:var(--text);text-align:left;padding:11px 13px;font-weight:700;border-bottom:1px solid var(--border);border-right:1px solid var(--border);white-space:nowrap}
+thead th.group{text-align:center}
 tbody td{padding:10px 13px;border-bottom:1px solid var(--border);border-right:1px solid var(--border);color:var(--secondary);white-space:nowrap}
 tbody tr:hover td{background:#fbfaf7}td.date,td.kind,td.person{color:var(--text)}td.date,td.kind{font-weight:600}
-td.date,td.person{vertical-align:middle}td.person{border-left:1px solid var(--border-strong);border-right:1px solid var(--border-strong)}
-td.time-merged{text-align:center;vertical-align:middle;font-weight:400;color:var(--secondary);border-left:1px solid var(--border-strong);border-right:1px solid var(--border-strong)}
+td.date,td.person{vertical-align:middle}
+td.time-merged{text-align:center;vertical-align:middle;font-weight:400;color:var(--secondary)}
 @media(max-width:600px){.wrap{padding:18px 12px 36px}h1{font-size:20px}.toolbar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:stretch}.toolbar .field:first-child{grid-column:1/-1}.toolbar .field,.toolbar .field.period{min-width:0;width:100%}.field select,.field input{width:100%;min-width:0}.reset{grid-column:1/-1;width:100%}}
 </style>
 </head>

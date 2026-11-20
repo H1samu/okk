@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>НАССР-К-03 Журнал уборки — Hismar Check</title>
+<script src="auth-guard.js"></script>
+<script>
+(function(){
+  var u=window.gcheckUser||{};
+  var ok=(u.type||'').trim().toLowerCase()==='администратор' ||
+         (u.position||'').trim().toLowerCase()==='сотрудник кулинарии';
+  if(!ok) location.replace('culinary.html');
+})();
+</script>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#3a5a52">
+<link rel="icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f5f1;--surface:#fff;--border:#e4e2d9;--border-strong:#c9c6b8;
+  --text:#20201c;--secondary:#6b6a61;--muted:#98968a;
+  --accent:#3a5a52;--soft:#e8efec;--danger:#9c3b34;--danger-soft:#fbebe9;
+  --success:#2f6a4f;--success-soft:#eaf4ed;--radius:12px;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;overflow-x:hidden}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Manrope,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,select{font:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1250px;margin:0 auto;padding:24px 20px 52px}
+.back{display:inline-flex;margin-bottom:18px;color:var(--secondary);text-decoration:none;font-size:13px}
+.back:hover{color:var(--accent)}
+header{margin-bottom:18px}
+h1{font-size:22px;line-height:1.3;margin:0 0 6px;font-weight:700}
+.subtitle{font-size:13px;color:var(--secondary);margin:0}
+.toolbar{display:flex;gap:12px;align-items:end;flex-wrap:wrap;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px}
+.field{display:flex;flex-direction:column;gap:6px;min-width:190px}
+.field label{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+select{height:42px;min-width:190px;padding:0 34px 0 12px;border:1px solid var(--border-strong);border-radius:9px;background:#fff;color:var(--text);font-size:13px}
+.hint{font-size:12px;color:var(--secondary);margin-left:auto;align-self:center}
+.status{display:flex;align-items:center;gap:8px;min-height:38px;margin:0 2px 12px;font-size:12px;color:var(--secondary)}
+.status-dot{width:8px;height:8px;border-radius:50%;background:#b9b6aa;flex:none}
+.status.ok .status-dot{background:#4c8a63}
+.status.error{color:var(--danger)}
+.status.error .status-dot{background:var(--danger)}
+.status.saving .status-dot{background:#c28b35}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:16px}
+.panel-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:16px 16px 12px}
+.panel-head h2{font-size:15px;line-height:1.3;margin:0;font-weight:700}
+.panel-head p{font-size:12px;color:var(--secondary);margin:4px 0 0}
+.legend{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:11px;color:var(--secondary)}
+.legend-item{display:inline-flex;align-items:center;gap:5px}
+.legend-chip{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;font-size:12px;font-weight:700}
+.legend-chip.t{background:#e8efec;color:var(--accent)}
+.legend-chip.g{background:#f7efe0;color:#8a5b17}
+.table-scroll{overflow:auto;max-height:68vh;border-top:1px solid var(--border);-webkit-overflow-scrolling:touch}
+.calendar{width:100%;min-width:850px;border-collapse:separate;border-spacing:0;font-size:12px}
+.calendar th,.calendar td{border-right:1px solid var(--border);border-bottom:1px solid var(--border);text-align:center}
+.calendar th:last-child,.calendar td:last-child{border-right:0}
+.calendar thead th{position:sticky;top:0;z-index:3;background:var(--soft);padding:11px 8px;font-weight:700;white-space:nowrap}
+.calendar thead th:first-child{left:0;z-index:5;min-width:90px}
+.calendar tbody td{height:43px;padding:4px 6px;background:#fff}
+.calendar tbody tr:last-child td{border-bottom:0}
+.calendar tbody td:first-child{position:sticky;left:0;z-index:2;background:#fbfaf7;text-align:left;padding-left:12px;font-weight:700;white-space:nowrap}
+.mark-btn{display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:62px;height:32px;border:1px solid transparent;border-radius:8px;background:#f6f5f1;color:#aaa79c;font-weight:700;font-size:13px;cursor:pointer;transition:background .12s,border-color .12s,transform .1s}
+.mark-btn:hover{border-color:var(--border-strong)}
+.mark-btn:active{transform:scale(.96)}
+.mark-btn.mark-t{background:#e8efec;color:var(--accent);border-color:#d8e4df}
+.mark-btn.mark-g{background:#f7efe0;color:#8a5b17;border-color:#ead9b8}
+.mark-btn:disabled{opacity:.55;cursor:wait}
+.responsible-panel{padding-bottom:16px}
+.people-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;padding:0 16px}
+.person-card{min-width:0;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff}
+.person-card h3{font-size:13px;font-weight:700;margin:0 0 10px}
+.person-field{display:flex;flex-direction:column;gap:5px;margin-top:9px}
+.person-field label{font-size:11px;font-weight:700;color:var(--secondary)}
+.person-field select{width:100%;min-width:0;height:39px;font-size:12px}
+.reference-panel{padding-bottom:14px}
+.reference-scroll{overflow:auto;padding:0 16px;-webkit-overflow-scrolling:touch}
+.reference-table{width:100%;min-width:640px;border-collapse:collapse;font-size:12px}
+.reference-table th,.reference-table td{border:1px solid var(--border);padding:10px 11px;text-align:left;vertical-align:top;line-height:1.5}
+.reference-table th{background:var(--soft);font-weight:700}
+.reference-table td:first-child{font-weight:700;white-space:nowrap}
+.reference-note{margin:12px 16px 0;padding:11px 12px;border-radius:9px;background:#f7f6f1;color:var(--secondary);font-size:12px;line-height:1.5}
+.empty{padding:36px 18px;text-align:center;color:var(--muted);font-size:13px}
+.loading{padding:42px 20px;text-align:center;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--muted);font-size:14px}
+.error-box{padding:18px;background:var(--danger-soft);border:1px solid #efd2ce;border-radius:var(--radius);color:var(--danger);font-size:13px;line-height:1.5}
+.small-note{font-size:11px;color:var(--muted);padding:0 16px}
+@media(max-width:700px){
+  .wrap{padding:18px 12px 36px}
+  h1{font-size:20px}
+  .toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;padding:13px}
+  .field,.field select{width:100%;min-width:0}
+  .hint{margin:0;align-self:start;line-height:1.45}
+  .panel-head{flex-direction:column;padding:14px 12px 11px}
+  .people-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding:0 12px;gap:8px}
+  .person-card{padding:10px}
+  .reference-scroll{padding:0 12px}
+  .reference-note{margin-left:12px;margin-right:12px}
+}
+@media(max-width:420px){
+  .people-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="back" href="culinary.html">← Кулинария</a>
+  <header>
+    <h1>НАССР-К-03 Журнал уборки</h1>
+    <p class="subtitle">Отметки текущей и генеральной уборки по помещениям</p>
+  </header>
+
+  <section class="toolbar" aria-label="Выбор месяца">
+    <div class="field">
+      <label for="monthSelect">Месяц журнала</label>
+      <select id="monthSelect" disabled><option>Загрузка…</option></select>
+    </div>
+    <div class="hint">Нажми на ячейку, чтобы переключить отметку: пусто → Т → Г → пусто. Изменения сохраняются в Google Sheets.</div>
+  </section>
+
+  <div id="status" class="status"><span class="status-dot"></span><span id="statusText">Подключение к журналу…</span></div>
+  <div id="mainContent"><div class="loading">Загружаем журнал…</div></div>
+</div>
+
+<script>
+'use strict';
+
+// Вставь сюда URL веб-приложения Apps Script, заканчивающийся на /exec.
+const API_URL = 'PASTE_WEB_APP_EXEC_URL_HERE';
+
+const monthSelect = document.getElementById('monthSelect');
+const mainContent = document.getElementById('mainContent');
+const statusEl = document.getElementById('status');
+const statusText = document.getElementById('statusText');
+
+let journal = null;
+let requestCounter = 0;
+
+function esc(value){
+  return String(value == null ? '' : value)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
+}
+
+function setStatus(message, type){
+  statusEl.className = 'status' + (type ? ' ' + type : '');
+  statusText.textContent = message;
+}
+
+function jsonp(params){
+  return new Promise(function(resolve,reject){
+    if(!API_URL || API_URL.indexOf('PASTE_') === 0){
+      reject(new Error('Не указан URL веб-приложения Apps Script.'));
+      return;
+    }
+
+    const callbackName = 'hismarK03Callback_' + Date.now() + '_' + (++requestCounter);
+    const script = document.createElement('script');
+    let finished = false;
+
+    const query = new URLSearchParams();
+    Object.keys(params).forEach(function(key){
+      query.set(key, params[key]);
+    });
+    query.set('callback', callbackName);
+    query.set('_', String(Date.now()));
+
+    function cleanup(){
+      if(script.parentNode) script.parentNode.removeChild(script);
+      try{ delete window[callbackName]; }catch(e){ window[callbackName] = undefined; }
+    }
+
+    const timer = setTimeout(function(){
+      if(finished) return;
+      finished = true;
+      cleanup();
+      reject(new Error('Сервер не ответил за 20 секунд.'));
+    },20000);
+
+    window[callbackName] = function(data){
+      if(finished) return;
+      finished = true;
+      clearTimeout(timer);
+      cleanup();
+
+      if(!data || data.success !== true){
+        reject(new Error(data && data.error ? data.error : 'Не удалось выполнить запрос.'));
+        return;
+      }
+      resolve(data);
+    };
+
+    script.onerror = function(){
+      if(finished) return;
+      finished = true;
+      clearTimeout(timer);
+      cleanup();
+      reject(new Error('Не удалось связаться с Apps Script. Проверь URL и публикацию веб-приложения.'));
+    };
+
+    script.src = API_URL + (API_URL.indexOf('?') === -1 ? '?' : '&') + query.toString();
+    document.head.appendChild(script);
+  });
+}
+
+function formatDate(iso){
+  const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match) return String(iso || '');
+  return match[3] + '.' + match[2] + '.' + match[1];
+}
+
+function loadJournal(sheetName){
+  monthSelect.disabled = true;
+  setStatus('Загружаем данные…','saving');
+  mainContent.innerHTML = '<div class="loading">Загружаем журнал…</div>';
+
+  const params = {action:'bootstrap'};
+  if(sheetName) params.sheet = sheetName;
+
+  jsonp(params).then(function(data){
+    journal = data;
+    renderJournal();
+    renderMonthOptions();
+    monthSelect.disabled = false;
+    setStatus('Данные загружены. Все изменения сохраняются в Google Sheets.','ok');
+  }).catch(function(error){
+    mainContent.innerHTML = '<div class="error-box">' + esc(error.message) + '</div>';
+    setStatus('Не удалось загрузить журнал.','error');
+    monthSelect.disabled = false;
+  });
+}
+
+function renderMonthOptions(){
+  const sheets = journal && Array.isArray(journal.sheets) ? journal.sheets : [];
+  monthSelect.innerHTML = sheets.map(function(item){
+    return '<option value="' + esc(item.name) + '">' + esc(item.title || item.name) + '</option>';
+  }).join('');
+
+  monthSelect.value = journal.sheet;
+}
+
+function renderCalendar(){
+  const rooms = journal.rooms || [];
+  const dates = journal.dates || [];
+  const dateRows = journal.dateRows || [];
+  const marks = journal.marks || [];
+
+  if(!dates.length){
+    return '<div class="empty">В выбранном месяце нет календарных дат.</div>';
+  }
+
+  let html = '<section class="panel"><div class="panel-head"><div><h2>Календарь уборки</h2><p>' +
+    esc(journal.title || journal.sheet) + ' · нажимай на отметку для изменения</p></div>' +
+    '<div class="legend"><span class="legend-item"><span class="legend-chip t">Т</span> Текущая уборка</span>' +
+    '<span class="legend-item"><span class="legend-chip g">Г</span> Генеральная уборка</span></div></div>' +
+    '<div class="table-scroll"><table class="calendar"><thead><tr><th>Дата</th>';
+
+  rooms.forEach(function(room){
+    html += '<th>' + esc(room) + '</th>';
+  });
+
+  html += '</tr></thead><tbody>';
+
+  dates.forEach(function(date,index){
+    html += '<tr><td>' + esc(formatDate(date)) + '</td>';
+
+    rooms.forEach(function(room,roomIndex){
+      const value = marks[index] && marks[index][roomIndex] ? marks[index][roomIndex] : '';
+      const cls = value === 'Т' ? 'mark-t' : value === 'Г' ? 'mark-g' : '';
+      const row = dateRows[index];
+
+      html += '<td><button type="button" class="mark-btn ' + cls + '" ' +
+        'data-mark="1" data-row="' + esc(row) + '" data-col="' + (roomIndex + 2) + '" ' +
+        'aria-label="' + esc(room) + ', ' + esc(formatDate(date)) + ': ' + (value || 'нет отметки') + '">' +
+        (value || '—') + '</button></td>';
+    });
+
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div><div class="small-note" style="padding-top:10px;padding-bottom:12px">Пустая ячейка означает, что уборка ещё не отмечена.</div></section>';
+  return html;
+}
+
+function renderResponsible(){
+  const rooms = journal.rooms || [];
+  const cleaning = journal.responsible && journal.responsible.cleaning || [];
+  const control = journal.responsible && journal.responsible.control || [];
+  const employees = journal.employees || {};
+  const cleaningList = employees.cleaning || [];
+  const controlList = employees.control || [];
+  const rows = journal.responsibleRows || {};
+
+  let html = '<section class="panel responsible-panel"><div class="panel-head"><div><h2>Ответственные сотрудники</h2>' +
+    '<p>Для каждого помещения можно выбрать своего ответственного за уборку и за контроль</p></div></div><div class="people-grid">';
+
+  rooms.forEach(function(room,index){
+    const cleaningValue = cleaning[index] || cleaningList[0] || '';
+    const controlValue = control[index] || controlList[0] || '';
+
+    html += '<article class="person-card"><h3>' + esc(room) + '</h3>' +
+      '<div class="person-field"><label for="cleaning-' + index + '">Ответственный за уборку</label>' +
+      '<select id="cleaning-' + index + '" data-person="1" data-kind="cleaning" data-col="' + (index + 2) + '" data-row="' + esc(rows.cleaning) + '">' +
+      optionList(cleaningList,cleaningValue) + '</select></div>' +
+      '<div class="person-field"><label for="control-' + index + '">Ответственный за контроль</label>' +
+      '<select id="control-' + index + '" data-person="1" data-kind="control" data-col="' + (index + 2) + '" data-row="' + esc(rows.control) + '">' +
+      optionList(controlList,controlValue) + '</select></div></article>';
+  });
+
+  html += '</div></section>';
+  return html;
+}
+
+function optionList(list,selected){
+  return list.map(function(name){
+    return '<option value="' + esc(name) + '"' + (name === selected ? ' selected' : '') + '>' + esc(name) + '</option>';
+  }).join('');
+}
+
+function renderReference(){
+  const reference = journal.reference || [];
+  const rows = reference.slice(1).filter(function(row){
+    return row && row[0];
+  });
+
+  let html = '<section class="panel reference-panel"><div class="panel-head"><div><h2>Памятка по видам уборки</h2>' +
+    '<p>Перечень работ по каждому помещению из исходного журнала</p></div></div>';
+
+  if(!rows.length){
+    return html + '<div class="empty">Справочная таблица пока не заполнена.</div></section>';
+  }
+
+  html += '<div class="reference-scroll"><table class="reference-table"><thead><tr>' +
+    '<th>Помещение</th><th>Текущая уборка (Т)</th><th>Генеральная уборка (Г)</th></tr></thead><tbody>';
+
+  rows.forEach(function(row){
+    html += '<tr><td>' + esc(row[0]) + '</td><td>' + esc(row[1] || '—') +
+      '</td><td>' + esc(row[3] || '—') + '</td></tr>';
+  });
+
+  html += '</tbody></table></div><div class="reference-note"><strong>Моющие и дезинфицирующие средства:</strong> Н-101, К-214.</div></section>';
+  return html;
+}
+
+function renderJournal(){
+  mainContent.innerHTML = renderCalendar() + renderResponsible() + renderReference();
+}
+
+function cycleMark(value){
+  if(value === '') return 'Т';
+  if(value === 'Т') return 'Г';
+  return '';
+}
+
+mainContent.addEventListener('click',function(event){
+  const button = event.target.closest('[data-mark="1"]');
+  if(!button || button.disabled || !journal) return;
+
+  const row = Number(button.dataset.row);
+  const col = Number(button.dataset.col);
+  const oldValue = button.textContent === '—' ? '' : button.textContent;
+  const newValue = cycleMark(oldValue);
+  const oldClass = button.className;
+
+  button.disabled = true;
+  button.textContent = newValue || '—';
+  button.classList.remove('mark-t','mark-g');
+  if(newValue === 'Т') button.classList.add('mark-t');
+  if(newValue === 'Г') button.classList.add('mark-g');
+
+  setStatus('Сохраняем отметку…','saving');
+
+  jsonp({
+    action:'setMark',
+    sheet:journal.sheet,
+    row:row,
+    col:col,
+    value:newValue
+  }).then(function(){
+    const index = journal.dateRows.indexOf(row);
+    if(index !== -1){
+      journal.marks[index][col - 2] = newValue;
+    }
+    button.disabled = false;
+    setStatus('Отметка сохранена.','ok');
+  }).catch(function(error){
+    button.className = oldClass;
+    button.textContent = oldValue || '—';
+    button.disabled = false;
+    setStatus('Ошибка сохранения: ' + error.message,'error');
+  });
+});
+
+mainContent.addEventListener('change',function(event){
+  const select = event.target.closest('select[data-person="1"]');
+  if(!select || !journal) return;
+
+  const row = Number(select.dataset.row);
+  const col = Number(select.dataset.col);
+  const kind = select.dataset.kind;
+  const value = select.value;
+  const previous = kind === 'cleaning'
+    ? journal.responsible.cleaning[col - 2]
+    : journal.responsible.control[col - 2];
+
+  select.disabled = true;
+  setStatus('Сохраняем ответственного…','saving');
+
+  jsonp({
+    action:'setResponsible',
+    sheet:journal.sheet,
+    row:row,
+    col:col,
+    value:value
+  }).then(function(){
+    journal.responsible[kind][col - 2] = value;
+    select.disabled = false;
+    setStatus('Ответственный сохранён.','ok');
+  }).catch(function(error){
+    select.value = previous || '';
+    select.disabled = false;
+    setStatus('Ошибка сохранения: ' + error.message,'error');
+  });
+});
+
+monthSelect.addEventListener('change',function(){
+  if(monthSelect.value) loadJournal(monthSelect.value);
+});
+
+loadJournal('');
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  });
+}
+</script>
+</body>
+</html>

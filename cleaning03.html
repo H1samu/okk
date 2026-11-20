@@ -66,6 +66,11 @@ select{height:42px;min-width:190px;padding:0 34px 0 12px;border:1px solid var(--
 .calendar tbody td{height:43px;padding:4px 6px;background:#fff}
 .calendar tbody tr:last-child td{border-bottom:0}
 .calendar tbody td:first-child{position:sticky;left:0;z-index:2;background:#fbfaf7;text-align:left;padding-left:12px;font-weight:700;white-space:nowrap}
+.weekday{display:block;margin-top:2px;font-size:10px;font-weight:500;color:var(--muted)}
+.responsible-row th,.responsible-row td{background:#fbfaf7;height:48px}
+.responsible-row th{position:sticky;left:0;z-index:2;text-align:left;padding:8px 10px;min-width:175px;font-weight:700;white-space:normal}
+.responsible-select{width:100%;min-width:120px;max-width:190px;height:34px;padding:0 24px 0 7px;border:1px solid var(--border-strong);border-radius:7px;background:#fff;font-size:11px;color:var(--text)}
+.responsible-select:disabled{opacity:.6}
 .mark-btn{display:inline-flex;align-items:center;justify-content:center;width:100%;max-width:62px;height:32px;border:1px solid transparent;border-radius:8px;background:#f6f5f1;color:#aaa79c;font-weight:700;font-size:13px;cursor:pointer;transition:background .12s,border-color .12s,transform .1s}
 .mark-btn:hover{border-color:var(--border-strong)}
 .mark-btn:active{transform:scale(.96)}
@@ -217,6 +222,13 @@ function formatDate(iso){
   return match[3] + '.' + match[2] + '.' + match[1];
 }
 
+function formatWeekday(iso){
+  const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if(!match) return '';
+  const date = new Date(Date.UTC(Number(match[1]),Number(match[2])-1,Number(match[3])));
+  return ['Вс','Пн','Вт','Ср','Чт','Пт','Сб'][date.getUTCDay()];
+}
+
 function loadJournal(sheetName){
   monthSelect.disabled = true;
   setStatus('Загружаем данные…','saving');
@@ -270,7 +282,7 @@ function renderCalendar(){
   html += '</tr></thead><tbody>';
 
   dates.forEach(function(date,index){
-    html += '<tr><td>' + esc(formatDate(date)) + '</td>';
+    html += '<tr><td>' + esc(formatDate(date)) + '<span class="weekday">' + esc(formatWeekday(date)) + '</span></td>';
 
     rooms.forEach(function(room,roomIndex){
       const value = marks[index] && marks[index][roomIndex] ? marks[index][roomIndex] : '';
@@ -286,6 +298,7 @@ function renderCalendar(){
     html += '</tr>';
   });
 
+  html += renderResponsibleRows();
   html += '</tbody></table></div><div class="small-note" style="padding-top:10px;padding-bottom:12px">Пустая ячейка означает, что уборка ещё не отмечена.</div></section>';
   return html;
 }
@@ -350,8 +363,32 @@ function renderReference(){
   return html;
 }
 
+function renderResponsibleRows(){
+  const rooms = journal.rooms || [];
+  const cleaning = journal.responsible && journal.responsible.cleaning || [];
+  const control = journal.responsible && journal.responsible.control || [];
+  const employees = journal.employees || {};
+  const cleaningList = employees.cleaning || [];
+  const controlList = employees.control || [];
+  const rows = journal.responsibleRows || {};
+
+  function buildRow(label, kind, list, values, rowNumber){
+    let html = '<tr class="responsible-row"><th scope="row">' + esc(label) + '</th>';
+    rooms.forEach(function(room,index){
+      const selected = values[index] || list[0] || '';
+      html += '<td><select class="responsible-select" data-person="1" data-kind="' + kind +
+        '" data-col="' + (index + 2) + '" data-row="' + esc(rowNumber) + '" aria-label="' +
+        esc(label + ', ' + room) + '">' + optionList(list,selected) + '</select></td>';
+    });
+    return html + '</tr>';
+  }
+
+  return buildRow('Ответственный за уборку','cleaning',cleaningList,cleaning,rows.cleaning) +
+         buildRow('Ответственный за контроль','control',controlList,control,rows.control);
+}
+
 function renderJournal(){
-  mainContent.innerHTML = renderCalendar() + renderResponsible() + renderReference();
+  mainContent.innerHTML = renderCalendar() + renderReference();
 }
 
 function cycleMark(value){

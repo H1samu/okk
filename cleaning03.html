@@ -125,7 +125,6 @@ select{height:42px;min-width:190px;padding:0 34px 0 12px;border:1px solid var(--
       <label for="monthSelect">Месяц журнала</label>
       <select id="monthSelect" disabled><option>Загрузка…</option></select>
     </div>
-    <div class="hint">Нажми на ячейку, чтобы переключить отметку: пусто → Т → Г → пусто. Изменения сохраняются в Google Sheets.</div>
   </section>
 
   <div id="status" class="status"><span class="status-dot"></span><span id="statusText">Подключение к журналу…</span></div>
@@ -270,7 +269,7 @@ function renderCalendar(){
   }
 
   let html = '<section class="panel"><div class="panel-head"><div><h2>Календарь уборки</h2><p>' +
-    esc(journal.title || journal.sheet) + ' · нажимай на отметку для изменения</p></div>' +
+    '</p></div>' +
     '<div class="legend"><span class="legend-item"><span class="legend-chip t">Т</span> Текущая уборка</span>' +
     '<span class="legend-item"><span class="legend-chip g">Г</span> Генеральная уборка</span></div></div>' +
     '<div class="table-scroll"><table class="calendar"><thead><tr><th>Дата</th>';

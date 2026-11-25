@@ -94,7 +94,10 @@ function managementCreateUser_(sheet, data, req) {
   if (row > sheet.getMaxRows()) sheet.insertRowsAfter(sheet.getMaxRows(), 1);
 
   const range = sheet.getRange(row, 1, 1, width);
-  range.setDataValidations(sheet.getRange(2, 1, 1, width).getDataValidations());
+  const template = sheet.getRange(2, 1, 1, width);
+  template.copyTo(range, SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
+  // Копирование правила сохраняет вид и цвета выпадающего списка из шаблона.
+  template.copyTo(range, SpreadsheetApp.CopyPasteType.PASTE_DATA_VALIDATION, false);
   const entry = Array(width).fill('');
   entry[columns.id] = id;
   entry[columns.name] = name;

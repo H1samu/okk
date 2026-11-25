@@ -9,24 +9,35 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{--green:#3a5a52;--bg:#f6f5f1;--line:#e4e2d9}
+:root{--green:#3a5a52;--bg:#f6f5f1;--line:#e4e2d9;--muted:#6b6a61;--danger:#9c3b34}
 *{box-sizing:border-box}
+[hidden]{display:none !important}
 body{margin:0;padding:22px;background:var(--bg);font-family:Manrope,Arial,sans-serif;color:#20201c}
-.wrap{max-width:1200px;margin:auto}
+.wrap{max-width:1040px;margin:auto}
 .head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
 h1{margin:0 0 6px;font-size:22px}
-.muted{color:#6b6a61;font-size:13px}
+.muted,.status{color:var(--muted);font-size:13px}
 .back-link{display:inline-block;margin-bottom:20px;color:var(--green);font-size:13px;text-decoration:none}
-a:focus-visible,button:focus-visible,.table-wrap:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+:focus-visible{outline:2px solid var(--green);outline-offset:2px}
 .button{display:inline-flex;align-items:center;min-height:44px;border:0;border-radius:999px;padding:0 16px;background:var(--green);color:#fff;text-decoration:none;font:600 13px Manrope,Arial,sans-serif;cursor:pointer}
-.button[hidden]{display:none}
-.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:18px;max-height:72vh}
+.button:disabled{opacity:.55;cursor:default}
+.search{display:grid;gap:6px;max-width:360px;margin:22px 0 12px;font-size:13px;font-weight:600}
+.search input{width:100%;min-height:44px;padding:0 14px;border:1px solid #c9c6b8;border-radius:10px;background:#fff;color:inherit;font:inherit}
+.matches{display:grid;gap:8px;padding:0;list-style:none}
+.employee{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:13px}
+.employee strong{display:block;margin-bottom:3px}
+.reset{min-height:36px;padding:0 12px;background:#fbebe9;color:var(--danger);border:1px solid #f2d7d3}
+.table-wrap{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;margin-top:14px;max-height:72vh}
 table{border-collapse:separate;border-spacing:0;width:100%;font-size:13px}
-th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top;min-width:110px;white-space:pre-wrap;overflow-wrap:anywhere}
-th{background:#e8efec;color:#20201c;position:sticky;top:0}
-th:nth-child(n+5):nth-child(-n+7){min-width:210px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{background:#e8efec;position:sticky;top:0}
+th button{border:0;background:transparent;color:inherit;padding:0;font:inherit;text-align:left;cursor:pointer}
+.arrow{margin-left:5px;color:var(--green)}
+td:first-child{white-space:nowrap;font-variant-numeric:tabular-nums}
+td:nth-child(2){min-width:165px}
 tr:nth-child(even) td{background:#f7f9f8}
-.status{margin:18px 0 12px;color:#6b6a61}
+.status{margin:14px 0 12px}
+.notice:empty{display:none}
 </style>
 </head>
 <body>
@@ -37,80 +48,242 @@ tr:nth-child(even) td{background:#f7f9f8}
       <h1>Результаты тестирования</h1>
       <div class="muted" id="meta"></div>
     </div>
-    <a class="button" id="sheetLink" href="https://docs.google.com/spreadsheets/d/1sNKXxXegeBt8w4rrL_5je_XHvT1eijVMad6LWjkPEgM/edit?gid=377642348#gid=377642348" target="_blank" rel="noopener" hidden>Открыть в Google Таблицах</a>
+    <a class="button" id="sheetLink" href="https://docs.google.com/spreadsheets/d/1sNKXxXegeBt8w4rrL_5je_XHvT1eijVMad6LWjkPEgM/edit?gid=377642348#gid=377642348" target="_blank" rel="noopener" hidden>Подробности в Google Таблицах</a>
   </header>
+  <div class="search" id="searchBox" hidden>
+    <label for="nameSearch">Поиск по фамилии</label>
+    <input type="search" id="nameSearch" placeholder="Введите фамилию или ФИО" autocomplete="off">
+  </div>
+  <p class="notice status" id="notice" role="status"></p>
+  <ul class="matches" id="matches" aria-label="Найденные сотрудники" hidden></ul>
   <p class="status" id="status" role="status">Проверяем права доступа…</p>
   <button class="button" id="retry" type="button" hidden>Повторить загрузку</button>
   <div class="table-wrap" id="tableWrap" tabindex="0" role="region" aria-label="Таблица результатов" hidden>
-    <table id="results"></table>
+    <table id="results"><thead></thead><tbody></tbody></table>
   </div>
 </main>
 <script>
   const meta = document.getElementById('meta');
   const statusEl = document.getElementById('status');
+  const notice = document.getElementById('notice');
   const sheetLink = document.getElementById('sheetLink');
   const retry = document.getElementById('retry');
+  const searchBox = document.getElementById('searchBox');
+  const search = document.getElementById('nameSearch');
+  const matches = document.getElementById('matches');
   const tableWrap = document.getElementById('tableWrap');
   const table = document.getElementById('results');
 
+  const collator = new Intl.Collator('ru', { numeric: true });
+  const grades = ['Тест не пройден', 'Удовлетворительно', 'Хорошо', 'Отлично'];
+  let results;
+  let sortColumn = 0;
+  let sortDirection = -1;
+  let resetting = false;
+  let loading = false;
+
+  function normalize(value){
+    return String(value).toLowerCase().replace(/ё/g, 'е').replace(/\s+/g, ' ').trim();
+  }
+
   function checkAccess(){
     if(window.gcheckCanViewTestResults()) return true;
-    table.replaceChildren();
-    tableWrap.hidden = true;
-    sheetLink.hidden = true;
+    results = null;
+    table.tBodies[0].replaceChildren();
+    matches.replaceChildren();
+    [tableWrap, sheetLink, searchBox, matches, retry].forEach(el => { el.hidden = true; });
     meta.textContent = '';
+    notice.textContent = '';
     statusEl.hidden = false;
     statusEl.textContent = 'У вашей должности нет доступа к результатам.';
     return false;
   }
 
-  function render(data){
-    meta.textContent = 'Всего попыток: ' + data.total;
-    sheetLink.hidden = false;
-    if(!data.rows.length){
-      statusEl.textContent = 'Пока нет сохранённых результатов.';
-      return;
-    }
-    const headerRow = table.createTHead().insertRow();
-    for(const title of data.headers){
+  function renderHeaders(headers){
+    const head = table.tHead;
+    head.replaceChildren();
+    const row = head.insertRow();
+    headers.forEach((title, column) => {
       const th = document.createElement('th');
       th.scope = 'col';
-      th.textContent = title;
-      headerRow.append(th);
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.textContent = title;
+      const arrow = document.createElement('span');
+      arrow.className = 'arrow';
+      arrow.setAttribute('aria-hidden', 'true');
+      button.append(arrow);
+      button.addEventListener('click', () => {
+        sortDirection = sortColumn === column ? -sortDirection : 1;
+        sortColumn = column;
+        render();
+      });
+      th.append(button);
+      row.append(th);
+    });
+  }
+
+  function sortValue(row){
+    const value = row.cells[sortColumn];
+    if(sortColumn === 0) return row.timestamp;
+    if(sortColumn === 2 || sortColumn === 4){
+      const text = String(value).trim();
+      const number = Number(text.replace(',', '.'));
+      return text && Number.isFinite(number) ? number : null;
     }
-    const body = table.createTBody();
-    for(const row of data.rows){
+    if(sortColumn === 3){
+      const rank = grades.indexOf(value);
+      return rank < 0 ? null : rank;
+    }
+    return normalize(value);
+  }
+
+  function compareRows(a, b){
+    const left = sortValue(a);
+    const right = sortValue(b);
+    if(left === right) return 0;
+    if(left === null) return 1;
+    if(right === null) return -1;
+    const comparison = typeof left === 'number' ? left - right : collator.compare(left, right);
+    return sortDirection * comparison;
+  }
+
+  function renderMatches(employees){
+    matches.replaceChildren();
+    for(const employee of employees){
+      const item = document.createElement('li');
+      item.className = 'employee';
+      const info = document.createElement('div');
+      const name = document.createElement('strong');
+      name.textContent = employee.name;
+      const count = document.createElement('span');
+      count.className = 'muted';
+      count.textContent = 'Использовано попыток: ' + employee.attempts;
+      info.append(name, count);
+      item.append(info);
+      if(results.canReset && employee.revision){
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'button reset';
+        button.textContent = 'Обнулить попытки';
+        button.setAttribute('aria-label', 'Обнулить попытки — ' + employee.name);
+        button.disabled = resetting;
+        button.addEventListener('click', () => resetAttempts(employee));
+        item.append(button);
+      }
+      matches.append(item);
+    }
+    matches.hidden = employees.length === 0;
+  }
+
+  function render(){
+    if(!results) return;
+    const query = normalize(search.value);
+    const employees = query ? results.employees.filter(employee => employee.key.includes(query)) : [];
+    const keys = new Set(employees.map(employee => employee.key));
+    const rows = results.rows.filter(row => !query || keys.has(row.key)).sort(compareRows);
+
+    meta.textContent = 'Всего попыток: ' + results.rows.length;
+    renderMatches(employees);
+    statusEl.textContent = query ? 'По этому запросу нет сохранённых результатов.' : 'Пока нет сохранённых результатов.';
+    statusEl.hidden = rows.length !== 0;
+    tableWrap.hidden = rows.length === 0;
+    Array.from(table.tHead.rows[0].cells).forEach((cell, column) => {
+      const sorted = sortColumn === column;
+      cell.setAttribute('aria-sort', sorted ? (sortDirection === 1 ? 'ascending' : 'descending') : 'none');
+      cell.querySelector('.arrow').textContent = sorted ? (sortDirection === 1 ? '▲' : '▼') : '↕';
+    });
+    const body = table.tBodies[0];
+    body.replaceChildren();
+    for(const row of rows){
       const tr = body.insertRow();
-      for(const value of row) tr.insertCell().textContent = value;
+      for(const value of row.cells) tr.insertCell().textContent = value;
     }
-    tableWrap.hidden = false;
-    statusEl.hidden = true;
+  }
+
+  function handleAccessError(error){
+    if(['invalid', 'expired', 'inactive'].includes(error.message)){
+      window.gcheckLogout();
+      return true;
+    }
+    return false;
   }
 
   async function load(){
+    if(loading || !checkAccess()) return;
+    loading = true;
     retry.hidden = true;
-    if(!checkAccess()) return;
+    results = null;
+    matches.replaceChildren();
+    table.tBodies[0].replaceChildren();
+    [matches, tableWrap, searchBox, sheetLink].forEach(el => { el.hidden = true; });
+    meta.textContent = '';
     statusEl.textContent = 'Загружаем результаты…';
     statusEl.hidden = false;
     try{
       const data = await window.gcheckRequest('testGetResults');
-      if(checkAccess()) render(data);
+      if(!checkAccess()) return;
+      results = {
+        rows: data.rows.map((cells, index) => ({ cells, key: normalize(cells[1]), timestamp: data.timestamps[index] })),
+        employees: data.employees,
+        canReset: data.canReset
+      };
+      renderHeaders(data.headers);
+      sheetLink.hidden = false;
+      searchBox.hidden = false;
+      render();
     }catch(error){
-      if(['invalid', 'expired', 'inactive'].includes(error.message)){
-        window.gcheckLogout();
-        return;
-      }
-      if(error.message === 'forbidden'){
-        statusEl.textContent = 'У вашей должности нет доступа к результатам.';
-        return;
-      }
-      statusEl.textContent = 'Не удалось загрузить результаты.';
-      retry.hidden = false;
+      if(handleAccessError(error)) return;
+      const forbidden = error.message === 'forbidden';
+      statusEl.textContent = forbidden ? 'У вашей должности нет доступа к результатам.' : 'Не удалось загрузить результаты.';
+      retry.hidden = forbidden;
+    }finally{
+      loading = false;
     }
   }
 
+  async function resetAttempts(employee){
+    if(resetting || !results?.canReset || !checkAccess()) return;
+    const warning = 'Вы хотите удалить результаты тестирования сотрудника «' + employee.name + '»?\n\n' +
+      'Все его результаты будут удалены из Google Таблиц, а количество использованных попыток станет равным 0.';
+    if(!window.confirm(warning)) return;
+
+    resetting = true;
+    matches.querySelectorAll('.reset').forEach(button => { button.disabled = true; });
+    search.disabled = true;
+    notice.textContent = 'Обнуляем попытки…';
+    try{
+      await window.gcheckRequest('testResetResults', { name: employee.name, revision: employee.revision });
+      if(!checkAccess()) return;
+      results.rows = results.rows.filter(row => row.key !== employee.key);
+      results.employees = results.employees.filter(item => item.key !== employee.key);
+      notice.textContent = employee.name + ' — использовано попыток: 0.';
+    }catch(error){
+      if(handleAccessError(error)) return;
+      const messages = {
+        results_changed: 'Результаты изменились. Проверьте обновлённый список.',
+        busy: 'Таблица сейчас обновляется. Повторите попытку.',
+        forbidden: 'Сбрасывать попытки могут только администраторы.'
+      };
+      notice.textContent = Object.hasOwn(messages, error.message) ? messages[error.message] : 'Не удалось подтвердить сброс. Проверьте обновлённый список.';
+      await load();
+    }finally{
+      resetting = false;
+      search.disabled = false;
+      render();
+      search.focus();
+    }
+  }
+
+  search.addEventListener('input', () => {
+    notice.textContent = '';
+    render();
+  });
   retry.addEventListener('click', load);
-  document.addEventListener('gcheck:user', checkAccess);
+  document.addEventListener('gcheck:user', () => {
+    if(!checkAccess()) return;
+    if(!results || (results.canReset && window.gcheckUser.type !== 'Администратор')) load();
+  });
   load();
 </script>
 </body>

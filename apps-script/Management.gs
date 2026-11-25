@@ -183,8 +183,115 @@ function managementTestResults_(token) {
     return { ok: false, error: 'forbidden' };
   }
 
+  const sheet = managementTestSheet_();
+  const timezone = sheet.getParent().getSpreadsheetTimeZone();
+  const records = managementTestRows_(sheet).reverse();
+  const canReset = actor.type === CFG.ADMIN_POSITION;
+  const groups = new Map();
+  const timestamps = [];
+
+  const rows = records.map(record => {
+    const { date, name, score, grade, attempt } = record;
+    const key = normalize_(name);
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(record);
+    timestamps.push(managementTestTimestamp_(date, timezone));
+
+    const displayDate = date instanceof Date
+      ? Utilities.formatDate(date, timezone, 'dd.MM.yyyy HH:mm:ss')
+      : String(date);
+    return [displayDate, name, score, grade, attempt];
+  });
+
+  const employees = [...groups].map(([key, matches]) => ({
+    key,
+    name: matches[0].name,
+    attempts: matches.length,
+    ...(canReset ? { revision: managementTestRevision_(matches) } : {})
+  }));
+
+  return {
+    ok: true,
+    headers: ['Дата и время', 'ФИО сотрудника', 'Баллы', 'Оценка', 'Количество попыток'],
+    rows,
+    timestamps,
+    employees,
+    canReset,
+    total: rows.length
+  };
+}
+
+function managementResetTestResults_(req) {
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(5000)) return { ok: false, error: 'busy' };
+  try {
+    const actor = checkToken_(req.token, true);
+    if (!actor.ok) return actor;
+    if (actor.type !== CFG.ADMIN_POSITION) return { ok: false, error: 'forbidden' };
+
+    const key = normalize_(req.name);
+    if (!key || typeof req.revision !== 'string' || !req.revision) {
+      return { ok: false, error: 'bad_request' };
+    }
+    const sheet = managementTestSheet_();
+    const records = managementTestRows_(sheet)
+      .filter(record => normalize_(record.name) === key).reverse();
+    if (!records.length || managementTestRevision_(records) !== req.revision) {
+      return { ok: false, error: 'results_changed' };
+    }
+
+    // Сначала убираем сохранённые сессии, чтобы после удаления строк не вернуть устаревший результат.
+    const props = PropertiesService.getScriptProperties();
+    const active = testReadUserState_(props, key);
+    if (active.activeSessionId) props.deleteProperty(testSessionKey_(active.activeSessionId, key));
+    props.deleteProperty(testUserStateKey_(key));
+    for (const [property, raw] of Object.entries(props.getProperties())) {
+      if (!property.startsWith('TEST_SESSION_')) continue;
+      let session;
+      try { session = JSON.parse(raw); }
+      catch (error) { continue; }
+      if (session && normalize_(session.user) === key) props.deleteProperty(property);
+    }
+
+    for (const record of records) sheet.deleteRow(record.sheetRow);
+    SpreadsheetApp.flush();
+    return { ok: true, removed: records.length };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function managementTestSheet_() {
   const sheet = SpreadsheetApp.openById(TEST_CFG.SPREADSHEET_ID).getSheetById(377642348);
-  const [headers, ...values] = sheet.getDataRange().getDisplayValues();
-  const rows = values.filter(row => row.some(value => value !== '')).reverse();
-  return { ok: true, headers, rows, total: rows.length };
+  if (!sheet) throw new Error('Лист результатов тестирования не найден');
+  return sheet;
+}
+
+function managementTestRows_(sheet) {
+  const count = sheet.getLastRow() - 1;
+  if (count < 1) return [];
+
+  return sheet.getRange(2, 1, count, 8).getValues().flatMap((row, index) => {
+    const [date, name, score, grade, , , , attempt] = row;
+    const employee = String(name).trim();
+    return employee ? [{ date, name: employee, score, grade, attempt, sheetRow: index + 2 }] : [];
+  });
+}
+
+function managementTestTimestamp_(date, timezone) {
+  if (date instanceof Date) return date.getTime();
+  const text = String(date).trim();
+  if (/^\d{1,2}\.\d{1,2}\.\d{4}(?: \d{1,2}:\d{2}(?::\d{2})?)?$/.test(text)) {
+    const format = text.includes(':') ? (text.split(':').length === 3 ? 'd.M.yyyy H:mm:ss' : 'd.M.yyyy H:mm') : 'd.M.yyyy';
+    try { return Utilities.parseDate(text, timezone, format).getTime(); }
+    catch (error) { return null; }
+  }
+  const timestamp = /^\d{4}-\d{2}-\d{2}/.test(text) ? Date.parse(text) : NaN;
+  return Number.isFinite(timestamp) ? timestamp : null;
+}
+
+function managementTestRevision_(records) {
+  return hashKey_(JSON.stringify(records.map(({ date, name, score, grade, attempt }) =>
+    [date, name, score, grade, attempt]
+  )));
 }

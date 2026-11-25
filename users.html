@@ -61,7 +61,7 @@
   .form{margin:20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
   .form legend{padding:0 6px;font-size:14px;font-weight:700;}
   .fields{display:flex;align-items:end;flex-wrap:wrap;gap:12px;}
-  .fields label{display:grid;gap:5px;font-size:13px;flex:1;min-width:160px;}
+  .field{display:grid;gap:5px;font-size:13px;flex:1;min-width:160px;}
   .fields input,.fields select{
     width:100%;min-height:44px;padding:8px;border:1px solid var(--border-strong);
     border-radius:8px;font:inherit;background:var(--surface);color:var(--text);
@@ -130,9 +130,18 @@
     <fieldset class="form" id="createFields" disabled>
       <legend>Новый пользователь</legend>
       <div class="fields">
-        <label>ФИО <input name="name" required maxlength="150" autocomplete="off"></label>
-        <label>Должность <select name="position" required></select></label>
-        <label>Статус <select name="status" required></select></label>
+        <div class="field">
+          <label for="newName">ФИО</label>
+          <input id="newName" name="name" required maxlength="150" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="newPosition">Должность</label>
+          <select id="newPosition" name="position" required></select>
+        </div>
+        <div class="field">
+          <label for="newStatus">Статус</label>
+          <select id="newStatus" name="status" required></select>
+        </div>
         <button class="action primary" type="submit">Создать пользователя</button>
       </div>
     </fieldset>

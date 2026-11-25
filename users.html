@@ -256,7 +256,7 @@
       return;
     }
 
-    const columns = [['№'], ['ФИО', 'name'], ['PIN-код'], ['Должность', 'position'], ['Статус', 'status'], ['Действия']];
+    const columns = [['ФИО', 'name'], ['PIN-код'], ['Должность', 'position'], ['Статус', 'status'], ['Действия']];
     const header = columns.map(([title, key]) => {
       if(!key) return '<th scope="col">' + title + '</th>';
       const sort = key === sortKey ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
@@ -268,7 +268,7 @@
     const rows = visibleUsers.map((user, index) => {
       const active = user.status === statuses[0];
       const label = active ? 'Деактивировать' : 'Активировать';
-      return '<tr><td>' + escapeHtml(user.id) + '</td><td class="name">' + highlight(user.name, query) +
+      return '<tr><td class="name">' + highlight(user.name, query) +
         '</td><td class="pin">' + escapeHtml(user.pin || '—') + '</td><td>' + highlight(user.position, query) +
         '</td><td>' + escapeHtml(user.status || '—') + '</td><td><div class="actions">' +
         '<button type="button" class="action button-small" data-row="' + index + '" data-operation="setStatus">' + label + '</button>' +

@@ -694,6 +694,17 @@
   </div>
 
   <div class="quick-row" hidden>
+    <button class="tile tile-fav" id="favToggle" type="button" data-block="Избранное" aria-pressed="false" hidden>
+      <span class="tile-icon">⭐</span>
+      <span class="tile-text" id="favText">Избранное</span>
+      <span class="tile-badge count" id="favBadge">0</span>
+    </button>
+    <a class="tile tile-sgi" href="sgi.html" data-block="Заявки для СГИ" hidden>
+      <span class="tile-icon">🛠️</span>
+      <span class="tile-text">Заявки для СГИ</span>
+    </a>
+    <a class="tile" href="test.html" data-block="Проверка знаний" hidden><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
+
 <a class="tile tile-master" href="master.html" data-block="Мастер-таблица" hidden>
   <span class="tile-icon">📊</span>
   <span class="tile-text">Мастер-таблица</span>
@@ -714,17 +725,11 @@
   <span class="tile-text">Кулинария</span>
 </a>  
 
-    <a class="tile" href="test.html" data-block="Проверка знаний" hidden><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
     <a class="tile" href="test-results.html" data-block="Результаты тестирования" hidden>
       <span class="tile-icon" aria-hidden="true">📋</span>
       <span class="tile-text">Результаты тестирования</span>
     </a>
 
-    
-    <a class="tile tile-sgi" href="sgi.html" data-block="Заявки для СГИ" hidden>
-      <span class="tile-icon">🛠️</span>
-      <span class="tile-text">Заявки для СГИ</span>
-    </a>
 <a class="tile" href="sensors.html" data-block="Датчики" hidden>
   <span class="tile-icon">🌡️</span>
   <span class="tile-text">Датчики</span>
@@ -735,11 +740,6 @@
   <span class="tile-text">Контроль заполнения</span>
 </a>
     
-    <button class="tile tile-fav" id="favToggle" type="button" data-block="Избранное" aria-pressed="false" hidden>
-      <span class="tile-icon">⭐</span>
-      <span class="tile-text" id="favText">Избранное</span>
-      <span class="tile-badge count" id="favBadge">0</span>
-    </button>
     <button class="tile" id="moreModules" type="button" aria-haspopup="dialog" aria-controls="modulesDialog" hidden>
       <span class="tile-icon" aria-hidden="true">⋯</span>
       <span class="tile-text">Ещё</span>

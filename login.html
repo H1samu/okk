@@ -403,7 +403,7 @@
         console.log('login response', d);
         localStorage.setItem(AUTH_KEY, JSON.stringify({
           token: d.token, name: d.name, type: d.type, position: d.position, allowed: d.allowed,
-exp: d.expiresAt, checkedAt: Date.now()
+          blocks: d.blocks, exp: d.expiresAt, checkedAt: Date.now()
         }));
         localStorage.removeItem('gcheck_auth_time'); // старая сессия по общему паролю
 

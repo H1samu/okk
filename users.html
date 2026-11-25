@@ -2,11 +2,6 @@
 <html lang="ru">
 <head>
 <script src="auth-guard.js"></script>
-<script>
-  if(!window.gcheckUser || (window.gcheckUser.type || '').trim().toLowerCase() !== 'администратор'){
-    location.replace('index.html');
-  }
-</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Пользователи системы — Hismar Check</title>
@@ -28,7 +23,6 @@
     --accent:#3a5a52;
     --accent-soft:#e8efec;
     --danger:#9c3b34;
-    --danger-soft:#fbebe9;
     --radius:12px;
   }
   *{box-sizing:border-box;}
@@ -41,7 +35,7 @@
   }
   button{font-family:inherit;}
   :focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
-  .wrap{max-width:900px; margin:0 auto; padding:24px 20px 60px;}
+  .wrap{max-width:1100px; margin:0 auto; padding:24px 20px 60px;}
   .back-link{
     display:inline-flex; align-items:center; gap:6px;
     font-size:13px; color:var(--text-secondary);
@@ -51,14 +45,31 @@
   header{margin-bottom:20px;}
   h1{font-size:22px; font-weight:700; margin:0 0 6px;}
   header p{font-size:13px; color:var(--text-secondary); margin:0;}
+  [hidden]{display:none !important;}
   .ext-links{display:flex; gap:10px; flex-wrap:wrap; margin-top:14px;}
-  .ext-links a{
+  .ext-links a,.action{
     display:inline-flex; align-items:center; gap:7px; min-height:44px;
     font-size:13px; font-weight:600; text-decoration:none;
     color:var(--accent); background:var(--accent-soft);
     border:1px solid var(--border); border-radius:999px; padding:0 16px;
   }
-  .ext-links a:hover{border-color:var(--border-strong);}
+  .ext-links a:hover,.action:hover{border-color:var(--border-strong);}
+  .action{cursor:pointer;}
+  .action:disabled{opacity:.55;cursor:default;}
+  .primary{background:var(--accent);color:#fff;}
+  .button-small{min-height:36px;padding:0 11px;}
+  .form{margin:20px 0;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;}
+  .form legend{padding:0 6px;font-size:14px;font-weight:700;}
+  .fields{display:flex;align-items:end;flex-wrap:wrap;gap:12px;}
+  .fields label{display:grid;gap:5px;font-size:13px;flex:1;min-width:160px;}
+  .fields input,.fields select{
+    width:100%;min-height:44px;padding:8px;border:1px solid var(--border-strong);
+    border-radius:8px;font:inherit;background:var(--surface);color:var(--text);
+  }
+  .message{margin:0 0 10px;font-size:13px;color:var(--accent);}
+  .message:empty{display:none;}
+  .message.error{color:var(--danger);}
+  .actions{display:flex;gap:8px;}
 
   .toolbar{display:flex; align-items:center; gap:12px; margin:18px 0 12px; flex-wrap:wrap;}
   .search-box{position:relative; flex:1; min-width:200px;}
@@ -78,7 +89,6 @@
     text-align:center; padding:50px 20px; color:var(--text-muted); font-size:14px;
     background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
   }
-  .state-box.error{color:var(--danger); background:var(--danger-soft); border-color:transparent;}
 
   .table-scroll{
     background:var(--surface); border:1px solid var(--border);
@@ -90,8 +100,7 @@
     color:var(--text); text-align:left; padding:10px 14px; font-weight:600;
     border-bottom:1px solid var(--border-strong);
   }
-  th.sortable{cursor:pointer; user-select:none;}
-  th.sortable:hover{background:#dfe9e5;}
+  th button{padding:0;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;}
   th .sort-arrow{display:inline-block; margin-left:4px; color:var(--text-muted); font-size:11px;}
   th.sort-active .sort-arrow{color:var(--accent);}
   tbody td{
@@ -107,129 +116,264 @@
 </head>
 <body>
 
-<div class="wrap">
-  <a class="back-link" href="master.html">← Мастер-таблица</a>
+<main class="wrap">
+  <a class="back-link" href="index.html">← На главную</a>
 
   <header>
     <h1>Пользователи системы</h1>
-    <div class="ext-links">
-      <a href="https://docs.google.com/spreadsheets/d/1HwSWknOgkaHRKmDuJGH7jo6E5eUy1KKm4KYe5DErZbE/edit?gid=0#gid=0" target="_blank" rel="noopener">📊 Открыть таблицу пользователей</a>
+    <div class="ext-links" id="sheetLink" hidden>
+      <a href="https://docs.google.com/spreadsheets/d/1HwSWknOgkaHRKmDuJGH7jo6E5eUy1KKm4KYe5DErZbE/edit?gid=0#gid=0" target="_blank" rel="noopener">Открыть в Google Таблицах</a>
     </div>
   </header>
 
+  <form id="createForm" hidden>
+    <fieldset class="form" id="createFields" disabled>
+      <legend>Новый пользователь</legend>
+      <div class="fields">
+        <label>ФИО <input name="name" required maxlength="150" autocomplete="off"></label>
+        <label>Должность <select name="position" required></select></label>
+        <label>Статус <select name="status" required></select></label>
+        <button class="action primary" type="submit">Создать пользователя</button>
+      </div>
+    </fieldset>
+  </form>
+
   <div class="toolbar">
-    <div class="search-box">
-      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      <input type="text" id="searchInput" placeholder="Поиск по ФИО или должности" autocomplete="off">
+    <div class="search-box" id="searchBox" hidden>
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="search" id="searchInput" aria-label="Поиск по ФИО или должности" placeholder="Поиск по ФИО или должности" autocomplete="off">
     </div>
+    <button class="action" type="button" id="refresh" hidden>Обновить список</button>
   </div>
 
+  <p class="message" id="message" role="status"></p>
   <div class="row-count" id="rowCount"></div>
-  <div id="content"><div class="state-box">Загрузка...</div></div>
-</div>
+  <div id="content"><div class="state-box">Загружаем пользователей…</div></div>
+</main>
 
 <script>
-  const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw65iyi4m1X3Bu1KIrcJwiQCnqQ83odteQc2MtEYnkEjHCiVqQV6sIVwJoUYrCQFR2ALQ/exec';
+  const content = document.getElementById('content');
+  const rowCount = document.getElementById('rowCount');
+  const search = document.getElementById('searchInput');
+  const searchBox = document.getElementById('searchBox');
+  const sheetLink = document.getElementById('sheetLink');
+  const refresh = document.getElementById('refresh');
+  const message = document.getElementById('message');
+  const form = document.getElementById('createForm');
+  const fields = document.getElementById('createFields');
 
-  const contentEl = document.getElementById('content');
-  const rowCountEl = document.getElementById('rowCount');
-  const searchInput = document.getElementById('searchInput');
-
-  // cols: 0 = ФИО, 1 = Пинкод, 2 = Должность
   let users = [];
-  let sortCol = 0;
+  let visibleUsers = [];
+  let statuses = [];
+  let sortKey = 'name';
   let sortDir = 1;
+  let busy = false;
 
-  function escapeHtml(str){
-    return String(str)
-      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+  function canManageUsers(){
+    return (window.gcheckUser?.type || '').trim().toLowerCase() === 'администратор';
+  }
+
+  function checkAccess(){
+    if(canManageUsers()) return true;
+    users = [];
+    content.replaceChildren();
+    rowCount.textContent = '';
+    [sheetLink, form, searchBox, refresh].forEach(el => { el.hidden = true; });
+    if(window.gcheckUser) location.replace('index.html');
+    return false;
+  }
+
+  function request(operation, params = {}){
+    return window.gcheckRequest('manageUsers', { operation, ...params });
+  }
+
+  function showMessage(text, isError = false){
+    message.classList.toggle('error', isError);
+    message.textContent = text;
+  }
+
+  function reportError(error, fallback){
+    const code = error.message;
+    if(['invalid', 'expired', 'inactive'].includes(code)){
+      window.gcheckLogout();
+      return;
+    }
+    if(code === 'forbidden'){
+      location.replace('index.html');
+      return;
+    }
+    const messages = {
+      duplicate_name: 'Пользователь с таким ФИО уже существует.',
+      invalid_name: 'Введите ФИО пользователя.',
+      invalid_position: 'Выберите должность из списка.',
+      invalid_status: 'Выберите статус из списка.',
+      user_changed: 'Данные пользователя изменились. Обновите список и повторите действие.',
+      pin_exhausted: 'Свободные четырёхзначные PIN-коды закончились.',
+      busy: 'Таблица сейчас обновляется. Повторите действие через несколько секунд.'
+    };
+    showMessage(Object.hasOwn(messages, code) ? messages[code] : fallback, true);
+  }
+
+  function setBusy(value){
+    busy = value;
+    fields.disabled = value;
+    refresh.disabled = value;
+    search.disabled = value;
+    content.querySelectorAll('button').forEach(button => { button.disabled = value; });
+  }
+
+  function escapeHtml(value){
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;')
       .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   }
+
   function highlight(text, query){
     if(!query) return escapeHtml(text);
-    const i = text.toLowerCase().indexOf(query.toLowerCase());
-    if(i === -1) return escapeHtml(text);
-    return escapeHtml(text.slice(0, i)) + '<mark>' + escapeHtml(text.slice(i, i + query.length)) + '</mark>' + escapeHtml(text.slice(i + query.length));
-  }
-
-  function load(){
-    contentEl.innerHTML = '<div class="state-box">Загрузка...</div>';
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'listUsers', token: window.gcheckUser.token })
-    })
-      .then(r => r.json())
-      .then(res => {
-        if(!res.ok){
-          if(res.error === 'invalid' || res.error === 'expired' || res.error === 'inactive'){
-            window.gcheckLogout(); return;
-          }
-          if(res.error === 'forbidden'){ location.replace('index.html'); return; }
-          throw new Error(res.error || 'Неизвестная ошибка');
-        }
-        users = (res.users || []).map(u => ({
-          name: String(u.name || ''),
-          pin: String(u.pin || ''),
-          position: String(u.position || '')
-        }));
-        draw();
-      })
-      .catch(err => {
-        contentEl.innerHTML = '<div class="state-box error">Не удалось загрузить пользователей. (' + escapeHtml(err.message) + ')</div>';
-        rowCountEl.textContent = '';
-      });
+    const start = text.toLowerCase().indexOf(query.toLowerCase());
+    if(start < 0) return escapeHtml(text);
+    const end = start + query.length;
+    return escapeHtml(text.slice(0, start)) + '<mark>' + escapeHtml(text.slice(start, end)) + '</mark>' + escapeHtml(text.slice(end));
   }
 
   function draw(){
-    const q = searchInput.value.trim();
-    let rows = users;
-    if(q){
-      const ql = q.toLowerCase();
-      rows = rows.filter(u => u.name.toLowerCase().includes(ql) || u.position.toLowerCase().includes(ql));
-    }
-    const key = ['name', 'pin', 'position'][sortCol];
-    rows = rows.slice().sort((a, b) => a[key].localeCompare(b[key], 'ru') * sortDir);
+    const query = search.value.trim();
+    const lower = query.toLowerCase();
+    visibleUsers = users.filter(user => user.name.toLowerCase().includes(lower) || user.position.toLowerCase().includes(lower));
+    visibleUsers.sort((a, b) => a[sortKey].localeCompare(b[sortKey], 'ru') * sortDir);
+    rowCount.textContent = query ? 'Найдено: ' + visibleUsers.length + ' из ' + users.length : 'Пользователей: ' + users.length;
 
-    rowCountEl.textContent = q ? `Найдено: ${rows.length} из ${users.length}` : `Пользователей: ${users.length}`;
-
-    if(rows.length === 0){
-      contentEl.innerHTML = '<div class="state-box">Ничего не найдено.</div>';
+    if(!visibleUsers.length){
+      content.innerHTML = '<div class="state-box">' + (query ? 'Ничего не найдено.' : 'Список пользователей пуст.') + '</div>';
       return;
     }
 
-    const heads = [['ФИО', true], ['Пинкод', false], ['Должность', true]];
-    const thead = '<thead><tr>' + heads.map(([h, sortable], i) => {
-      if(!sortable) return `<th>${h}</th>`;
-      const active = sortCol === i;
-      const arrow = active ? (sortDir === 1 ? '▲' : '▼') : '↕';
-      return `<th class="sortable${active ? ' sort-active' : ''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span></th>`;
-    }).join('') + '</tr></thead>';
+    const columns = [['№'], ['ФИО', 'name'], ['PIN-код'], ['Должность', 'position'], ['Статус', 'status'], ['Действия']];
+    const header = columns.map(([title, key]) => {
+      if(!key) return '<th scope="col">' + title + '</th>';
+      const sort = key === sortKey ? (sortDir === 1 ? 'ascending' : 'descending') : 'none';
+      const arrow = { ascending: '▲', descending: '▼', none: '↕' }[sort];
+      return '<th scope="col" aria-sort="' + sort + '"><button type="button" data-sort="' + key + '">' +
+        title + '<span class="sort-arrow" aria-hidden="true">' + arrow + '</span></button></th>';
+    }).join('');
 
-    const tbody = '<tbody>' + rows.map(u =>
-      `<tr><td class="name">${highlight(u.name, q)}</td><td class="pin">${escapeHtml(u.pin)}</td><td>${highlight(u.position, q)}</td></tr>`
-    ).join('') + '</tbody>';
+    const rows = visibleUsers.map((user, index) => {
+      const active = user.status === statuses[0];
+      const label = active ? 'Деактивировать' : 'Активировать';
+      return '<tr><td>' + escapeHtml(user.id) + '</td><td class="name">' + highlight(user.name, query) +
+        '</td><td class="pin">' + escapeHtml(user.pin || '—') + '</td><td>' + highlight(user.position, query) +
+        '</td><td>' + escapeHtml(user.status || '—') + '</td><td><div class="actions">' +
+        '<button type="button" class="action button-small" data-row="' + index + '" data-operation="setStatus">' + label + '</button>' +
+        '<button type="button" class="action button-small" data-row="' + index + '" data-operation="generatePin">Сгенерировать PIN-код</button>' +
+        '</div></td></tr>';
+    }).join('');
 
-    contentEl.innerHTML = `<div class="table-scroll"><table>${thead}${tbody}</table></div>`;
-
-    contentEl.querySelectorAll('th.sortable').forEach(th => {
-      th.addEventListener('click', () => {
-        const c = parseInt(th.dataset.col, 10);
-        if(sortCol === c) sortDir = -sortDir; else { sortCol = c; sortDir = 1; }
-        draw();
-      });
-    });
+    content.innerHTML = '<div class="table-scroll" tabindex="0" role="region" aria-label="Список пользователей"><table>' +
+      '<thead><tr>' + header + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
-  searchInput.addEventListener('input', draw);
+  async function load(){
+    if(busy || !checkAccess()) return;
+    refresh.hidden = false;
+    setBusy(true);
+    showMessage('Загружаем пользователей…');
+    try{
+      const data = await request('list');
+      if(!checkAccess()) return;
+      users = data.users;
+      statuses = data.statuses;
+      const position = form.elements.position;
+      const selectedPosition = position.value;
+      position.replaceChildren(new Option('Выберите должность', ''), ...data.positions.map(value => new Option(value, value)));
+      if(data.positions.includes(selectedPosition)) position.value = selectedPosition;
+      const status = form.elements.status;
+      const selectedStatus = status.value;
+      status.replaceChildren(...statuses.map(value => new Option(value, value)));
+      if(statuses.includes(selectedStatus)) status.value = selectedStatus;
+      [sheetLink, form, searchBox].forEach(el => { el.hidden = false; });
+      showMessage('');
+      draw();
+    }catch(error){
+      if(!users.length) content.replaceChildren();
+      reportError(error, 'Не удалось загрузить пользователей.');
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  async function changeUser(operation, params, onSuccess, successMessage){
+    if(busy || !checkAccess()) return;
+    setBusy(true);
+    showMessage('Сохраняем изменения…');
+    try{
+      const { user } = await request(operation, params);
+      if(!checkAccess()) return;
+      onSuccess(user);
+      showMessage(successMessage);
+      draw();
+    }catch(error){
+      reportError(error, 'Не удалось сохранить изменения. Обновите список перед повтором.');
+    }finally{
+      setBusy(false);
+    }
+  }
+
+  function changeRow(user, operation){
+    const isSelf = user.name === window.gcheckUser.name;
+    const params = { id: user.id, name: user.name };
+    let confirmation;
+    let success;
+
+    if(operation === 'generatePin'){
+      confirmation = 'Сгенерировать новый PIN-код для «' + user.name + '»? Текущий PIN-код перестанет действовать.';
+      params.currentPin = user.pin;
+      success = 'Новый PIN-код сохранён.';
+    }else{
+      params.status = user.status === statuses[0] ? statuses[1] : statuses[0];
+      if(params.status === statuses[1]) confirmation = 'Деактивировать пользователя «' + user.name + '»?';
+      success = 'Статус пользователя изменён.';
+    }
+    if(isSelf && confirmation) confirmation += '\nПосле изменения потребуется снова войти.';
+    if(confirmation && !window.confirm(confirmation)) return;
+
+    changeUser(operation, params, updated => {
+      users[users.indexOf(user)] = updated;
+      if(isSelf && operation === 'generatePin'){
+        window.alert('Ваш новый PIN-код: ' + updated.pin + '\nСохраните его, чтобы снова войти.');
+        window.gcheckLogout();
+      }else if(isSelf && operation === 'setStatus' && updated.status !== statuses[0]){
+        window.gcheckLogout();
+      }
+    }, success);
+  }
+
+  form.addEventListener('submit', event => {
+    event.preventDefault();
+    const params = Object.fromEntries(new FormData(form));
+    changeUser('create', params, user => {
+      users.push(user);
+      form.reset();
+      search.value = '';
+    }, 'Пользователь создан. PIN-код указан в списке.');
+  });
+
+  content.addEventListener('click', event => {
+    const button = event.target.closest('button');
+    if(!button || busy || !checkAccess()) return;
+    if(button.dataset.sort){
+      const key = button.dataset.sort;
+      sortDir = sortKey === key ? -sortDir : 1;
+      sortKey = key;
+      draw();
+      content.querySelector('button[data-sort="' + key + '"]').focus();
+    }else if(button.dataset.operation){
+      changeRow(visibleUsers[Number(button.dataset.row)], button.dataset.operation);
+    }
+  });
+
+  search.addEventListener('input', draw);
+  refresh.addEventListener('click', load);
+  document.addEventListener('gcheck:user', checkAccess);
   load();
-
-  if('serviceWorker' in navigator){
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('sw.js').catch(() => {});
-    });
-  }
 </script>
-
 </body>
 </html>

@@ -22,6 +22,30 @@
     location.replace('login.html?redirect=' + here);
   }
 
+  window.gcheckCanViewTestResults = function(){
+    var user = window.gcheckUser;
+    if(!user) return false;
+    var positions = String(user.position || user.type || '').toLowerCase().split(',');
+    return positions.some(function(position){
+      return ['администратор', 'сотрудник окк'].includes(position.trim());
+    });
+  };
+
+  window.gcheckRequest = async function(action, params = {}){
+    var user = window.gcheckUser;
+    if(!user || !user.token) throw new Error('invalid');
+
+    var response = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ ...params, action, token: user.token })
+    });
+    if(!response.ok) throw new Error('network');
+    var data = await response.json();
+    if(!data || !data.ok) throw new Error(data && data.error || 'server');
+    return data;
+  };
+
   // Выход по кнопке: window.gcheckLogout()
   window.gcheckLogout = function(){
     localStorage.removeItem(AUTH_KEY);

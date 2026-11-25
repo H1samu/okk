@@ -35,3 +35,16 @@
 ├── control.html               # Модуль контроля
 ├── users.html                 # Управление пользователями (для администраторов)
 └── ...                        # Другие специализированные страницы (sensors.html, sgi.html, round.html и т.д.)
+```
+
+### Google Apps Script
+
+Модуль `apps-script/Management.gs` подключается к привязанному проекту **Hismar. Пользователи**:
+
+1. Добавьте модуль отдельным файлом в текущий проект.
+2. В `doPost` добавьте маршрут `case 'manageUsers': return json_(manageUsers_(req));`.
+3. В `checkToken_` добавьте параметр `fresh = false`. Присвойте `user` из `readUsersFromSheet_().find(u => u.key === key)` при `fresh` и из `findUser_(key)` в остальных случаях. `key` получается через `normalize_(data.n)`.
+4. В `testGetResults_(token)` верните `managementTestResults_(token)`. В `onEdit(e)` вызовите `managementSheetPin_(e)`.
+5. Опубликуйте новую версию в существующем развёртывании веб-приложения.
+
+Управление пользователями доступно администраторам. Результаты тестирования доступны должностям «Администратор» и «Сотрудник ОКК».

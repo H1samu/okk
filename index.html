@@ -203,12 +203,16 @@
 
   /* ===== Плитки разделов ===== */
   .quick-row{
-    display:grid;
-    grid-template-columns:repeat(4, minmax(0, 1fr));
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
     gap:10px;
     max-width:620px;
     margin:22px auto 0;
   }
+  .quick-row > .tile{flex:0 1 calc((100% - 30px)/4);}
+  .quick-row.single-item{justify-content:flex-start;}
+  .search-row[hidden]{display:none;}
   .tile{
     position:relative;
     display:flex;
@@ -639,7 +643,8 @@
 
     /* плитки: на всю ширину, компактнее */
     .search-row, .quick-row{max-width:none;}
-    .quick-row{grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-top:18px;}
+    .quick-row{gap:8px; margin-top:18px;}
+    .quick-row > .tile{flex-basis:calc((100% - 8px)/2);}
     .tile{min-height:68px; padding:10px 6px; gap:6px;}
     .tile .tile-icon{font-size:20px;}
     .tile .tile-text{font-size:12px;}
@@ -670,7 +675,7 @@
     <img class="logo" src="logo.svg" alt="Hismar Check">
     <h1>Журналы и чек-листы НАССР</h1>
 
-    <div class="search-row">
+    <div class="search-row" id="journalSearchRow">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
         <input type="text" id="searchInput" placeholder="Поиск журнала" autocomplete="off">
@@ -758,7 +763,7 @@
     </div>
   </dialog>
 
-  <div class="tags-section">
+  <div class="tags-section" id="tagsSection">
     <div class="section-head">
       <h2>Категории</h2>
       <span class="hint"></span>
@@ -766,7 +771,7 @@
     <div class="tag-grid" id="tagGrid"></div>
   </div>
 
-  <div class="results-section">
+  <div class="results-section" id="resultsSection">
     <div class="section-head">
       <h2 id="resultsTitle">Все документы</h2>
       <button class="reset-btn" id="resetBtn" type="button">Сбросить фильтр</button>
@@ -819,13 +824,24 @@ function renderUser(){
     }
   }
 
+  function applyJournalAccessVisibility(){
+    const allowed = window.gcheckUser?.allowed;
+    const hasJournalAccess = allowed === '*' || (Array.isArray(allowed) && allowed.length > 0);
+
+    journalSearchRow.hidden = !hasJournalAccess;
+    tagsSection.hidden = !hasJournalAccess;
+    resultsSection.hidden = !hasJournalAccess;
+  }
+
   function applyBlockVisibility(){
     const blocks = window.gcheckUser?.blocks;
     const allowed = new Set(Array.isArray(blocks) ? blocks : []);
     availableTiles = blockTiles.filter(tile => allowed.has(tile.dataset.block));
     const quickTiles = new Set(availableTiles.slice(0, 3));
     blockTiles.forEach(tile => { tile.hidden = !quickTiles.has(tile); });
+    quickRow.classList.toggle('single-item', quickTiles.size === 1);
     quickRow.hidden = availableTiles.length === 0;
+    applyJournalAccessVisibility();
     moreModules.hidden = availableTiles.length <= 3;
     if(!allowed.has(favToggle.dataset.block) && favoritesOnly) setFavoritesOnly(false);
     if(modulesDialog.open){
@@ -880,6 +896,9 @@ function renderUser(){
   const favText = document.getElementById('favText');
   const favBadge = document.getElementById('favBadge');
   const quickRow = document.querySelector('.quick-row');
+  const journalSearchRow = document.getElementById('journalSearchRow');
+  const tagsSection = document.getElementById('tagsSection');
+  const resultsSection = document.getElementById('resultsSection');
   const blockTiles = Array.from(quickRow.querySelectorAll('[data-block]'));
   const moreModules = document.getElementById('moreModules');
   const modulesDialog = document.getElementById('modulesDialog');

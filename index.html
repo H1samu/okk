@@ -668,6 +668,11 @@
   <span class="tile-text">Мастер-таблица</span>
 </a>
 
+<a class="tile admin-only" href="users.html" hidden>
+  <span class="tile-icon" aria-hidden="true">👥</span>
+  <span class="tile-text">Пользователи системы</span>
+</a>
+
 <a class="tile sgi-only" href="round.html" hidden>
   <span class="tile-icon">🔍</span>
   <span class="tile-text">Ежедневный обход СГИ</span>
@@ -679,6 +684,10 @@
 </a>  
 
     <a class="tile" href="test.html"><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
+    <a class="tile test-results-only" href="test-results.html" hidden>
+      <span class="tile-icon" aria-hidden="true">📋</span>
+      <span class="tile-text">Результаты тестирования</span>
+    </a>
 
     
     <a class="tile tile-sgi" href="sgi.html">
@@ -762,6 +771,8 @@ function renderUser(){
 function applyRole(){
   const admin = isAdmin();
   document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !admin; });
+  const canViewResults = window.gcheckCanViewTestResults();
+  document.querySelector('.test-results-only').hidden = !canViewResults;
   document.querySelectorAll('.sgi-only').forEach(el => { el.hidden = !(admin || isSgi()); });
   document.querySelectorAll('.culin-only').forEach(el => { el.hidden = !(admin || isCulinary()); });
   const row = document.querySelector('.quick-row');

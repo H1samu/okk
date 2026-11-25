@@ -204,9 +204,9 @@
   /* ===== Плитки разделов ===== */
   .quick-row{
     display:grid;
-    grid-template-columns:repeat(3, 1fr);
+    grid-template-columns:repeat(4, minmax(0, 1fr));
     gap:10px;
-    max-width:520px;
+    max-width:620px;
     margin:22px auto 0;
   }
   .tile{
@@ -238,7 +238,48 @@
     line-height:1.25;
   }
   .quick-row[hidden],.tile[hidden]{display:none;}
-  .quick-row.no-master{grid-template-columns:repeat(2, 1fr);}
+  .modules-dialog{
+    width:min(560px, calc(100% - 32px));
+    max-height:min(80vh, 640px);
+    max-height:min(80dvh, 640px);
+    padding:0;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--bg);
+    color:var(--text);
+    box-shadow:0 16px 48px rgba(0, 0, 0, .18);
+    overscroll-behavior:contain;
+  }
+  .modules-dialog::backdrop{background:rgba(0, 0, 0, .42);}
+  .modules-content{padding:16px;}
+  .modules-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    margin-bottom:12px;
+  }
+  .modules-header h2{margin:0; font-size:18px;}
+  .modules-close{
+    min-width:44px;
+    min-height:44px;
+    border:1px solid var(--border);
+    border-radius:var(--radius);
+    background:var(--surface);
+    color:var(--text);
+    font-size:18px;
+    cursor:pointer;
+  }
+  .modules-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+    gap:10px;
+  }
+  .modules-grid .tile .tile-text, .quick-row .tile .tile-text{overflow-wrap:anywhere;}
+  .modules-dialog :focus-visible, .quick-row :focus-visible{
+    outline:2px solid var(--accent);
+    outline-offset:2px;
+  }
   .tile-fav.active{ background:#fdf7e3; border-color:#ecdca0; }
   .tile-fav.active:hover{ border-color:#dcbf7e; }
   .tile-badge{
@@ -566,12 +607,6 @@
     .btn-fill{flex:1 1 0; min-width:0;}
     .jc-actions{flex-wrap:nowrap;}
     .btn-view{flex:0 0 auto;}
-    .quick-row{
-      grid-template-columns:none;
-      grid-auto-flow:column;
-      grid-auto-columns:1fr;
-      max-width:none;
-    }
   }
   @media (max-width:599px){
     .wrap{padding:20px 16px 48px;}
@@ -604,14 +639,10 @@
 
     /* плитки: на всю ширину, компактнее */
     .search-row, .quick-row{max-width:none;}
-    .quick-row{gap:8px; margin-top:18px;}
+    .quick-row{grid-template-columns:repeat(2, minmax(0, 1fr)); gap:8px; margin-top:18px;}
     .tile{min-height:68px; padding:10px 6px; gap:6px;}
     .tile .tile-icon{font-size:20px;}
     .tile .tile-text{font-size:12px;}
-  }
-  @media (max-width:380px){
-    .quick-row:not(.no-master){grid-template-columns:1fr 1fr;}
-    .quick-row:not(.no-master) .tile-fav{grid-column:1 / -1;}
   }
 </style>
 </head>
@@ -708,8 +739,24 @@
       <span class="tile-icon">⭐</span>
       <span class="tile-text" id="favText">Избранное</span>
       <span class="tile-badge count" id="favBadge">0</span>
-    </button>  
+    </button>
+    <button class="tile" id="moreModules" type="button" aria-haspopup="dialog" aria-controls="modulesDialog" hidden>
+      <span class="tile-icon" aria-hidden="true">⋯</span>
+      <span class="tile-text">Ещё</span>
+    </button>
   </div>
+
+  <dialog class="modules-dialog" id="modulesDialog" aria-labelledby="modulesTitle">
+    <div class="modules-content">
+      <div class="modules-header">
+        <h2 id="modulesTitle">Все модули</h2>
+        <form method="dialog">
+          <button class="modules-close" type="submit" aria-label="Закрыть" autofocus>×</button>
+        </form>
+      </div>
+      <div class="modules-grid" id="modulesGrid"></div>
+    </div>
+  </dialog>
 
   <div class="tags-section">
     <div class="section-head">
@@ -753,18 +800,38 @@ function renderUser(){
   document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
 }
 
+  function renderModules(){
+    const focusedBlock = document.activeElement?.dataset.block;
+    modulesGrid.replaceChildren(...availableTiles.map(tile => {
+      const copy = tile.cloneNode(true);
+      copy.hidden = false;
+      copy.removeAttribute('id');
+      copy.querySelectorAll('[id]').forEach(element => element.removeAttribute('id'));
+      copy.addEventListener('click', () => {
+        modulesDialog.close();
+        if(tile === favToggle) tile.click();
+      });
+      return copy;
+    }));
+    if(focusedBlock){
+      const target = Array.from(modulesGrid.children).find(tile => tile.dataset.block === focusedBlock);
+      (target || modulesDialog.querySelector('.modules-close')).focus();
+    }
+  }
+
   function applyBlockVisibility(){
     const blocks = window.gcheckUser?.blocks;
     const allowed = new Set(Array.isArray(blocks) ? blocks : []);
-    const row = document.querySelector('.quick-row');
-    let visibleTiles = 0;
-    row.querySelectorAll('[data-block]').forEach(tile => {
-      tile.hidden = !allowed.has(tile.dataset.block);
-      if(!tile.hidden) visibleTiles++;
-    });
-    row.hidden = visibleTiles === 0;
-    row.classList.toggle('no-master', visibleTiles <= 2);
-    if(favToggle.hidden && favoritesOnly) setFavoritesOnly(false);
+    availableTiles = blockTiles.filter(tile => allowed.has(tile.dataset.block));
+    const quickTiles = new Set(availableTiles.slice(0, 3));
+    blockTiles.forEach(tile => { tile.hidden = !quickTiles.has(tile); });
+    quickRow.hidden = availableTiles.length === 0;
+    moreModules.hidden = availableTiles.length <= 3;
+    if(!allowed.has(favToggle.dataset.block) && favoritesOnly) setFavoritesOnly(false);
+    if(modulesDialog.open){
+      if(moreModules.hidden) modulesDialog.close();
+      else renderModules();
+    }
     renderUser();
   }
 
@@ -812,6 +879,20 @@ function renderUser(){
   const favToggle = document.getElementById('favToggle');
   const favText = document.getElementById('favText');
   const favBadge = document.getElementById('favBadge');
+  const quickRow = document.querySelector('.quick-row');
+  const blockTiles = Array.from(quickRow.querySelectorAll('[data-block]'));
+  const moreModules = document.getElementById('moreModules');
+  const modulesDialog = document.getElementById('modulesDialog');
+  const modulesGrid = document.getElementById('modulesGrid');
+  let availableTiles = [];
+
+  moreModules.addEventListener('click', () => {
+    renderModules();
+    modulesDialog.showModal();
+  });
+  modulesDialog.addEventListener('click', event => {
+    if(event.target === modulesDialog) modulesDialog.close();
+  });
 
   applyBlockVisibility();
   document.addEventListener('gcheck:user', () => {

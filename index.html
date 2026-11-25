@@ -237,7 +237,7 @@
     text-align:center;
     line-height:1.25;
   }
-  .tile[hidden]{display:none;}
+  .quick-row[hidden],.tile[hidden]{display:none;}
   .quick-row.no-master{grid-template-columns:repeat(2, 1fr);}
   .tile-fav.active{ background:#fdf7e3; border-color:#ecdca0; }
   .tile-fav.active:hover{ border-color:#dcbf7e; }
@@ -662,49 +662,49 @@
     </div>
   </div>
 
-  <div class="quick-row">    
-<a class="tile tile-master admin-only" id="masterTile" href="master.html" hidden>
+  <div class="quick-row" hidden>
+<a class="tile tile-master" href="master.html" data-block="Мастер-таблица" hidden>
   <span class="tile-icon">📊</span>
   <span class="tile-text">Мастер-таблица</span>
 </a>
 
-<a class="tile admin-only" href="users.html" hidden>
+<a class="tile" href="users.html" data-block="Пользователи системы" hidden>
   <span class="tile-icon" aria-hidden="true">👥</span>
   <span class="tile-text">Пользователи системы</span>
 </a>
 
-<a class="tile sgi-only" href="round.html" hidden>
+<a class="tile" href="round.html" data-block="Ежедневный обход СГИ" hidden>
   <span class="tile-icon">🔍</span>
   <span class="tile-text">Ежедневный обход СГИ</span>
 </a>
 
-<a class="tile culin-only" href="culinary.html" hidden>
+<a class="tile" href="culinary.html" data-block="Кулинария" hidden>
   <span class="tile-icon">🍳</span>
   <span class="tile-text">Кулинария</span>
 </a>  
 
-    <a class="tile" href="test.html"><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
-    <a class="tile test-results-only" href="test-results.html" hidden>
+    <a class="tile" href="test.html" data-block="Проверка знаний" hidden><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
+    <a class="tile" href="test-results.html" data-block="Результаты тестирования" hidden>
       <span class="tile-icon" aria-hidden="true">📋</span>
       <span class="tile-text">Результаты тестирования</span>
     </a>
 
     
-    <a class="tile tile-sgi" href="sgi.html">
+    <a class="tile tile-sgi" href="sgi.html" data-block="Заявки для СГИ" hidden>
       <span class="tile-icon">🛠️</span>
       <span class="tile-text">Заявки для СГИ</span>
     </a>
-<a class="tile admin-only" href="sensors.html" hidden>
+<a class="tile" href="sensors.html" data-block="Датчики" hidden>
   <span class="tile-icon">🌡️</span>
   <span class="tile-text">Датчики</span>
 </a>
 
-<a class="tile admin-only" href="control.html" hidden>
+<a class="tile" href="control.html" data-block="Контроль заполнения" hidden>
   <span class="tile-icon">🚦</span>
   <span class="tile-text">Контроль заполнения</span>
 </a>
     
-    <button class="tile tile-fav" id="favToggle" type="button" aria-pressed="false">
+    <button class="tile tile-fav" id="favToggle" type="button" data-block="Избранное" aria-pressed="false" hidden>
       <span class="tile-icon">⭐</span>
       <span class="tile-text" id="favText">Избранное</span>
       <span class="tile-badge count" id="favBadge">0</span>
@@ -745,21 +745,6 @@
     return false;
   }
 
-function isAdmin(){
-  const t = (window.gcheckUser && window.gcheckUser.type || '').trim().toLowerCase();
-  return t === 'администратор';
-}
-
-function isSgi(){
-  const p = (window.gcheckUser && window.gcheckUser.position || '').trim().toLowerCase();
-  return p === 'сотрудник сги';
-}
-
-  function isCulinary(){
-  const p = (window.gcheckUser && window.gcheckUser.position || '').trim().toLowerCase();
-  return p === 'сотрудник кулинарии';
-}
-  
 function renderUser(){
   const u = window.gcheckUser || {};
   const name = (u.name || '').trim();
@@ -768,32 +753,25 @@ function renderUser(){
   document.getElementById('udRole').textContent = u.position || u.type || 'Сотрудник';
 }
 
-function applyRole(){
-  const admin = isAdmin();
-  document.querySelectorAll('.admin-only').forEach(el => { el.hidden = !admin; });
-  const canViewResults = window.gcheckCanViewTestResults();
-  document.querySelector('.test-results-only').hidden = !canViewResults;
-  document.querySelectorAll('.sgi-only').forEach(el => { el.hidden = !(admin || isSgi()); });
-  document.querySelectorAll('.culin-only').forEach(el => { el.hidden = !(admin || isCulinary()); });
-  const row = document.querySelector('.quick-row');
-  const visibleTiles = row.querySelectorAll('.tile:not([hidden])').length;
-  row.classList.toggle('no-master', visibleTiles <= 2);
-  renderUser();
-}
+  function applyBlockVisibility(){
+    const blocks = window.gcheckUser?.blocks;
+    const allowed = new Set(Array.isArray(blocks) ? blocks : []);
+    const row = document.querySelector('.quick-row');
+    let visibleTiles = 0;
+    row.querySelectorAll('[data-block]').forEach(tile => {
+      tile.hidden = !allowed.has(tile.dataset.block);
+      if(!tile.hidden) visibleTiles++;
+    });
+    row.hidden = visibleTiles === 0;
+    row.classList.toggle('no-master', visibleTiles <= 2);
+    if(favToggle.hidden && favoritesOnly) setFavoritesOnly(false);
+    renderUser();
+  }
 
   let allJournals = [];
   let journals = [];
   let activeTags = new Set();
   let favoritesOnly = false;
-
-  applyRole();
-  document.addEventListener('gcheck:user', () => {
-    applyRole();
-    if(allJournals.length){
-      journals = visible(allJournals).map(normalizeTags);
-      updateFavBadge(); renderTags(); renderList();
-    }
-  });
 
   function visible(data){
     const a = window.gcheckUser && window.gcheckUser.allowed;
@@ -834,6 +812,15 @@ function applyRole(){
   const favToggle = document.getElementById('favToggle');
   const favText = document.getElementById('favText');
   const favBadge = document.getElementById('favBadge');
+
+  applyBlockVisibility();
+  document.addEventListener('gcheck:user', () => {
+    applyBlockVisibility();
+    if(allJournals.length){
+      journals = visible(allJournals).map(normalizeTags);
+      updateFavBadge(); renderTags(); renderList();
+    }
+  });
 
   fetch('journals.json')
     .then(r => {
@@ -1020,11 +1007,15 @@ function applyRole(){
     btn.setAttribute('aria-label', nowActive ? 'Убрать из избранного' : 'Добавить в избранное');
   });
 
+  function setFavoritesOnly(value){
+    favoritesOnly = value;
+    favToggle.classList.toggle('active', value);
+    favToggle.setAttribute('aria-pressed', String(value));
+    favText.textContent = value ? '✓ Избранное' : 'Избранное';
+  }
+
   favToggle.addEventListener('click', () => {
-    favoritesOnly = !favoritesOnly;
-    favToggle.classList.toggle('active', favoritesOnly);
-    favToggle.setAttribute('aria-pressed', favoritesOnly ? 'true' : 'false');
-    favText.textContent = favoritesOnly ? '✓ Избранное' : 'Избранное';
+    setFavoritesOnly(!favoritesOnly);
     renderTags();
     renderList();
   });
@@ -1037,10 +1028,7 @@ function applyRole(){
   resetBtn.addEventListener('click', () => {
     activeTags.clear();
     searchInput.value = '';
-    favoritesOnly = false;
-    favToggle.classList.remove('active');
-    favToggle.setAttribute('aria-pressed', 'false');
-    favText.textContent = 'Избранное';
+    setFavoritesOnly(false);
     renderTags();
     renderList();
   });

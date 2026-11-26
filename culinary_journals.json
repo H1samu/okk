@@ -126,5 +126,21 @@
     "formUrlPrefill": "",
     "qrPrefillDriveId": "",
     "fillFrequency": ""
+  },
+  {
+    "id": "НАССР-К-09",
+    "name": "НАССР-К-09 Температуры и микроклимата холодильных камер",
+    "tags": [
+      "Прочее"
+    ],
+    "sheetId": "1helD1jWmpno4XoOfk1pJPLwJxbKlB5tmrD0MUfn6Vn8",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1helD1jWmpno4XoOfk1pJPLwJxbKlB5tmrD0MUfn6Vn8/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": ""
   }
 ]

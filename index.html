@@ -630,6 +630,30 @@
     .scan-btn .scan-label{display:inline;}
     .jc-actions{flex-wrap:nowrap;}
   }
+
+  /* На широких экранах действия располагаются справа от информации */
+  @media (min-width:900px){
+    .journal-card{
+      display:grid;
+      grid-template-columns:minmax(0, 1fr) auto;
+      grid-template-areas:
+        "code actions"
+        "name actions"
+        "tags actions";
+      column-gap:24px;
+      align-items:center;
+    }
+    .jc-code{grid-area:code;}
+    .jc-name{grid-area:name;}
+    .jc-tags{grid-area:tags;}
+    .jc-actions{
+      grid-area:actions;
+      align-self:center;
+      justify-self:end;
+      margin-top:0;
+    }
+  }
+
   @media (max-width:599px){
     .wrap{padding:20px 16px 48px;}
     header{

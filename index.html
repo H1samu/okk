@@ -207,103 +207,149 @@
     flex-wrap:wrap;
     justify-content:center;
     gap:10px;
-    max-width:620px;
+    max-width:1060px;
     margin:22px auto 0;
   }
   .quick-row > .tile{flex:0 1 calc((100% - 30px)/4);}
   .quick-row.single-item{justify-content:center;}
   .search-row[hidden]{display:none;}
   .tile{
+    --tile-icon-bg:var(--accent-soft);
+    --tile-icon-color:var(--accent);
     position:relative;
     display:flex;
     flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    min-height:88px;
-    padding:12px 8px;
-    border-radius:var(--radius);
+    align-items:flex-start;
+    justify-content:flex-start;
+    gap:10px;
+    min-width:0;
+    min-height:104px;
+    padding:12px;
+    border-radius:14px;
     border:1px solid var(--border);
     background:var(--surface);
-    text-decoration:none;
-    cursor:pointer;
-    transition:border-color .15s ease, transform .1s ease;
-    border:1px solid #bcd6f0;
-    background:#eaf2fc;
-  }
-  .tile:hover{border-color:var(--border-strong);}
-  .tile:active{transform:scale(0.97);}
-  .tile .tile-icon{font-size:24px; line-height:1;}
-  .tile .tile-text{
-    font-size:13px;
-    font-weight:600;
     color:var(--text);
-    text-align:center;
-    line-height:1.25;
+    text-decoration:none;
+    text-align:left;
+    cursor:pointer;
+    transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
   }
+  .tile::after{
+    content:"";
+    position:absolute;
+    top:19px;
+    right:15px;
+    width:7px;
+    height:7px;
+    border-top:1.5px solid var(--text-muted);
+    border-right:1.5px solid var(--text-muted);
+    transform:rotate(45deg);
+    pointer-events:none;
+  }
+  @media (hover:hover) and (pointer:fine){
+    .tile:hover{
+      border-color:var(--border-strong);
+      box-shadow:0 3px 12px rgba(32,32,28,.07);
+      transform:translateY(-2px);
+    }
+    .tile:hover::after{border-color:var(--accent);}
+  }
+  .tile:active{transform:scale(.98);}
+  .tile .tile-icon{
+    display:grid;
+    place-items:center;
+    flex:0 0 auto;
+    width:36px;
+    height:36px;
+    border-radius:10px;
+    background:var(--tile-icon-bg);
+    color:var(--tile-icon-color);
+  }
+  .tile-icon svg{width:21px; height:21px; display:block;}
+  .tile .tile-text{
+    min-width:0;
+    max-width:100%;
+    font-size:13px;
+    font-weight:650;
+    color:var(--text);
+    text-align:left;
+    line-height:1.35;
+    overflow-wrap:anywhere;
+  }
+  .tile[data-tone="gold"]{--tile-icon-bg:#faf0d5;--tile-icon-color:#8b681e;}
+  .tile[data-tone="blue"]{--tile-icon-bg:#e8eff9;--tile-icon-color:#365e94;}
+  .tile[data-tone="purple"]{--tile-icon-bg:#efeaf8;--tile-icon-color:#6d56a4;}
+  .tile[data-tone="orange"]{--tile-icon-bg:#fbeee2;--tile-icon-color:#a65e2d;}
+  .tile[data-tone="neutral"]{--tile-icon-bg:#eeede8;--tile-icon-color:var(--text-secondary);}
   .quick-row[hidden],.tile[hidden]{display:none;}
   .modules-dialog{
-    width:min(560px, calc(100% - 32px));
+    width:min(850px, calc(100% - 32px));
     max-height:min(80vh, 640px);
     max-height:min(80dvh, 640px);
     padding:0;
     border:1px solid var(--border);
-    border-radius:var(--radius);
+    border-radius:18px;
     background:var(--bg);
     color:var(--text);
     box-shadow:0 16px 48px rgba(0, 0, 0, .18);
     overscroll-behavior:contain;
   }
   .modules-dialog::backdrop{background:rgba(0, 0, 0, .42);}
-  .modules-content{padding:16px;}
+  .modules-content{padding:20px;}
   .modules-header{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:12px;
-    margin-bottom:12px;
+    margin-bottom:16px;
   }
   .modules-header h2{margin:0; font-size:18px;}
   .modules-close{
+    display:grid;
+    place-items:center;
     min-width:44px;
     min-height:44px;
+    padding:0;
     border:1px solid var(--border);
     border-radius:var(--radius);
     background:var(--surface);
-    color:var(--text);
-    font-size:18px;
+    color:var(--text-secondary);
     cursor:pointer;
   }
+  .modules-close:hover{border-color:var(--border-strong);color:var(--text);}
+  .modules-close svg{width:19px;height:19px;}
   .modules-grid{
     display:grid;
-    grid-template-columns:repeat(auto-fill, minmax(120px, 1fr));
+    grid-template-columns:repeat(2,minmax(0,1fr));
     gap:10px;
   }
-  .modules-grid .tile .tile-text, .quick-row .tile .tile-text{overflow-wrap:anywhere;}
   .modules-dialog :focus-visible, .quick-row :focus-visible{
     outline:2px solid var(--accent);
     outline-offset:2px;
   }
-  .tile-fav.active{ background:#fdf7e3; border-color:#ecdca0; }
-  .tile-fav.active:hover{ border-color:#dcbf7e; }
+  .tile-fav.active{background:#fffaf0;border-color:#d7bd76;}
+  .tile-fav.active:hover{border-color:#b89b50;}
+  .tile-fav.active .tile-icon svg{fill:#f1d993;}
+  .tile-fav::after{display:none;}
   .tile-badge{
     position:absolute;
-    top:8px;
-    right:8px;
+    top:12px;
+    right:12px;
     font-size:11px;
     font-weight:700;
     line-height:1;
   }
   .tile-badge.count{
-    min-width:20px;
-    height:20px;
+    min-width:22px;
+    height:22px;
     padding:0 6px;
     border-radius:999px;
-    background:#1d5fa8;
-    color:#fff;
+    background:var(--tile-icon-bg);
+    color:var(--tile-icon-color);
     display:none;
     align-items:center;
     justify-content:center;
+    font-variant-numeric:tabular-nums;
   }
   .tile-badge.count.show{display:inline-flex;}
   .tile-badge.beta{
@@ -311,22 +357,38 @@
     border-radius:999px;
     background:#d6e6f8;
     color:#1d5fa8;
-    letter-spacing:0.02em;
+    letter-spacing:.02em;
   }
   .tile-badge.soon{
-  padding:3px 6px;
-  border-radius:999px;
-  background:var(--accent-soft);
-  color:var(--accent);
-  letter-spacing:0.02em;
-  text-transform:lowercase;
-}
-.tile-soon{
-  cursor:default;
-  opacity:0.75;
-}
-.tile-soon:hover{border-color:#bcd6f0;}
-.tile-soon:active{transform:none;}
+    padding:3px 6px;
+    border-radius:999px;
+    background:var(--accent-soft);
+    color:var(--accent);
+    letter-spacing:.02em;
+    text-transform:lowercase;
+  }
+  .tile-soon{cursor:default;opacity:.75;}
+  .tile-soon:hover{border-color:var(--border);transform:none;box-shadow:none;}
+  .tile-soon:active{transform:none;}
+  @media (min-width:600px){
+    .modules-grid{grid-template-columns:repeat(3,minmax(0,1fr));}
+  }
+  @media (min-width:900px){
+    .tile{
+      flex-direction:row;
+      align-items:center;
+      min-height:72px;
+      padding:12px 30px 12px 12px;
+      gap:10px;
+    }
+    .tile::after{top:calc(50% - 4px);right:14px;}
+    .tile-fav{padding-right:44px;}
+    .tile-badge{top:50%;right:10px;transform:translateY(-50%);}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .tile{transition:none;}
+    .tile:hover,.tile:active{transform:none;}
+  }
 
   /* ===== Категории ===== */
   .tags-section{margin-top:32px; min-width:0; max-width:100%;}
@@ -687,9 +749,11 @@
     .search-row, .quick-row{max-width:none;}
     .quick-row{gap:8px; margin-top:18px;}
     .quick-row > .tile{flex-basis:calc((100% - 8px)/2);}
-    .tile{min-height:68px; padding:10px 6px; gap:6px;}
-    .tile .tile-icon{font-size:20px;}
+    .tile{min-height:100px;padding:10px;gap:9px;}
+    .tile .tile-icon{width:34px;height:34px;}
     .tile .tile-text{font-size:12px;}
+    .modules-content{padding:12px;}
+    .modules-grid{gap:8px;}
 
     .jc-actions{justify-content:flex-end; gap:8px;}
     .btn-fill{flex:1 0 100%; order:0;}
@@ -746,54 +810,54 @@
   </div>
 
   <div class="quick-row" hidden>
-    <button class="tile tile-fav" id="favToggle" type="button" data-block="Избранное" aria-pressed="false" hidden>
-      <span class="tile-icon">⭐</span>
+    <button class="tile tile-fav" id="favToggle" type="button" data-block="Избранное" aria-pressed="false" hidden data-tone="gold">
+      <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/></svg></span>
       <span class="tile-text" id="favText">Избранное</span>
       <span class="tile-badge count" id="favBadge">0</span>
     </button>
-    <a class="tile tile-sgi" href="sgi.html" data-block="Заявки для СГИ" hidden>
-      <span class="tile-icon">🛠️</span>
+    <a class="tile tile-sgi" href="sgi.html" data-block="Заявки для СГИ" hidden data-tone="blue">
+      <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.1-3.1a6 6 0 0 1-7.9 7.9l-6.9 6.9a2.1 2.1 0 0 1-3-3l6.9-6.9a6 6 0 0 1 7.9-7.9Z"/></svg></span>
       <span class="tile-text">Заявки для СГИ</span>
     </a>
-    <a class="tile" href="test.html" data-block="Проверка знаний" hidden><span class="tile-icon">🧪</span><span class="tile-text">Проверка знаний</span></a>
+    <a class="tile" href="test.html" data-block="Проверка знаний" hidden data-tone="green"><span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3.5 3 8.5 3 12 0v-5M22 10v6"/></svg></span><span class="tile-text">Проверка знаний</span></a>
 
-<a class="tile tile-master" href="master.html" data-block="Мастер-таблица" hidden>
-  <span class="tile-icon">📊</span>
+<a class="tile tile-master" href="master.html" data-block="Мастер-таблица" hidden data-tone="purple">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3v18h18M8 16v-3M13 16V8M18 16V5"/></svg></span>
   <span class="tile-text">Мастер-таблица</span>
 </a>
 
-<a class="tile" href="users.html" data-block="Пользователи системы" hidden>
-  <span class="tile-icon" aria-hidden="true">👥</span>
+<a class="tile" href="users.html" data-block="Пользователи системы" hidden data-tone="blue">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M22 21v-2a4 4 0 0 0-3-3.9M16 3.1a4 4 0 0 1 0 7.8"/><circle cx="10" cy="7" r="4"/></svg></span>
   <span class="tile-text">Пользователи системы</span>
 </a>
 
-<a class="tile" href="round.html" data-block="Ежедневный обход СГИ" hidden>
-  <span class="tile-icon">🔍</span>
+<a class="tile" href="round.html" data-block="Ежедневный обход СГИ" hidden data-tone="green">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m9 14 2 2 4-4"/></svg></span>
   <span class="tile-text">Ежедневный обход СГИ</span>
 </a>
 
-<a class="tile" href="culinary.html" data-block="Кулинария" hidden>
-  <span class="tile-icon">🍳</span>
+<a class="tile" href="culinary.html" data-block="Кулинария" hidden data-tone="orange">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h18M5 13v4a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4v-4M2 16h3m14 0h3M7 9h10M12 9V7M9 3v2m6-2v2"/></svg></span>
   <span class="tile-text">Кулинария</span>
 </a>  
 
-    <a class="tile" href="test-results.html" data-block="Результаты тестирования" hidden>
-      <span class="tile-icon" aria-hidden="true">📋</span>
+    <a class="tile" href="test-results.html" data-block="Результаты тестирования" hidden data-tone="purple">
+      <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 17v-3m4 3v-5m4 5v-2"/></svg></span>
       <span class="tile-text">Результаты тестирования</span>
     </a>
 
-<a class="tile" href="sensors.html" data-block="Датчики" hidden>
-  <span class="tile-icon">🌡️</span>
+<a class="tile" href="sensors.html" data-block="Датчики" hidden data-tone="blue">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 14.8V5a2 2 0 0 0-4 0v9.8a4 4 0 1 0 4 0Z"/><path d="M12 17V9"/></svg></span>
   <span class="tile-text">Датчики</span>
 </a>
 
-<a class="tile" href="control.html" data-block="Контроль заполнения" hidden>
-  <span class="tile-icon">🚦</span>
+<a class="tile" href="control.html" data-block="Контроль заполнения" hidden data-tone="green">
+  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m3 6 2 2 4-4m-6 8 2 2 4-4m-6 8 2 2 4-4M12 6h9m-9 6h9m-9 6h9"/></svg></span>
   <span class="tile-text">Контроль заполнения</span>
 </a>
     
-    <button class="tile" id="moreModules" type="button" aria-haspopup="dialog" aria-controls="modulesDialog" hidden>
-      <span class="tile-icon" aria-hidden="true">⋯</span>
+    <button class="tile" id="moreModules" type="button" aria-haspopup="dialog" aria-controls="modulesDialog" hidden data-tone="neutral">
+      <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg></span>
       <span class="tile-text">Ещё</span>
     </button>
   </div>
@@ -803,7 +867,7 @@
       <div class="modules-header">
         <h2 id="modulesTitle">Все модули</h2>
         <form method="dialog">
-          <button class="modules-close" type="submit" aria-label="Закрыть" autofocus>×</button>
+          <button class="modules-close" type="submit" aria-label="Закрыть" autofocus><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </form>
       </div>
       <div class="modules-grid" id="modulesGrid"></div>

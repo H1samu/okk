@@ -458,18 +458,20 @@
   }
   .jc-actions{
     display:flex;
+    align-items:center;
+    justify-content:flex-end;
     flex-wrap:wrap;
     gap:8px;
-    margin-top:12px;
+    margin-top:16px;
   }
   .btn{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    gap:6px;
-    height:44px;
+    gap:8px;
+    height:48px;
     padding:0 16px;
-    border-radius:10px;
+    border-radius:12px;
     font-size:14px;
     font-weight:600;
     text-decoration:none;
@@ -477,48 +479,66 @@
     border:1px solid var(--border-strong);
     background:var(--surface);
     color:var(--text);
-    transition:border-color .15s ease, opacity .15s ease, transform .1s ease;
+    white-space:nowrap;
+    transition:background-color .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease, transform .12s ease;
   }
-  .btn:hover{border-color:var(--accent);}
-  .btn:active{transform:scale(0.97);}
+  .btn:hover{
+    border-color:var(--accent);
+    background:#fafbf9;
+  }
+  .btn:active{transform:scale(0.985);}
   .btn-primary{
     background:var(--accent);
     border-color:var(--accent);
     color:#fff;
   }
-  .btn-primary:hover{opacity:0.92;}
+  .btn-primary:hover{
+    background:#304d46;
+    border-color:#304d46;
+    box-shadow:0 4px 12px rgba(58,90,82,0.16);
+  }
   .btn-fill{
-    flex:1 1 100%;
-    flex-direction:column;
-    gap:1px;
+    flex:0 0 auto;
+    flex-direction:row;
+    gap:8px;
   }
   .btn-fill .btn-sub{
-    font-size:11px;
+    font-size:10px;
     font-weight:500;
-    opacity:0.85;
+    opacity:0.82;
     line-height:1.1;
   }
   .btn-fill .btn-main{
     display:inline-flex;
     align-items:center;
-    gap:6px;
+    gap:8px;
+  }
+  .btn-svg{
+    display:block;
+    width:18px;
+    height:18px;
+    flex:0 0 auto;
   }
   .btn.disabled{
-    opacity:0.5;
-    cursor:default;
+    opacity:0.55;
+    cursor:not-allowed;
     pointer-events:none;
   }
-  .btn-view{flex:1;}
+  .btn-view{flex:0 0 auto;}
   .btn-icon{
-    width:44px;
+    width:48px;
+    height:48px;
     padding:0;
     flex-shrink:0;
-    font-size:18px;
+    color:var(--text-secondary);
   }
+  .btn-icon .btn-svg{width:20px;height:20px;}
   .btn-icon.active{
     background:#fdf7e3;
     border-color:#ecdca0;
+    color:#9a6b12;
   }
+  .btn-icon.active .btn-svg{fill:currentColor;}
 
   .empty-state, .loading-state{
     text-align:center;
@@ -608,9 +628,7 @@
   /* ===== Адаптив ===== */
   @media (min-width:600px){
     .scan-btn .scan-label{display:inline;}
-    .btn-fill{flex:1 1 0; min-width:0;}
     .jc-actions{flex-wrap:nowrap;}
-    .btn-view{flex:0 0 auto;}
   }
   @media (max-width:599px){
     .wrap{padding:20px 16px 48px;}
@@ -648,6 +666,11 @@
     .tile{min-height:68px; padding:10px 6px; gap:6px;}
     .tile .tile-icon{font-size:20px;}
     .tile .tile-text{font-size:12px;}
+
+    .jc-actions{justify-content:flex-end; gap:8px;}
+    .btn-fill{flex:1 0 100%; order:0;}
+    .btn-view{flex:1 1 auto; order:1;}
+    .btn-icon{order:2;}
   }
 </style>
 </head>
@@ -1024,6 +1047,15 @@ function renderUser(){
     return { url: '', prefilled: false };
   }
 
+  function actionIcon(name){
+    const paths = {
+      pencil: '<path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L8 18l-4 1 1-4Z"/>',
+      book: '<path d="M12 7v14"/><path d="M3 18V5a2 2 0 0 1 2-2h3a4 4 0 0 1 4 4 4 4 0 0 1 4-4h3a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2h-3a4 4 0 0 0-4 2 4 4 0 0 0-4-2H5a2 2 0 0 1-2-2Z"/>',
+      star: '<path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2L12 17.3l-5.6 2.9 1.1-6.2L3 9.6l6.2-.9L12 3Z"/>'
+    };
+    return `<svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths[name]}</svg>`;
+  }
+
   function cardHtml(j, query){
     const { code, title } = splitName(j);
     const fill = fillLink(j);
@@ -1031,11 +1063,10 @@ function renderUser(){
 
     const fillBtn = fill.url
       ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fill.url)}" target="_blank" rel="noopener">
-           <span class="btn-main">✏️ Заполнить</span>
-           ${fill.prefilled ? '<span class="btn-sub"></span>' : ''}
+           <span class="btn-main">${actionIcon('pencil')}<span>Заполнить</span></span>
          </a>`
-      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true">
-           <span class="btn-main">✏️ Заполнить</span>
+      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true" title="Форма не подключена">
+           <span class="btn-main">${actionIcon('pencil')}<span>Заполнить</span></span>
            <span class="btn-sub">форма не подключена</span>
          </span>`;
 
@@ -1046,10 +1077,10 @@ function renderUser(){
         <div class="jc-tags">${j.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
         <div class="jc-actions">
           ${fillBtn}
-          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала"><span>📖</span><span class="btn-label">Просмотр</span></a>
+          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала">${actionIcon('book')}<span class="btn-label">Просмотр</span></a>
           <button class="btn btn-icon${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
                   aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
-                  aria-pressed="${fav ? 'true' : 'false'}">${fav ? '⭐' : '☆'}</button>
+                  aria-pressed="${fav ? 'true' : 'false'}">${actionIcon('star')}</button>
         </div>
       </div>
     `;
@@ -1102,7 +1133,7 @@ function renderUser(){
     }
 
     btn.classList.toggle('active', nowActive);
-    btn.textContent = nowActive ? '⭐' : '☆';
+    btn.innerHTML = actionIcon('star');
     btn.setAttribute('aria-pressed', nowActive ? 'true' : 'false');
     btn.setAttribute('aria-label', nowActive ? 'Убрать из избранного' : 'Добавить в избранное');
   });

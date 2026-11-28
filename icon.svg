@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>hismar check app icon</title>
+  <rect width="512" height="512" fill="#F6F5F1"/>
+  <defs>
+    <linearGradient id="checkGradient" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0FBF9A"/>
+      <stop offset="100%" stop-color="#2DD4BF"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(256 256) scale(1.68) translate(-553 -213)">
+    <g fill="#25476B">
+    <rect x="437" y="137" width="41" height="152" rx="20.5"/>
+    <rect x="524" y="137" width="41" height="152" rx="20.5"/>
+    <rect x="628" y="138" width="41" height="151" rx="20.5"/>
+  </g>
+
+  <path d="M459 229 L548 194 L588 221 L651 160"
+        fill="none" stroke="url(#checkGradient)" stroke-width="30"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>

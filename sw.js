@@ -1,7 +1,7 @@
 // Меняйте номер версии (v1 → v2 → v3...) при каждом значимом деплое —
 // это заставит service worker сам обновить кэш у всех пользователей,
 // без их участия. Старые версии кэша удаляются автоматически (см. ниже).
-const CACHE_NAME = 'nassr-journals-v112026_9';
+const CACHE_NAME = 'nassr-journals-v112026_10';
 const CORE_ASSETS = [
   './',
   './index.html',
@@ -11,7 +11,8 @@ const CORE_ASSETS = [
   './cleaning03.html',
   './manifest.json',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './icon-maskable-512.png'
 ];
 
 self.addEventListener('install', event => {

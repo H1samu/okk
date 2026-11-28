@@ -3,13 +3,13 @@
 // <script src="auth-guard.js"></script>
 //
 // Если в браузере нет действующего токена — отправляет на login.html.
-// Раз в несколько минут (в фоне) спрашивает сервер, не отключили ли пользователя
-// и не сменили ли ему пинкод; если да — выходит из аккаунта.
+// При открытии страницы и возвращении в приложение запрашивает актуальный профиль.
+// Если сервер отклонил токен, отправляет на страницу входа.
 // Это удобство, а не защита: настоящая проверка токена происходит на сервере.
 (function(){
   var AUTH_KEY = 'gcheck_auth';
   var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw65iyi4m1X3Bu1KIrcJwiQCnqQ83odteQc2MtEYnkEjHCiVqQV6sIVwJoUYrCQFR2ALQ/exec';
-  var RECHECK_MS = 10 * 60 * 1000; // как часто сверяться с сервером
+  var checking = false;
 
   function readSession(){
     try{ return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); }
@@ -67,16 +67,28 @@
 
   updateUser(s);
 
-  if(!s.checkedAt || !s.allowed || !Array.isArray(s.blocks) || Date.now() - s.checkedAt > RECHECK_MS){
+  function recheckSession(){
+    if(document.visibilityState === 'hidden' || checking) return;
+
+    var session = readSession();
+    if(!session || !session.token || !session.exp || Date.now() >= session.exp){
+      toLogin();
+      return;
+    }
+
+    checking = true;
     fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'verify', token: s.token })
+      body: JSON.stringify({ action: 'verify', token: session.token })
     })
-      .then(function(r){ return r.json(); })
+      .then(function(r){
+        if(!r.ok) throw new Error('network');
+        return r.json();
+      })
       .then(function(res){
         var cur = readSession();
-        if(!cur || cur.token !== s.token) return;
+        if(!cur || cur.token !== session.token) return;
         if(res && res.ok){
           cur.checkedAt = Date.now();
           cur.name = res.name || cur.name;
@@ -92,6 +104,14 @@
         }
         // прочие ошибки сервера игнорируем, чтобы сбой скрипта не выкидывал всех
       })
-      .catch(function(){ /* нет сети — остаёмся в системе (PWA/офлайн) */ });
+      .catch(function(){ /* при сбое связи оставляем сохранённую сессию */ })
+      .finally(function(){ checking = false; });
   }
+
+  document.addEventListener('visibilitychange', recheckSession);
+  window.addEventListener('pageshow', function(event){
+    if(event.persisted) recheckSession();
+  });
+  window.addEventListener('online', recheckSession);
+  recheckSession();
 })();

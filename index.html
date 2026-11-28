@@ -1039,6 +1039,7 @@ function renderUser(){
 
   applyBlockVisibility();
   document.addEventListener('gcheck:user', () => {
+    renderUser();
     applyBlockVisibility();
     if(allJournals.length){
       journals = visible(allJournals).map(normalizeTags);

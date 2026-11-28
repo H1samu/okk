@@ -141,9 +141,11 @@
     margin-bottom:24px;
   }
   header .logo{
-    height:48px;
-    width:auto;
-    margin-bottom:14px;
+    display:block;
+    width:clamp(270px, 28vw, 320px);
+    max-width:calc(100% - 112px);
+    height:auto;
+    margin:0 auto 14px;
   }
   h1{
     font-size:26px;
@@ -739,9 +741,11 @@
     }
     header .logo{
       order:1;
-      width:min(230px, calc(100% - 56px));
+      flex:0 1 auto;
+      width:min(clamp(200px, 60vw, 240px), calc(100% - 56px));
+      max-width:calc(100% - 56px);
       height:auto;
-      margin-bottom:0;
+      margin:0;
     }
     .user-menu{
       order:2;
@@ -796,7 +800,7 @@
       </div>
     </div>
 
-    <img class="logo" src="logo.svg" alt="Hismar Check">
+    <img class="logo" src="logo.svg" alt="hismar check" width="1100" height="166">
     <h1>Журналы и чек-листы НАССР</h1>
 
     <div class="search-row" id="journalSearchRow">

@@ -374,7 +374,7 @@ async function loadAll(force){
   }
 
   const today = nowInTz();
-  items = journals.map(j => ({
+  items = journals.filter(j => !(j.tags || []).includes('Кулинария')).map(j => ({
     journal: Object.assign({}, j, { tags:(j.tags || []).map(t => t === 'Учет' ? 'Учёт' : t) }),
     freq: normFreq(j.fillFrequency), stat:null, status:'nodata', note:''
   }));

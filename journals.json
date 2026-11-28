@@ -1436,5 +1436,175 @@
     "formUrlPrefill": "",
     "qrPrefillDriveId": "",
     "fillFrequency": "1 раз в три дня"
+  },
+  {
+    "id": "НАССР-К-01",
+    "name": "НАССР-К-01 Журнал контроля температуры и влажности",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1w3YhOEKriG-yYGEul1Y4nVJ38DMOUq1sCCpam1-fMp8",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1w3YhOEKriG-yYGEul1Y4nVJ38DMOUq1sCCpam1-fMp8/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "temperature.html"
+  },
+  {
+    "id": "НАССР-К-02",
+    "name": "НАССР-К-02 Чек-лист уборки и проветривания помещений",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1jydKAjIdJh5ilupdT2FNHSHlEizT70rCXbUHzNEgBpE",
+    "sheetName": "Текущий месяц",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1jydKAjIdJh5ilupdT2FNHSHlEizT70rCXbUHzNEgBpE/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "cleaning.html"
+  },
+  {
+    "id": "НАССР-К-03",
+    "name": "НАССР-К-03 Журнал уборки",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1t7k1pccPeluIHgf798YniaEGj_GQC-5WCtD0xUP1Nq8",
+    "sheetName": "Текущий месяц",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1t7k1pccPeluIHgf798YniaEGj_GQC-5WCtD0xUP1Nq8/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "cleaning03.html"
+  },
+  {
+    "id": "НАССР-К-04",
+    "name": "НАССР-К-04 График и учет генеральных уборок",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1XInX8PlYyKo8Thn2tFy5pyPQmjOUDNhEUIrICZ7BVsw",
+    "sheetName": "Текущий год",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1XInX8PlYyKo8Thn2tFy5pyPQmjOUDNhEUIrICZ7BVsw/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-05",
+    "name": "НАССР-К-05 Журнал учета работы УФ бактерицидной установки",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1zdBQKNAq6jAlF4IzeXmChKbLrNMZxqsvPrWPZv_i4A8",
+    "sheetName": "Ежемесячный подсчет часов",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1zdBQKNAq6jAlF4IzeXmChKbLrNMZxqsvPrWPZv_i4A8/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-06",
+    "name": "НАССР-К-06 Журнал бракеража готовой пищевой продукции",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1VRY5D-K2UqtL3PiiaZ4EMZLQQpojTDrgG2IiimvHnRk",
+    "sheetName": "Ответы на форму (1)",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1VRY5D-K2UqtL3PiiaZ4EMZLQQpojTDrgG2IiimvHnRk/edit?gid=1464292163#gid=1464292163",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-07",
+    "name": "НАССР-К-07 Журнал приемки и входного контроля продукции",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1q8T-cRqFJ09M-rWZXI6RMgpcSzIBqtwiUfsEW0biCyc",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1q8T-cRqFJ09M-rWZXI6RMgpcSzIBqtwiUfsEW0biCyc/edit?gid=1255920483#gid=1255920483",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-08",
+    "name": "НАССР-К-08 Медицинские книжки",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1vqJAlyK3sn1Bg4rc3Akn15CrcHT2pHwacpE7nCB1s6Y",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1vqJAlyK3sn1Bg4rc3Akn15CrcHT2pHwacpE7nCB1s6Y/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-09",
+    "name": "НАССР-К-09 Температура и микроклимат холодильных камер",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1helD1jWmpno4XoOfk1pJPLwJxbKlB5tmrD0MUfn6Vn8",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1helD1jWmpno4XoOfk1pJPLwJxbKlB5tmrD0MUfn6Vn8/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
+  },
+  {
+    "id": "НАССР-К-10",
+    "name": "НАССР-К-10 Контроль стекла и пластика и деревянных предметов",
+    "tags": [
+      "Кулинария"
+    ],
+    "sheetId": "1UKtaSZJnji8Ax8FPVUxxlw_J3ppFqv1fXxLHHK-Q2-4",
+    "sheetName": "Лист1",
+    "sheetUrl": "https://docs.google.com/spreadsheets/d/1UKtaSZJnji8Ax8FPVUxxlw_J3ppFqv1fXxLHHK-Q2-4/edit?gid=0#gid=0",
+    "formUrl": "",
+    "formUrlEdit": "",
+    "qrDriveId": "",
+    "formUrlPrefill": "",
+    "qrPrefillDriveId": "",
+    "fillFrequency": "",
+    "viewer": "culinary_journal.html"
   }
 ]

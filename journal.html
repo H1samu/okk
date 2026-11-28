@@ -428,6 +428,14 @@
           return;
         }
 
+        // Сохраняем специальные интерфейсы для журналов из общего каталога.
+        if(['temperature.html', 'cleaning.html', 'cleaning03.html'].includes(journal.viewer)){
+          location.replace(journal.viewer); return;
+        }
+        if(journal.viewer === 'culinary_journal.html'){
+          location.replace(journal.viewer + '?id=' + encodeURIComponent(journal.id)); return;
+        }
+
         renderHeader();
 
         if(!journal.sheetId || !journal.sheetName){

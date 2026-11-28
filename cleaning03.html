@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>НАССР-К-03 Журнал уборки — Hismar Check</title>
 <script src="auth-guard.js"></script>
-<script>
-(function(){
-  var u=window.gcheckUser||{};
-  var ok=(u.type||'').trim().toLowerCase()==='администратор' ||
-         (u.position||'').trim().toLowerCase()==='сотрудник кулинарии';
-  if(!ok) location.replace('culinary.html');
-})();
-</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -114,7 +106,7 @@ select{height:42px;min-width:190px;padding:0 34px 0 12px;border:1px solid var(--
 </head>
 <body>
 <div class="wrap">
-  <a class="back" href="culinary.html">← Кулинария</a>
+  <a class="back" href="index.html">← Все журналы</a>
   <header>
     <h1>НАССР-К-03 Журнал уборки</h1>
     <p class="subtitle">Отметки текущей и генеральной уборки по помещениям</p>
@@ -132,7 +124,18 @@ select{height:42px;min-width:190px;padding:0 34px 0 12px;border:1px solid var(--
 </div>
 
 <script>
+(function(){
 'use strict';
+const journalId = 'НАССР-К-03';
+function hasJournalAccess(){
+  const a = window.gcheckUser?.allowed;
+  return a === '*' || (Array.isArray(a) && a.includes(journalId));
+}
+if(!window.gcheckUser) return; // auth-guard.js перенаправляет на вход
+if(!hasJournalAccess()){ location.replace('index.html'); return; }
+document.addEventListener('gcheck:user', () => {
+  if(!hasJournalAccess()) location.replace('index.html');
+});
 
 // Вставь сюда URL веб-приложения Apps Script, заканчивающийся на /exec.
 const API_URL = 'https://script.google.com/macros/s/AKfycbwwoCjwtQG-eVOvi0Ln9jBbnyYBOspMpBnzyA6RdKUI1HT-Naw5tWnAjXqk1hD2GHsD2w/exec';
@@ -478,6 +481,7 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(){});
   });
 }
+})();
 </script>
 </body>
 </html>

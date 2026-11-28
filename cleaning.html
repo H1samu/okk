@@ -5,14 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Чек-лист уборки и проветривания — Hismar Check</title>
 <script src="auth-guard.js"></script>
-<script>
-(function(){
-  var u=window.gcheckUser||{};
-  var ok=(u.type||'').trim().toLowerCase()==='администратор' ||
-         (u.position||'').trim().toLowerCase()==='сотрудник кулинарии';
-  if(!ok) location.replace('culinary.html');
-})();
-</script>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#3a5a52">
 <link rel="icon" href="icon-192.png">
@@ -43,7 +35,7 @@ td.time-merged{text-align:center;vertical-align:middle;font-weight:400;color:var
 </head>
 <body>
 <div class="wrap">
-<a class="back" href="culinary.html">← Кулинария</a>
+<a class="back" href="index.html">← Все журналы</a>
 <header><h1>НАССР-К-02 Чек-лист уборки и проветривания помещений</h1><p class="subtitle">Отметки по видам уборки и времени выполнения</p></header>
 <section class="toolbar" aria-label="Фильтры">
   <div class="field"><label for="monthFilter">Месяц</label><select id="monthFilter"><option value="">Все месяцы</option></select></div>
@@ -55,6 +47,18 @@ td.time-merged{text-align:center;vertical-align:middle;font-weight:400;color:var
 <div id="content"><div class="state">Загрузка данных таблицы…</div></div>
 </div>
 <script>
+(function(){
+'use strict';
+const journalId = 'НАССР-К-02';
+function hasJournalAccess(){
+  const a = window.gcheckUser?.allowed;
+  return a === '*' || (Array.isArray(a) && a.includes(journalId));
+}
+if(!window.gcheckUser) return; // auth-guard.js перенаправляет на вход
+if(!hasJournalAccess()){ location.replace('index.html'); return; }
+document.addEventListener('gcheck:user', () => {
+  if(!hasJournalAccess()) location.replace('index.html');
+});
 const SPREADSHEET_ID='1jydKAjIdJh5ilupdT2FNHSHlEizT70rCXbUHzNEgBpE';
 const SHEET_RANGE="'Текущий месяц'!A1:F";
 const API_KEY='AIzaSyCrXcA6Rzohxe0bWBD3W8veWLprb47m2lY';
@@ -123,6 +127,7 @@ fetch('https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'
 .then(r=>{if(!r.ok)throw new Error('HTTP '+r.status);return r.json()})
 .then(d=>init(d.values||[]))
 .catch(e=>{content.innerHTML='<div class="state error">Не удалось загрузить данные журнала. Проверьте, что Google-таблица доступна для чтения по ссылке, а вкладка называется «Текущий месяц». ('+esc(e.message)+')</div>';rowCount.textContent='Ошибка загрузки'});
+})();
 </script>
 </body>
 </html>

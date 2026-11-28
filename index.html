@@ -849,10 +849,6 @@
   <span class="tile-text">Ежедневный обход СГИ</span>
 </a>
 
-<a class="tile" href="culinary.html" data-block="Кулинария" hidden data-tone="orange">
-  <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 13h18M5 13v4a4 4 0 0 0 4 4h6a4 4 0 0 0 4-4v-4M2 16h3m14 0h3M7 9h10M12 9V7M9 3v2m6-2v2"/></svg></span>
-  <span class="tile-text">Кулинария</span>
-</a>  
 
     <a class="tile" href="test-results.html" data-block="Результаты тестирования" hidden data-tone="purple">
       <span class="tile-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6M8 17v-3m4 3v-5m4 5v-2"/></svg></span>
@@ -1009,7 +1005,7 @@ function renderUser(){
     window.gcheckLogout();
   });
 
-  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Прочее"];
+  const TAG_ORDER = ["Санитария","АХО","Оборудование","Продукт","Включения","Температурные","Вредители","Учёт","Кулинария","Прочее"];
 
   const tagGrid = document.getElementById('tagGrid');
   const journalList = document.getElementById('journalList');
@@ -1161,6 +1157,9 @@ function renderUser(){
     const { code, title } = splitName(j);
     const fill = fillLink(j);
     const fav = isFavorite(j.id);
+    const viewUrl = ['temperature.html', 'cleaning.html', 'cleaning03.html'].includes(j.viewer)
+      ? j.viewer
+      : (j.viewer === 'culinary_journal.html' ? j.viewer : 'journal.html') + '?id=' + encodeURIComponent(j.id);
 
     const fillBtn = fill.url
       ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fill.url)}" target="_blank" rel="noopener">
@@ -1178,7 +1177,7 @@ function renderUser(){
         <div class="jc-tags">${j.tags.map(t => `<span>${escapeHtml(t)}</span>`).join('')}</div>
         <div class="jc-actions">
           ${fillBtn}
-          <a class="btn btn-view" href="journal.html?id=${encodeURIComponent(j.id)}" aria-label="Просмотр журнала">${actionIcon('book')}<span class="btn-label">Просмотр</span></a>
+          <a class="btn btn-view" href="${escapeHtml(viewUrl)}" aria-label="Просмотр журнала">${actionIcon('book')}<span class="btn-label">Просмотр</span></a>
           <button class="btn btn-icon${fav ? ' active' : ''}" type="button" data-fav-id="${escapeHtml(j.id)}"
                   aria-label="${fav ? 'Убрать из избранного' : 'Добавить в избранное'}"
                   aria-pressed="${fav ? 'true' : 'false'}">${actionIcon('star')}</button>

@@ -1169,10 +1169,7 @@ function renderUser(){
       ? `<a class="btn btn-primary btn-fill" href="${escapeHtml(fill.url)}" target="_blank" rel="noopener">
            <span class="btn-main">${actionIcon('pencil')}<span>Заполнить</span></span>
          </a>`
-      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true" title="Форма не подключена">
-           <span class="btn-main">${actionIcon('pencil')}<span>Заполнить</span></span>
-           <span class="btn-sub">форма не подключена</span>
-         </span>`;
+      : '';
 
     return `
       <div class="journal-card" data-id="${escapeHtml(j.id)}">

@@ -486,10 +486,7 @@
            <span class="btn-main">✏️ Заполнить форму</span>
            ${prefilled ? '<span class="btn-sub"></span>' : ''}
          </a>`
-      : `<span class="btn btn-primary btn-fill disabled" aria-disabled="true">
-           <span class="btn-main">✏️ Заполнить форму</span>
-           <span class="btn-sub">форма не подключена</span>
-         </span>`;
+      : '';
 
     const fav = isFavorite(journal.id);
     headActions.innerHTML = `
